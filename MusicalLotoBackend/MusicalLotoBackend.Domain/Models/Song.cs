@@ -1,13 +1,13 @@
-﻿namespace MusicalLotoBackend.Domain.Models;
+namespace MusicalLotoBackend.Domain.Models;
 
 public class Song : BaseEntity
 {
-    public string? Title { get; set; }
-    public string? Artist { get; set; }
-    public string? AudioPath { get; set; }
+    public string Title { get; set; }
+    public string Artist { get; set; }
+    public string AudioPath { get; set; }
     public string? BackgoundImagePath { get; set; }
 
-    public Song(string? title, string? artist, string? audioPath, string? backgoundImagePath = null)
+    public Song(string title, string artist, string audioPath, string? backgoundImagePath = null)
     {
         Title = title;
         Artist = artist;
