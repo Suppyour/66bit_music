@@ -13,7 +13,6 @@ public class AppDbContext : DbContext
     public DbSet<Song> Songs { get; set; }
     public DbSet<GameSession> Sessions { get; set; }
     public DbSet<GameCard> GameCards { get; set; }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

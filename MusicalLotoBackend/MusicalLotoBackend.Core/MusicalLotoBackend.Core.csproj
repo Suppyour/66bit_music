@@ -22,4 +22,8 @@
       <ProjectReference Include="..\MusicalLotoBackend.Database\MusicalLotoBackend.Database.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Features\PDF\" />
+    </ItemGroup>
+
 </Project>
