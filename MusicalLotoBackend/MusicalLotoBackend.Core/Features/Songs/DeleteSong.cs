@@ -2,7 +2,7 @@
 using MusicalLotoBackend.Database;
 
 namespace MusicalLotoBackend.Core.Features.Songs;
-public class DeleteSongCommand : IRequest<bool> // хранит id песен которые надо удалять
+public class DeleteSongCommand : IRequest<bool>
 {
     public required Guid Id { get; init; }
 }

@@ -35,6 +35,9 @@ namespace MusicalLotoBackend.Database.Migrations
                     b.Property<Guid>("GameSessionId")
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("IsAssigned")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
