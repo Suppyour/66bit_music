@@ -13,6 +13,15 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// ----- Добавлено для Docker: Автоматическое применение миграций -----
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    dbContext.Database.Migrate();
+}
+// --------------------------------------------------------------------
+
 app.UseStaticFiles();
 if (app.Environment.IsDevelopment())
 {

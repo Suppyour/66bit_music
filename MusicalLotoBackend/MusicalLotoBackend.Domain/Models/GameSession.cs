@@ -8,6 +8,11 @@ public class GameSession : BaseEntity
     public List<GameCard> Cards { get; set; }
     public WinningRules Rules { get; set; }
     public List<Guid> Playlist { get; set; }
+    
+    public bool IsHorizontalClaimed { get; set; } = false;
+    public bool IsVerticalClaimed { get; set; } = false;
+    public bool IsFullCardClaimed { get; set; } = false;
+
 }
 
 [Flags]
