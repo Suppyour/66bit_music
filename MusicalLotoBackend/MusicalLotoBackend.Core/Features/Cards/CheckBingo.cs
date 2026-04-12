@@ -1,7 +1,9 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using MusicalLotoBackend.Database;
 using MusicalLotoBackend.Domain.Models;
+using Microsoft.AspNetCore.SignalR;
+using MusicalLotoBackend.Core.Features.Gameplay;
 
 namespace MusicalLotoBackend.Core.Features.Cards;
 
@@ -13,10 +15,12 @@ public class CheckBingoCommand : IRequest<string>
 public class CheckBingoHandler : IRequestHandler<CheckBingoCommand, string>
 {
     private readonly AppDbContext _dbContext;
+    private readonly IHubContext<GameHub> _hubContext;
 
-    public CheckBingoHandler(AppDbContext dbContext)
+    public CheckBingoHandler(AppDbContext dbContext, IHubContext<GameHub> hubContext)
     {
         _dbContext = dbContext;
+        _hubContext = hubContext;
     }
 
     public async Task<string> Handle(CheckBingoCommand request, CancellationToken cancellationToken)
@@ -32,11 +36,21 @@ public class CheckBingoHandler : IRequestHandler<CheckBingoCommand, string>
         var size = session.CardSize;
         string prizeWon = "";
 
+        // АНТИЧИТ СИСТЕМА: Зачеркнутая ячейка считается "честной" только если 
+        // песня в ней уже прозвучала (её индекс <= CurrentSongIndex)
+        bool IsCellValid(CardCell cell)
+        {
+            if (!cell.IsMarked) return false;
+            
+            int playlistIndex = session.Playlist.IndexOf(cell.SongId);
+            return playlistIndex != -1 && playlistIndex <= session.CurrentSongIndex;
+        }
+
         if (rules.HasFlag(WinningRules.Horizontal) && !session.IsHorizontalClaimed)
         {
             for (int r = 0; r < size; r++)
             {
-                if (card.Cells.Count(c => c.Row == r && c.IsMarked) == size)
+                if (card.Cells.Count(c => c.Row == r && IsCellValid(c)) == size)
                 {
                     session.IsHorizontalClaimed = true;
                     prizeWon = "Горизонталь";
@@ -49,7 +63,7 @@ public class CheckBingoHandler : IRequestHandler<CheckBingoCommand, string>
         {
             for (int c = 0; c < size; c++)
             {
-                if (card.Cells.Count(cell => cell.Column == c && cell.IsMarked) == size)
+                if (card.Cells.Count(cell => cell.Column == c && IsCellValid(cell)) == size)
                 {
                     session.IsVerticalClaimed = true;
                     prizeWon = "Вертикаль";
@@ -60,7 +74,7 @@ public class CheckBingoHandler : IRequestHandler<CheckBingoCommand, string>
 
         if (string.IsNullOrEmpty(prizeWon) && rules.HasFlag(WinningRules.FullCard) && !session.IsFullCardClaimed)
         {
-            if (card.Cells.All(c => c.IsMarked))
+            if (card.Cells.All(c => IsCellValid(c)))
             {
                 session.IsFullCardClaimed = true;
                 prizeWon = "Вся Карточка!";
@@ -71,6 +85,10 @@ public class CheckBingoHandler : IRequestHandler<CheckBingoCommand, string>
         {
             _dbContext.Sessions.Update(session);
             await _dbContext.SaveChangesAsync(cancellationToken);
+            
+            // МАГИЯ SIGNALR: выстреливаем салютом на экраны всех игроков в этой комнате!
+            await _hubContext.Clients.Group(session.Id.ToString())
+                .SendAsync("PlayerWonBingo", new { CardId = card.Id, Prize = prizeWon }, cancellationToken);
         }
 
         return prizeWon; 

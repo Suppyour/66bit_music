@@ -1,4 +1,4 @@
-﻿namespace MusicalLotoBackend.Domain.Models;
+namespace MusicalLotoBackend.Domain.Models;
 
 public class GameSession : BaseEntity
 {
@@ -8,6 +8,8 @@ public class GameSession : BaseEntity
     public List<GameCard> Cards { get; set; }
     public WinningRules Rules { get; set; }
     public List<Guid> Playlist { get; set; }
+    
+    public int CurrentSongIndex { get; set; } = -1; // -1 - музыка не играет
     
     public bool IsHorizontalClaimed { get; set; } = false;
     public bool IsVerticalClaimed { get; set; } = false;

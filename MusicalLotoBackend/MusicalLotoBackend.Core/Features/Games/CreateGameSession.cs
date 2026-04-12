@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel;
 using MediatR;
 using MusicalLotoBackend.Database;
 using MusicalLotoBackend.Domain.Models;
@@ -8,12 +9,15 @@ namespace MusicalLotoBackend.Core.Features.Games;
 public class CreateGameSessionCommand : IRequest<Guid>
 {
     [Required]
+    [DefaultValue("Название румы")]
     public required string Name { get; init; }
     
     [Range(1, 1000)]
+    [DefaultValue(10)]
     public required int ParticipantsCount { get; init; }
     
     [Range(3, 7)] // range card
+    [DefaultValue(3)]
     public required int CardSize { get; init; }
     
     [Required]

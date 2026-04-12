@@ -8,19 +8,20 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connect
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// ----- Добавлено для Docker: Автоматическое применение миграций -----
+// for docker
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     dbContext.Database.Migrate();
 }
-// --------------------------------------------------------------------
+
 
 app.UseStaticFiles();
 if (app.Environment.IsDevelopment())
@@ -31,5 +32,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<MusicalLotoBackend.Core.Features.Gameplay.GameHub>("/gameHub");
 
 app.Run();
