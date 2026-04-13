@@ -1,0 +1,84 @@
+.howItWorksSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin-top: 176px; /* From Figma: 1720.81 (top of section) - 1544.81 (bottom of cards) */
+  margin-bottom: 120px;
+}
+
+.howItWorksHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  /* Top of cards is 165px from the top of the container in Figma */
+  margin-bottom: 72px; 
+}
+
+.howItWorksTitle {
+  font-family: var(--font-main);
+  font-size: 40px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 16px;
+}
+
+.howItWorksSubtitle {
+  font-family: var(--font-main);
+  font-size: 18px;
+  color: #6B7280;
+  max-width: 600px;
+}
+
+.howItWorksSteps {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 33px;
+  width: 100%;
+}
+
+.howItWorksCard {
+  width: 327.25px;
+  height: 231px;
+  background-color: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0px 5.5px 19.25px rgba(46, 104, 245, 0.08); /* Same shadow as before approx */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-sizing: border-box;
+  padding: 0 52px;
+}
+
+.howItWorksCard-number {
+  font-family: 'Inter', sans-serif;
+  font-weight: 900;
+  font-size: 41.25px;
+  line-height: 48.5px;
+  color: #2E68F5;
+  margin-bottom: 5.5px;
+}
+
+.howItWorksCard-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 33px;
+  color: #111827;
+  margin: 0;
+  margin-bottom: 5.5px;
+}
+
+.howItWorksCard-desc {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 19.25px;
+  line-height: 27.5px;
+  color: #64748B;
+  margin: 0;
+}

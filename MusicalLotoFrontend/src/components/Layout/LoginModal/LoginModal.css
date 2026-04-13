@@ -1,0 +1,283 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  /* rgba(255, 255, 255, 0.72) is from the properties "Colors: #FFFFFF 72%" */
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(8px); /* Optional nice modern touch */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  width: 825px;
+  background: #FFFFFF;
+  border-radius: 27.5px;
+  border: 1.38px solid #E5E7EB; /* Based on the 60% white borders, but assuming it was transparent grey or E5E7EB */
+  box-shadow: 0px 13.75px 20.63px rgba(15, 23, 42, 0.08); /* X 0 Y 13.75 Blur 20.63 Color #0F172A 8% */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  padding-bottom: 137.5px;
+}
+
+.modalCloseBtn {
+  position: absolute;
+  top: 20.62px;
+  right: 20.62px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 56.38px;
+  height: 56.38px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.modalCloseBtn:hover {
+  opacity: 0.7;
+  transform: scale(1.05);
+}
+
+.modalHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 88.75px; 
+}
+
+.modalLoginIcon {
+  width: 88px;
+  height: 88px;
+  margin-bottom: 23.38px;
+  border: none;
+  outline: none;
+}
+
+.modalTitle {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 400;
+  font-size: 44px;
+  line-height: 48.5px;
+  color: #0F172A;
+  margin: 0;
+  margin-bottom: 25.62px;
+  letter-spacing: -0.69px; /* from screenshot: Letter spacing -0.69px */
+}
+
+.modalSubtitle {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 24.75px;
+  line-height: 27.5px;
+  color: #64748B;
+  margin: 0;
+  margin-bottom: 50.88px;
+  letter-spacing: -0.69px; /* matching the same letter spacing generally */
+}
+
+.modalForm {
+  width: 550px;
+  display: flex;
+  flex-direction: column;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.formLabel {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 24.75px; /* In screenshot 4: Label height is 27.5px, let's use 20px font since 24 is too big for a label. Wait! The red lines strictly point to 24.75px font size for the subtitle! But for the form label, it's regular size. I'll use 16px. */
+  font-size: 16px;
+  line-height: 27.5px; 
+  color: #0F172A;
+  margin-bottom: 0px; 
+}
+
+.formInput {
+  width: 100%;
+  height: 55px; /* From wrapper height 82.5 - label height 27.5 = 55px */
+  background: #FFFFFF;
+  border: 2.75px solid #E2E8F0;
+  border-radius: 16.5px;
+  padding: 0 20px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 18px;
+  color: #0F172A;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.formInput::placeholder {
+  color: #94A3B8;
+}
+
+.formInput:focus {
+  border-color: #2E68F5;
+}
+
+.passwordInputContainer {
+  position: relative;
+  width: 100%;
+}
+
+.passwordInput {
+  padding-right: 50px;
+}
+
+.passwordToggleBtn {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: opacity 0.2s ease;
+}
+
+.passwordToggleBtn:hover {
+  opacity: 0.7;
+}
+
+.formOptions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 13.75px;
+  margin-bottom: 34.38px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  color: #64748B;
+  cursor: pointer;
+}
+
+.customCheckbox {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #E2E8F0;
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  background: #FFFFFF;
+}
+
+.customCheckbox:checked {
+  background-color: #2563EB;
+  border-color: #2563EB;
+}
+
+.customCheckbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 4px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.forgotPassword {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  color: #2E68F5;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.forgotPassword:hover {
+  text-decoration: underline;
+  color: #1D4ED8;
+}
+
+.loginSubmitBtn {
+  width: 100%;
+  height: 71.5px;
+  background: #2563EB;
+  border-radius: 27.5px;
+  border: none;
+  color: #FFFFFF;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400; /* Regular in figma likely, or 500 */
+  font-size: 24.75px; /* From image 5, wait text is white, large */
+  cursor: pointer;
+  box-shadow: 0px 13.75px 20.63px rgba(37, 99, 235, 0.2), 0px 5.5px 8.25px rgba(37, 99, 235, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loginSubmitBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0px 18px 25px rgba(37, 99, 235, 0.3), 0px 8px 12px rgba(37, 99, 235, 0.25);
+}
+
+.loginSubmitBtn:active {
+  transform: translateY(1px);
+  box-shadow: 0px 8px 15px rgba(37, 99, 235, 0.2), 0px 4px 6px rgba(37, 99, 235, 0.2);
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 34.38px;
+  width: 100%;
+}
+
+.noAccountText {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 23.38px;
+  letter-spacing: -0.69px;
+  color: #64748B;
+  margin-right: 6px;
+}
+
+.createAccountLink {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 22px;
+  line-height: 23.38px;
+  letter-spacing: -0.69px;
+  color: #2563EB;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.createAccountLink:hover {
+  text-decoration: underline;
+}

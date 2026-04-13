@@ -1,0 +1,92 @@
+.header {
+  width: 100%;
+  background-color: #ffffff;
+  box-shadow: 0px 5.5px 19.25px rgba(46, 104, 245, 0.12);
+  position: relative;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1980px;
+  padding: 0 110px;
+  box-sizing: border-box;
+  height: 96.25px;
+}
+
+.logoContainer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logoIcon {
+  width: 49.5px;
+  height: 49.5px;
+  display: block;
+}
+
+.logoText {
+  font-size: 24px;
+  font-weight: 700;
+  color: #000000;
+  letter-spacing: -0.02em;
+}
+
+.authContainer {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  gap: 32px;
+}
+
+.btnLogin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 120.81px;
+  height: 49.5px;
+  border-radius: 8.25px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-main);
+  font-weight: 500;
+  font-size: 16px;
+  color: #4A5565;
+  transition: opacity 0.2s;
+}
+
+.btnLogin:hover {
+  opacity: 0.7;
+}
+
+.btnRegister {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 232.07px;
+  height: 60.5px;
+  background-color: #2E68F5;
+  border-radius: 8.25px;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-main);
+  font-weight: 500;
+  font-size: 16px;
+  color: #ffffff;
+  box-shadow: 0px 5.5px 19.25px rgba(46, 104, 245, 0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btnRegister:hover {
+  transform: translateY(-2px);
+  box-shadow: 0px 8px 24px rgba(46, 104, 245, 0.4);
+}
