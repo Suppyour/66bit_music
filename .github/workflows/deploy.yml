@@ -16,7 +16,8 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}   
           key: ${{ secrets.SSH_PRIVATE_KEY }} 
           script: |
-            cd ~/66bit_music/MusicalLotoBackend
+            # Переходим в корень проекта, где лежит новый docker-compose.yml
+            cd ~/66bit_music
             
             git reset --hard
             git pull origin main
