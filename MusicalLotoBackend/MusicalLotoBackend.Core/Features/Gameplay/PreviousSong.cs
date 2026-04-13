@@ -30,7 +30,7 @@ public class PreviousSongHandler : IRequestHandler<PreviousSongCommand, object>
 
         if (session.CurrentSongIndex <= 0)
         {
-            return new { Message = "Вы в самом начале плейлиста!" };
+            return new { Message = "Начало игры" };
         }
 
         session.CurrentSongIndex--;
@@ -40,7 +40,7 @@ public class PreviousSongHandler : IRequestHandler<PreviousSongCommand, object>
         var songInfo = await _dbContext.Songs
             .FirstOrDefaultAsync(s => s.Id == songId, cancellationToken);
             
-        if (songInfo == null) throw new Exception("Песня не найдена");
+        if (songInfo == null) throw new Exception("Песня не найдена в базе");
 
         _dbContext.Sessions.Update(session);
         await _dbContext.SaveChangesAsync(cancellationToken);

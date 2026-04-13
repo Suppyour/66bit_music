@@ -13,7 +13,6 @@ public class NextSongCommand : IRequest<object>
 public class NextSongHandler : IRequestHandler<NextSongCommand, object>
 {
     private readonly AppDbContext _dbContext;
-
     private readonly IHubContext<GameHub> _hubContext;
 
     public NextSongHandler(AppDbContext dbContext, IHubContext<GameHub> hubContext)
@@ -35,7 +34,7 @@ public class NextSongHandler : IRequestHandler<NextSongCommand, object>
         {
             await _hubContext.Clients.Group(request.SessionId.ToString())
                 .SendAsync("GameOver", cancellationToken);
-            return new { Message = "Конец" };
+            return new { Message = "Спасибо за игру!" };
         }
 
         var songId = session.Playlist[session.CurrentSongIndex];
@@ -44,7 +43,6 @@ public class NextSongHandler : IRequestHandler<NextSongCommand, object>
             .FirstOrDefaultAsync(s => s.Id == songId, cancellationToken);
             
         if (songInfo == null) throw new Exception("Песня не найдена");
-
         _dbContext.Sessions.Update(session);
         await _dbContext.SaveChangesAsync(cancellationToken);
 

@@ -39,7 +39,7 @@ services:
     depends_on:
       - api
     ports:
-      - "8081:80" # Внутренний контейнер слушает на 80 (nginx), а наружу выдаем на 8081
+      - "8081:80"
     restart: unless-stopped
 
 volumes:

@@ -36,8 +36,7 @@ public class CheckBingoHandler : IRequestHandler<CheckBingoCommand, string>
         var size = session.CardSize;
         string prizeWon = "";
 
-        // АНТИЧИТ СИСТЕМА: Зачеркнутая ячейка считается "честной" только если 
-        // песня в ней уже прозвучала (её индекс <= CurrentSongIndex)
+        // если песня УЖЕ прозвучала
         bool IsCellValid(CardCell cell)
         {
             if (!cell.IsMarked) return false;
@@ -86,7 +85,6 @@ public class CheckBingoHandler : IRequestHandler<CheckBingoCommand, string>
             _dbContext.Sessions.Update(session);
             await _dbContext.SaveChangesAsync(cancellationToken);
             
-            // МАГИЯ SIGNALR: выстреливаем салютом на экраны всех игроков в этой комнате!
             await _hubContext.Clients.Group(session.Id.ToString())
                 .SendAsync("PlayerWonBingo", new { CardId = card.Id, Prize = prizeWon }, cancellationToken);
         }
