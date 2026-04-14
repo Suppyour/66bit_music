@@ -5,17 +5,28 @@ import Header from './components/Layout/Header/Header';
 import Footer from './components/Layout/Footer/Footer';
 import LoginModal from './components/Layout/LoginModal/LoginModal';
 import MainPage from './pages/MainPage/MainPage';
+import SongLibrary from './pages/SongLibrary/SongLibrary';
 
 function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   return (
     <Router>
-      <Header onLoginClick={() => setIsLoginModalOpen(true)} />
       <Routes>
-        <Route path="/" element={<MainPage />} />
+        <Route path="/" element={
+          <>
+            <Header onLoginClick={() => setIsLoginModalOpen(true)} />
+            <MainPage />
+            <Footer />
+          </>
+        } />
+        <Route path="/library" element={<SongLibrary />} />
+        {/* Placeholder routes for others links in HeaderLibrary */}
+        <Route path="/cabinet" element={<SongLibrary />} />
+        <Route path="/generator" element={<SongLibrary />} />
+        <Route path="/presentation" element={<SongLibrary />} />
       </Routes>
-      <Footer />
+      
       <LoginModal 
         isOpen={isLoginModalOpen} 
         onClose={() => setIsLoginModalOpen(false)} 
