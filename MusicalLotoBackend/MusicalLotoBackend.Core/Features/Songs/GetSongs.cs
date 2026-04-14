@@ -10,8 +10,9 @@ public class SongDto
     public Guid Id { get; init; }
     public string Title { get; init; }
     public string Artist { get; init; }
-    public string AudioPath { get; init; }
-    public string? BackgroundImagePath { get; init; }
+    public string AudioPath { get; set; }
+    public string? BackgroundImagePath { get; set; }
+    public int DurationSeconds { get; set; }
 }
 public class GetSongsQuery : IRequest<List<SongDto>> { }
 
@@ -34,6 +35,7 @@ public class GetSongsHandler : IRequestHandler<GetSongsQuery, List<SongDto>>
                 Title = s.Title,
                 Artist = s.Artist,
                 AudioPath = s.AudioPath,
+                DurationSeconds = s.DurationSeconds,
                 BackgroundImagePath = s.BackgoundImagePath
             })
             .ToListAsync(cancellationToken);

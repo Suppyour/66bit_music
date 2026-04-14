@@ -31,5 +31,4 @@ public class CardsController : ControllerBase
     
         return Ok(new { Message = "Ячейка успешно зачеркнута!" });
     }
-    // удалить после запуска докера на vps
 }

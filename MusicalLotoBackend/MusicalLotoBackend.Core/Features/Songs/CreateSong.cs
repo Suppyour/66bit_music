@@ -36,11 +36,25 @@ public class CreateSongHandler : IRequestHandler<CreateSongCommand, Guid>
             imagePath = await SaveFileAsync(request.BackgroundImageFile, "images", cancellationToken);
         }
         
+        int durationSeconds = 0;
+        var fullAudioPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", audioPath.TrimStart('/'));
+        try
+        {
+            // Используем TagLibSharp для чтения битрейта и длины
+            using var tfile = TagLib.File.Create(fullAudioPath);
+            durationSeconds = (int)tfile.Properties.Duration.TotalSeconds;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Не удалось прочитать длительность: {ex.Message}");
+        }
+
         // здесь готовые уже данные
         var song = new Song(
             title: request.Title, 
             artist: request.Artist, 
             audioPath: audioPath, 
+            durationSeconds: durationSeconds,
             backgoundImagePath: imagePath
         );
 
