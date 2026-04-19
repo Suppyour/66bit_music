@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import HeaderLibrary from '../../components/HeaderLibrary/HeaderLibrary';
+import AddSongModal from '../../components/AddSongModal/AddSongModal';
 import './SongLibrary.css';
 
 import plusIcon from '../../assets/SongLibrary/Плюсик в добавить песню.svg';
@@ -77,11 +78,7 @@ const SongLibrary: React.FC = () => {
     }, []);
 
     // Стандартный путь веба: отправляем файл и сразу вызываем fetchSongs
-    const handleUploadSong = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const form = e.currentTarget;
-        const formData = new FormData(form);
-
+    const handleUploadSong = async (formData: FormData) => {
         setIsUploading(true);
         try {
             const response = await fetch('/api/Songs', {
@@ -91,7 +88,6 @@ const SongLibrary: React.FC = () => {
 
             if (response.ok) {
                 setShowUploadForm(false);
-                form.reset();
                 // Магия стандартного веба: перерисовываем таблицу новыми данными
                 await fetchSongs();
             } else {
@@ -123,22 +119,11 @@ const SongLibrary: React.FC = () => {
                     </button>
                 </div>
 
-                {showUploadForm && (
-                    <form className="upload-form" onSubmit={handleUploadSong} style={{ background: '#1c1c1e', padding: '20px', borderRadius: '12px', marginBottom: '20px', display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center' }}>
-                        <input type="text" name="Title" placeholder="Название песни" required style={{ padding: '10px', borderRadius: '6px', border: 'none', outline: 'none' }} />
-                        <input type="text" name="Artist" placeholder="Исполнитель" required style={{ padding: '10px', borderRadius: '6px', border: 'none', outline: 'none' }} />
-                        <div style={{ color: "white", fontSize: '14px' }}>
-                            <span style={{ marginRight: '8px' }}>Аудио:</span>
-                            <input type="file" name="AudioFile" accept="audio/*" required />
-                        </div>
-                        <button type="submit" disabled={isUploading} className="add-song-btn" style={{ marginLeft: 'auto', background: '#e12b5b' }}>
-                            {isUploading ? 'Загрузка...' : 'Сохранить'}
-                        </button>
-                        <button type="button" onClick={() => setShowUploadForm(false)} className="add-song-btn" style={{ background: 'gray' }}>
-                            Отмена
-                        </button>
-                    </form>
-                )}
+                <AddSongModal 
+                    isOpen={showUploadForm} 
+                    onClose={() => setShowUploadForm(false)} 
+                    onUpload={handleUploadSong} 
+                />
 
                 <div className="library-card">
                     <div className="search-bar">
