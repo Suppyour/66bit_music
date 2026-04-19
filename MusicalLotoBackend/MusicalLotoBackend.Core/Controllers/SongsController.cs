@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using MusicalLotoBackend.Core.Features.Songs;
 
@@ -30,6 +30,17 @@ public class SongsController : ControllerBase
     
         return Ok(songs); 
     }
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateSong(Guid id, [FromForm] UpdateSongCommand command)
+    {
+        command.Id = id;
+        var result = await _mediator.Send(command);
+    
+        if (!result) return NotFound(new { Message = "Такой песни не существует" });
+    
+        return Ok();
+    }
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteSong(Guid id)
     {
