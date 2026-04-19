@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import HeaderLibrary from '../../components/HeaderLibrary/HeaderLibrary';
 import AddSongModal from '../../components/AddSongModal/AddSongModal';
+import NotificationToast, { type NotificationType } from '../../components/NotificationToast/NotificationToast';
 import './SongLibrary.css';
 
 import plusIcon from '../../assets/SongLibrary/Плюсик в добавить песню.svg';
@@ -30,12 +31,25 @@ const SongLibrary: React.FC = () => {
     // Стэйт для проигрывания песни
     const [playingSongId, setPlayingSongId] = useState<string | null>(null);
 
+    // Уведомления
+    const [notification, setNotification] = useState<{show: boolean, type: NotificationType, text: string}>({
+        show: false,
+        type: 'add',
+        text: ''
+    });
+
+    const triggerNotification = (type: NotificationType, text: string) => {
+        setNotification({ show: true, type, text });
+    };
+
     // Удаление песни
     const handleDeleteSong = async (id: string, name: string) => {
         if (!window.confirm(`Вы уверены, что хотите удалить песню "${name}"?`)) return;
         try {
             const response = await fetch(`/api/Songs/${id}`, { method: 'DELETE' });
             if (response.ok) {
+                // Если успешно удалено, показываем уведомление
+                triggerNotification('delete', name);
                 await fetchSongs();
             } else {
                 alert('Ошибка сервера при удалении');
@@ -88,6 +102,10 @@ const SongLibrary: React.FC = () => {
 
             if (response.ok) {
                 setShowUploadForm(false);
+                const title = formData.get('Title') as string;
+                const artist = formData.get('Artist') as string;
+                triggerNotification('add', `${title} - ${artist}`);
+                
                 // Магия стандартного веба: перерисовываем таблицу новыми данными
                 await fetchSongs();
             } else {
@@ -105,6 +123,12 @@ const SongLibrary: React.FC = () => {
 
     return (
         <div className="library-wrapper">
+            <NotificationToast 
+                show={notification.show} 
+                type={notification.type} 
+                songDetails={notification.text} 
+                onClose={() => setNotification(prev => ({ ...prev, show: false }))} 
+            />
             <HeaderLibrary />
 
             <main className="container library-main">
@@ -123,6 +147,7 @@ const SongLibrary: React.FC = () => {
                     isOpen={showUploadForm} 
                     onClose={() => setShowUploadForm(false)} 
                     onUpload={handleUploadSong} 
+                    isUploading={isUploading}
                 />
 
                 <div className="library-card">
@@ -171,11 +196,16 @@ const SongLibrary: React.FC = () => {
                                         <div className="col-time">{formatDuration(song.durationSeconds)}</div>
 
                                         <div className="col-actions">
-                                            <button className="icon-btn" title="Воспроизвести" onClick={() => setPlayingSongId(playingSongId === song.id ? null : song.id)}>
+                                            <button className="icon-btn" title="Воспроизвести" onClick={() => {
+                                                setPlayingSongId(playingSongId === song.id ? null : song.id);
+                                                if (playingSongId !== song.id) {
+                                                    triggerNotification('play', song.title);
+                                                }
+                                            }}>
                                                 { /* Немного приглушаем иконку, если песня играет, чтобы визуально отличить "Стоп" от "Плэй" */ }
                                                 <img src={playBtn} alt="Play" style={{ opacity: playingSongId === song.id ? 0.3 : 1 }} />
                                             </button>
-                                            <button className="icon-btn" title="Изменить">
+                                            <button className="icon-btn" title="Изменить" onClick={() => triggerNotification('edit', song.title)}>
                                                 <img src={editBtn} alt="Edit" />
                                             </button>
                                             <button className="icon-btn" title="Удалить" onClick={() => handleDeleteSong(song.id, song.title)}>
