@@ -115,6 +115,14 @@
     align-items: center;
 }
 
+.song-cover-image {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    object-fit: contain;
+    background-color: #F8FAFC;
+}
+
 .file-name {
     font-weight: 500;
     font-size: 18px;

@@ -9,10 +9,10 @@ const HeaderLibrary: React.FC = () => {
     return (
         <header className="header-library">
             <div className="container header-content">
-                <div className="logo-section">
+                <NavLink to="/" className="logo-section" style={{ textDecoration: 'none' }}>
                     <img src={logoIcon} alt="Logo" className="logo-icon" />
                     <span className="logo-text">66bit</span>
-                </div>
+                </NavLink>
 
                 <nav className="nav-menu">
                     <NavLink to="/cabinet" className="nav-link">Кабинет</NavLink>
