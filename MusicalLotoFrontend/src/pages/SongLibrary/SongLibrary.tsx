@@ -49,11 +49,19 @@ const SongLibrary: React.FC = () => {
     // Удаление песни
     const handleDeleteSong = async (id: string, name: string) => {
         try {
-            const response = await fetch(`/api/Songs/${id}`, { method: 'DELETE' });
+            const token = localStorage.getItem('token');
+            const response = await fetch(`/api/Songs/${id}`, { 
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
             if (response.ok) {
                 // Если успешно удалено, показываем уведомление
                 triggerNotification('delete', name);
                 await fetchSongs();
+            } else if (response.status === 401) {
+                alert('Вы не авторизованы!');
             } else {
                 alert('Ошибка сервера при удалении');
             }
@@ -74,11 +82,19 @@ const SongLibrary: React.FC = () => {
     const fetchSongs = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch('/api/Songs');
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/Songs', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
 
             if (response.ok) {
                 const data = await response.json();
                 setSongs(data);
+            } else if (response.status === 401) {
+                console.error('Не авторизован');
+                setSongs([]);
             } else {
                 console.error('Ошибка сервера при загрузке песен:', response.status);
             }
@@ -98,8 +114,12 @@ const SongLibrary: React.FC = () => {
     const handleUploadSong = async (formData: FormData) => {
         setIsUploading(true);
         try {
+            const token = localStorage.getItem('token');
             const response = await fetch('/api/Songs', {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
                 body: formData,
             });
 
