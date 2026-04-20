@@ -1,9 +1,11 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MusicalLotoBackend.Core.Features.Songs;
 
 namespace MusicalLotoBackend.Core.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class SongsController : ControllerBase

@@ -12,29 +12,76 @@ interface LoginModalProps {
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [errorStr, setErrorStr] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+        setErrorStr('Заполните все поля');
+        return;
+    }
+    
+    setErrorStr('');
+    setIsLoading(true);
+
+    const url = isRegisterMode ? '/api/Auth/register' : '/api/Auth/login';
+    
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Успешно! Сохраняем токен
+            localStorage.setItem('token', data.token);
+            // Сбрасываем форму
+            setEmail('');
+            setPassword('');
+            setIsRegisterMode(false);
+            onClose();
+        } else {
+            setErrorStr(data.error || data.title || 'Ошибка сервера');
+        }
+    } catch (err) {
+        console.error(err);
+        setErrorStr('Ошибка сети');
+    } finally {
+        setIsLoading(false);
+    }
+  };
 
   return (
     <div className="modalOverlay" onClick={onClose}>
       <div className="modalContent" onClick={(e) => e.stopPropagation()}>
-        <button className="modalCloseBtn" onClick={onClose}>
+        <button className="modalCloseBtn" onClick={onClose} disabled={isLoading}>
           <img src={closeIcon} alt="Закрыть" />
         </button>
 
         <div className="modalHeader">
           <img src={loginIcon} alt="Вход" className="modalLoginIcon" />
-          <h2 className="modalTitle">Вход в панель управления</h2>
+          <h2 className="modalTitle">{isRegisterMode ? 'Регистрация' : 'Вход в панель управления'}</h2>
           <p className="modalSubtitle">Введите ваши данные для доступа к играм</p>
         </div>
 
-        <form className="modalForm" onSubmit={(e) => e.preventDefault()}>
+        <form className="modalForm" onSubmit={handleSubmit}>
           <div className="formGroup">
             <label className="formLabel">Email / Логин</label>
             <input 
               type="text" 
               className="formInput" 
               placeholder="admin@bingo.ru"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
@@ -45,6 +92,8 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                  type={showPassword ? "text" : "password"} 
                  className="formInput passwordInput" 
                  placeholder="•••••••••"
+                 value={password}
+                 onChange={(e) => setPassword(e.target.value)}
                />
                <button 
                  type="button" 
@@ -56,21 +105,33 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          <div className="formOptions">
-            <label className="checkboxLabel">
-              <input type="checkbox" className="customCheckbox" />
-              Запомнить меня
-            </label>
-            <a href="#" className="forgotPassword">Забыли пароль?</a>
-          </div>
+          {!isRegisterMode && (
+            <div className="formOptions">
+              <label className="checkboxLabel">
+                <input type="checkbox" className="customCheckbox" />
+                Запомнить меня
+              </label>
+              <a href="#" className="forgotPassword">Забыли пароль?</a>
+            </div>
+          )}
 
-          <button type="submit" className="loginSubmitBtn">
-             Войти
+          {errorStr && <div style={{color: 'red', marginTop: 10, fontSize: 14, textAlign: 'center'}}>{errorStr}</div>}
+
+          <button type="submit" className="loginSubmitBtn" disabled={isLoading} style={{marginTop: 20}}>
+             {isLoading ? 'Загрузка...' : (isRegisterMode ? 'Создать аккаунт' : 'Войти')}
           </button>
           
           <div className="modalFooter">
-            <span className="noAccountText">Нет аккаунта? </span>
-            <a href="#" className="createAccountLink">Создать аккаунт</a>
+            <span className="noAccountText">
+                {isRegisterMode ? 'Уже есть аккаунт? ' : 'Нет аккаунта? '}
+            </span>
+            <a href="#" className="createAccountLink" onClick={(e) => {
+                e.preventDefault();
+                setIsRegisterMode(!isRegisterMode);
+                setErrorStr('');
+            }}>
+                {isRegisterMode ? 'Войти' : 'Создать аккаунт'}
+            </a>
           </div>
         </form>
       </div>

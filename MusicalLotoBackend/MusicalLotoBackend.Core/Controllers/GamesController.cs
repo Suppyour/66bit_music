@@ -1,9 +1,11 @@
-﻿using MediatR;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MusicalLotoBackend.Core.Features.Games;
 
 namespace MusicalLotoBackend.Core.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class GamesController : ControllerBase

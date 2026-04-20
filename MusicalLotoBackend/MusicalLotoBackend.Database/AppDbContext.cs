@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using MusicalLotoBackend.Domain.Models;
 
 namespace MusicalLotoBackend.Database;
@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
     }
     
     public DbSet<Song> Songs { get; set; }
+    public DbSet<User> Users { get; set; }
     public DbSet<GameSession> Sessions { get; set; }
     public DbSet<GameCard> GameCards { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
