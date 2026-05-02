@@ -40,7 +40,6 @@ public class CreateSongHandler : IRequestHandler<CreateSongCommand, Guid>
         var fullAudioPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", audioPath.TrimStart('/'));
         try
         {
-            // Используем TagLibSharp для чтения битрейта и длины
             using var tfile = TagLib.File.Create(fullAudioPath);
             durationSeconds = (int)tfile.Properties.Duration.TotalSeconds;
         }

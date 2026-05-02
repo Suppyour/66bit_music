@@ -2,8 +2,13 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using MusicalLotoBackend.Core.Services;
+using Microsoft.OpenApi;
 using MusicalLotoBackend.Database;
+using Microsoft.AspNetCore.Authorization;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using MusicalLotoBackend.Core.Services;
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -15,7 +20,23 @@ builder.Services.AddControllers();
 builder.Services.AddSignalR();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "MusicalLoto API", Version = "v1" });
+    
+    // Настройка для передачи токена
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Enter token below.",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
+    });
+
+    c.OperationFilter<AuthResponsesOperationFilter>();
+});
 
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
@@ -66,6 +87,8 @@ using (var scope = app.Services.CreateScope())
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
         dbContext.Users.Add(new MusicalLotoBackend.Domain.Models.User
         {
+            Name = "Misha",
+            SurName = "Ageev",
             Email = "formaya3007@mail.ru",
             PasswordHash = hasher.Generate("misha123")
         });
@@ -87,3 +110,18 @@ app.MapControllers();
 app.MapHub<MusicalLotoBackend.Core.Features.Gameplay.GameHub>("/gameHub");
 
 app.Run();
+
+public class AuthResponsesOperationFilter : IOperationFilter
+{
+    public void Apply(OpenApiOperation operation, OperationFilterContext context)
+    {
+        operation.Security ??= new List<OpenApiSecurityRequirement>();
+        operation.Security.Add(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecuritySchemeReference("Bearer"),
+                new List<string>()
+            }
+        });
+    }
+}

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import HeaderLibrary from '../../components/HeaderLibrary/HeaderLibrary';
 import AddSongModal from '../../components/AddSongModal/AddSongModal';
-import EditSongModal from '../../components/EditSongModal/EditSongModal';
 import NotificationToast, { type NotificationType } from '../../components/NotificationToast/NotificationToast';
 import './SongLibrary.css';
 
@@ -29,14 +28,11 @@ const SongLibrary: React.FC = () => {
     const [isUploading, setIsUploading] = useState(false);
     const [showUploadForm, setShowUploadForm] = useState(false);
 
-    const [editingSong, setEditingSong] = useState<BackendSong | null>(null);
-    const [isUpdating, setIsUpdating] = useState(false);
-    
     // Стэйт для проигрывания песни
     const [playingSongId, setPlayingSongId] = useState<string | null>(null);
 
     // Уведомления
-    const [notification, setNotification] = useState<{show: boolean, type: NotificationType, text: string}>({
+    const [notification, setNotification] = useState<{ show: boolean, type: NotificationType, text: string }>({
         show: false,
         type: 'add',
         text: ''
@@ -48,20 +44,13 @@ const SongLibrary: React.FC = () => {
 
     // Удаление песни
     const handleDeleteSong = async (id: string, name: string) => {
+        if (!window.confirm(`Вы уверены, что хотите удалить песню "${name}"?`)) return;
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`/api/Songs/${id}`, { 
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const response = await fetch(`/api/Songs/${id}`, { method: 'DELETE' });
             if (response.ok) {
                 // Если успешно удалено, показываем уведомление
                 triggerNotification('delete', name);
                 await fetchSongs();
-            } else if (response.status === 401) {
-                alert('Вы не авторизованы!');
             } else {
                 alert('Ошибка сервера при удалении');
             }
@@ -82,19 +71,11 @@ const SongLibrary: React.FC = () => {
     const fetchSongs = async () => {
         setIsLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('/api/Songs', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const response = await fetch('/api/Songs');
 
             if (response.ok) {
                 const data = await response.json();
                 setSongs(data);
-            } else if (response.status === 401) {
-                console.error('Не авторизован');
-                setSongs([]);
             } else {
                 console.error('Ошибка сервера при загрузке песен:', response.status);
             }
@@ -114,12 +95,8 @@ const SongLibrary: React.FC = () => {
     const handleUploadSong = async (formData: FormData) => {
         setIsUploading(true);
         try {
-            const token = localStorage.getItem('token');
             const response = await fetch('/api/Songs', {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
                 body: formData,
             });
 
@@ -128,7 +105,7 @@ const SongLibrary: React.FC = () => {
                 const title = formData.get('Title') as string;
                 const artist = formData.get('Artist') as string;
                 triggerNotification('add', `${title} - ${artist}`);
-                
+
                 // Магия стандартного веба: перерисовываем таблицу новыми данными
                 await fetchSongs();
             } else {
@@ -144,40 +121,13 @@ const SongLibrary: React.FC = () => {
         }
     };
 
-    const handleEditSongSubmit = async (id: string, formData: FormData) => {
-        setIsUpdating(true);
-        try {
-            const response = await fetch(`/api/Songs/${id}`, {
-                method: 'PUT',
-                body: formData,
-            });
-
-            if (response.ok) {
-                setEditingSong(null);
-                const title = formData.get('Title') as string;
-                triggerNotification('edit', title);
-                
-                await fetchSongs();
-            } else {
-                const errText = await response.text();
-                console.error("Backend error:", errText);
-                alert(`Ошибка от сервера: ${response.status}\n${errText}`);
-            }
-        } catch (err) {
-            console.error('Ошибка сети:', err);
-            alert('Сетевая ошибка при обновлении');
-        } finally {
-            setIsUpdating(false);
-        }
-    };
-
     return (
         <div className="library-wrapper">
-            <NotificationToast 
-                show={notification.show} 
-                type={notification.type} 
-                songDetails={notification.text} 
-                onClose={() => setNotification(prev => ({ ...prev, show: false }))} 
+            <NotificationToast
+                show={notification.show}
+                type={notification.type}
+                songDetails={notification.text}
+                onClose={() => setNotification(prev => ({ ...prev, show: false }))}
             />
             <HeaderLibrary />
 
@@ -193,19 +143,11 @@ const SongLibrary: React.FC = () => {
                     </button>
                 </div>
 
-                <AddSongModal 
-                    isOpen={showUploadForm} 
-                    onClose={() => setShowUploadForm(false)} 
-                    onUpload={handleUploadSong} 
+                <AddSongModal
+                    isOpen={showUploadForm}
+                    onClose={() => setShowUploadForm(false)}
+                    onUpload={handleUploadSong}
                     isUploading={isUploading}
-                />
-
-                <EditSongModal
-                    isOpen={!!editingSong}
-                    onClose={() => setEditingSong(null)}
-                    onEdit={handleEditSongSubmit}
-                    isUploading={isUpdating}
-                    initialData={editingSong ? { id: editingSong.id, title: editingSong.title, artist: editingSong.artist } : null}
                 />
 
                 <div className="library-card">
@@ -241,11 +183,7 @@ const SongLibrary: React.FC = () => {
                                         <div className="col-id">{index + 1}</div>
 
                                         <div className="col-name song-cell">
-                                            {song.backgroundImagePath ? (
-                                                <img src={song.backgroundImagePath} alt="Cover" className="song-cover-image" />
-                                            ) : (
-                                                <div className="song-icon-placeholder">🎵</div>
-                                            )}
+                                            <div className="song-icon-placeholder">🎵</div>
                                             <div className="song-details">
                                                 <span className="file-name">
                                                     {song.artist && song.title
@@ -264,17 +202,17 @@ const SongLibrary: React.FC = () => {
                                                     triggerNotification('play', song.title);
                                                 }
                                             }}>
-                                                { /* Немного приглушаем иконку, если песня играет, чтобы визуально отличить "Стоп" от "Плэй" */ }
+                                                { /* Немного приглушаем иконку, если песня играет, чтобы визуально отличить "Стоп" от "Плэй" */}
                                                 <img src={playBtn} alt="Play" style={{ opacity: playingSongId === song.id ? 0.3 : 1 }} />
                                             </button>
-                                            <button className="icon-btn" title="Изменить" onClick={() => setEditingSong(song)}>
+                                            <button className="icon-btn" title="Изменить" onClick={() => triggerNotification('edit', song.title)}>
                                                 <img src={editBtn} alt="Edit" />
                                             </button>
                                             <button className="icon-btn" title="Удалить" onClick={() => handleDeleteSong(song.id, song.title)}>
                                                 <img src={deleteBtn} alt="Delete" />
                                             </button>
                                         </div>
-                                        
+
                                         {/* Скрытый аудиоплеер, который играет только если песня активна */}
                                         {playingSongId === song.id && (
                                             <audio autoPlay src={song.audioPath} onEnded={() => setPlayingSongId(null)} />

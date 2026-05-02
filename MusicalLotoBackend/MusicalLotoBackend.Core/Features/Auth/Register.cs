@@ -9,6 +9,8 @@ namespace MusicalLotoBackend.Core.Features.Auth;
 
 public class RegisterCommand : IRequest<string>
 {
+    public required string Name{ get; set; }
+    public required string SurName{ get; set; }
     public required string Email { get; set; }
     public required string Password { get; set; }
 }
@@ -39,11 +41,13 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, string>
     {
         if (await _context.Users.AnyAsync(u => u.Email == request.Email, cancellationToken))
         {
-            throw new Exception("User already exists");
+            throw new Exception("Пользователь с таким Email уже существует");
         }
 
         var user = new User
         {
+            Name = request.Name,
+            SurName = request.SurName,
             Email = request.Email,
             PasswordHash = _passwordHasher.Generate(request.Password)
         };

@@ -39,7 +39,7 @@ public class LoginHandler : IRequestHandler<LoginCommand, string>
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
         if (user == null || !_passwordHasher.Verify(request.Password, user.PasswordHash))
         {
-            throw new Exception("Invalid credentials");
+            throw new Exception("Неверный логин или пароль");
         }
 
         return _jwtProvider.GenerateToken(user);

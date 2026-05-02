@@ -5,7 +5,6 @@ using MusicalLotoBackend.Core.Features.Gameplay;
 
 namespace MusicalLotoBackend.Core.Controllers;
 
-[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class GameplayController : ControllerBase
