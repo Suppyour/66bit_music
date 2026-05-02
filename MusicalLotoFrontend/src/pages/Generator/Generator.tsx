@@ -75,6 +75,56 @@ const Generator: React.FC = () => {
     const [currentCardIndex, setCurrentCardIndex] = useState<number>(0);
     const [isGenerating, setIsGenerating] = useState(false);
 
+    const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
+    const [backgroundImageFile, setBackgroundImageFile] = useState<File | null>(null);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const url = URL.createObjectURL(file);
+            setBackgroundImage(url);
+            setBackgroundImageFile(file);
+        }
+    };
+
+    const handleDownloadZip = async () => {
+        if (generatedCards.length === 0) return;
+
+        const formData = new FormData();
+        formData.append('cardsJson', JSON.stringify(generatedCards));
+        formData.append('songsJson', JSON.stringify(selectedSongs));
+        if (backgroundImageFile) {
+            formData.append('background', backgroundImageFile);
+        }
+
+        try {
+            const response = await fetch('/api/Pdf/generateArchive', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const err = await response.text();
+                throw new Error(err || 'Server error');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'CardsArchive.zip';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            console.error('Failed to download archive:', error);
+            alert('Ошибка при скачивании архива. Возможно, файл слишком большой.');
+        }
+    };
+
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -196,13 +246,20 @@ const Generator: React.FC = () => {
                 <div className="preview-section">
                     <div className="preview-header">
                         <h2 className="preview-title">Предварительный просмотр</h2>
-                        <button className="btn-load-bg">
+                        <input 
+                            type="file" 
+                            accept="image/*" 
+                            style={{ display: 'none' }} 
+                            ref={fileInputRef}
+                            onChange={handleImageUpload}
+                        />
+                        <button className="btn-load-bg" onClick={() => fileInputRef.current?.click()}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                                 <circle cx="8.5" cy="8.5" r="1.5"></circle>
                                 <polyline points="21 15 16 10 5 21"></polyline>
                             </svg>
-                            Загрузить фон
+                            {backgroundImage ? 'Изменить фон' : 'Загрузить фон'}
                         </button>
                     </div>
 
@@ -233,7 +290,7 @@ const Generator: React.FC = () => {
                                     items={currentCard.cells.map(c => `${c.row}-${c.column}`)} 
                                     strategy={rectSortingStrategy}
                                 >
-                                    <div className="bingo-card">
+                                    <div className="bingo-card" style={backgroundImage ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: 'transparent' } : {}}>
                                         {currentCard.cells.map(cell => {
                                             const song = selectedSongs.find(s => s.id === cell.songId);
                                             return <SortableCell key={`${cell.row}-${cell.column}`} cell={cell} song={song} />;
@@ -253,7 +310,7 @@ const Generator: React.FC = () => {
 
                         <div className="preview-hint">Перетаскивайте ячейки для изменения порядка внутри карточки</div>
 
-                        <button className="btn-download-pdf" disabled={generatedCards.length === 0}>
+                        <button className="btn-download-pdf" disabled={generatedCards.length === 0} onClick={handleDownloadZip}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                                 <polyline points="14 2 14 8 20 8"></polyline>
@@ -261,7 +318,7 @@ const Generator: React.FC = () => {
                                 <line x1="16" y1="17" x2="8" y2="17"></line>
                                 <polyline points="10 9 9 9 8 9"></polyline>
                             </svg>
-                            Скачать PDF (Офлайн)
+                            Скачать архив PDF
                         </button>
                     </div>
                 </div>
