@@ -177,7 +177,7 @@ const Cabinet: React.FC = () => {
                     isOpen={isCreateModalOpen}
                     onClose={() => setIsCreateModalOpen(false)}
                     songs={songs}
-                    onGameCreated={(newGameId) => {
+                    onGameCreated={() => {
                         setIsCreateModalOpen(false);
                         // Optional: trigger refresh of games
                     }}
