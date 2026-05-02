@@ -31,6 +31,24 @@ RUN echo "server { \
         proxy_set_header Host \$host; \
         proxy_set_header X-Real-IP \$remote_addr; \
     } \
+    location /audio/ { \
+        proxy_pass http://api:8080/audio/; \
+        proxy_set_header Host \$host; \
+        proxy_set_header X-Real-IP \$remote_addr; \
+    } \
+    location /images/ { \
+        proxy_pass http://api:8080/images/; \
+        proxy_set_header Host \$host; \
+        proxy_set_header X-Real-IP \$remote_addr; \
+    } \
+    location /gameHub/ { \
+        proxy_pass http://api:8080/gameHub/; \
+        proxy_set_header Host \$host; \
+        proxy_set_header X-Real-IP \$remote_addr; \
+        proxy_http_version 1.1; \
+        proxy_set_header Upgrade \$http_upgrade; \
+        proxy_set_header Connection \"Upgrade\"; \
+    } \
 }" > /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
