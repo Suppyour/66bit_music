@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import HeaderLibrary from '../../components/HeaderLibrary/HeaderLibrary';
+import CreateGameModal from '../../components/CreateGameModal/CreateGameModal';
 import './Cabinet.css';
 
 import playBtn from '../../assets/Cabinet/Значек плей в Играть.svg';
@@ -20,6 +21,12 @@ interface Game {
     date: string;
 }
 
+export interface Song {
+    id: string;
+    title: string;
+    artist: string;
+}
+
 // В будущем эти данные будут приходить с бэкенда
 const mockGames: Game[] = [
     // { id: '1', title: 'Корпоратив 2025', status: 'Active', participants: 20, date: '15.03.2025' },
@@ -29,7 +36,9 @@ const mockGames: Game[] = [
 const Cabinet: React.FC = () => {
     // Пока что у нас нет игр в бд, поэтому массив пустой
     const [games, setGames] = useState<Game[]>(mockGames);
+    const [songs, setSongs] = useState<Song[]>([]);
     const [totalSongs, setTotalSongs] = useState<number>(0);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
 
     // Вычисляемые параметры на основе текущего списка игр
     const totalGames = games.length;
@@ -44,24 +53,25 @@ const Cabinet: React.FC = () => {
         // };
         // fetchGames();
 
-        // Получение количества песен из библиотеки
-        const fetchTotalSongs = async () => {
+        // Получение списка песен
+        const fetchSongs = async () => {
             try {
                 const response = await fetch('/api/Songs');
                 if (response.ok) {
                     const data = await response.json();
+                    setSongs(data || []);
                     setTotalSongs(data.length || 0);
                 }
             } catch (error) {
-                console.error("Ошибка при получении количества песен:", error);
+                console.error("Ошибка при получении песен:", error);
             }
         };
 
-        fetchTotalSongs();
+        fetchSongs();
     }, []);
 
     const handleDeleteGame = (id: string) => {
-        if(window.confirm('Вы уверены, что хотите удалить эту игру?')) {
+        if (window.confirm('Вы уверены, что хотите удалить эту игру?')) {
             setGames(games.filter(g => g.id !== id));
         }
     };
@@ -78,7 +88,7 @@ const Cabinet: React.FC = () => {
                             <h1 className="cabinet-heading">Личный кабинет</h1>
                             <p className="cabinet-subtitle">Управляйте играми, карточками и музыкальной библиотекой</p>
                         </div>
-                        <button className="create-game-btn">
+                        <button className="create-game-btn" onClick={() => setIsCreateModalOpen(true)}>
                             <img src={plusIcon} alt="+" className="create-game-plus-icon" />
                             <span>Создать игру</span>
                         </button>
@@ -147,7 +157,7 @@ const Cabinet: React.FC = () => {
                                         </div>
                                         <div className="game-actions-col">
                                             <button className="play-game-btn">
-                                                <img src={playBtn} alt="Play" className="play-game-icon"/>
+                                                <img src={playBtn} alt="Play" className="play-game-icon" />
                                                 Играть
                                             </button>
                                             <button className="delete-game-btn" onClick={() => handleDeleteGame(game.id)} title="Удалить">
@@ -161,6 +171,18 @@ const Cabinet: React.FC = () => {
                     </div>
                 </div>
             </main>
+
+            {isCreateModalOpen && (
+                <CreateGameModal
+                    isOpen={isCreateModalOpen}
+                    onClose={() => setIsCreateModalOpen(false)}
+                    songs={songs}
+                    onGameCreated={(newGameId) => {
+                        setIsCreateModalOpen(false);
+                        // Optional: trigger refresh of games
+                    }}
+                />
+            )}
         </div>
     );
 };
