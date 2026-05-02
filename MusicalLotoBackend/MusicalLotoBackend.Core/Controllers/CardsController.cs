@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using MusicalLotoBackend.Core.Features.Cards;
 
@@ -30,5 +30,11 @@ public class CardsController : ControllerBase
         if (!result) return BadRequest(new { Message = "Ошибка! Такой ячейки нет на вашей карточке." });
     
         return Ok(new { Message = "Ячейка успешно зачеркнута!" });
+    }
+    [HttpPost("generate")]
+    public async Task<IActionResult> GenerateRandomCards([FromBody] GenerateRandomCardsCommand command)
+    {
+        var cards = await _mediator.Send(command);
+        return Ok(cards);
     }
 }

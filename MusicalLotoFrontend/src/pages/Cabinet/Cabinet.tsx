@@ -27,15 +27,8 @@ export interface Song {
     artist: string;
 }
 
-// В будущем эти данные будут приходить с бэкенда
-const mockGames: Game[] = [
-    // { id: '1', title: 'Корпоратив 2025', status: 'Active', participants: 20, date: '15.03.2025' },
-    // { id: '2', title: 'День рождения Марины', status: 'Completed', participants: 12, date: '20.03.2025' },
-];
-
 const Cabinet: React.FC = () => {
-    // Пока что у нас нет игр в бд, поэтому массив пустой
-    const [games, setGames] = useState<Game[]>(mockGames);
+    const [games, setGames] = useState<Game[]>([]);
     const [songs, setSongs] = useState<Song[]>([]);
     const [totalSongs, setTotalSongs] = useState<number>(0);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
@@ -44,14 +37,27 @@ const Cabinet: React.FC = () => {
     const totalGames = games.length;
     const activePlayers = games.filter(g => g.status === 'Active').reduce((sum, g) => sum + g.participants, 0);
 
+    const fetchGames = async () => {
+        try {
+            const response = await fetch('/api/Games');
+            if (response.ok) {
+                const data = await response.json();
+                const mappedGames = data.map((g: any) => ({
+                    id: g.id,
+                    title: g.name,
+                    status: 'Active', // Mocking status as backend doesn't provide it yet
+                    participants: g.participantCount,
+                    date: new Date().toLocaleDateString() // Mocking date
+                }));
+                setGames(mappedGames);
+            }
+        } catch (error) {
+            console.error("Ошибка при получении игр:", error);
+        }
+    };
+
     useEffect(() => {
-        // TODO: На будущее реализовать получение игр с бэкенда
-        // const fetchGames = async () => {
-        //     const response = await fetch('/api/Games');
-        //     const data = await response.json();
-        //     setGames(data);
-        // };
-        // fetchGames();
+        fetchGames();
 
         // Получение списка песен
         const fetchSongs = async () => {
@@ -179,7 +185,7 @@ const Cabinet: React.FC = () => {
                     songs={songs}
                     onGameCreated={() => {
                         setIsCreateModalOpen(false);
-                        // Optional: trigger refresh of games
+                        fetchGames(); // Refresh games after creation
                     }}
                 />
             )}

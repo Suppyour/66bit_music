@@ -7,7 +7,7 @@ import LoginModal from './components/Layout/LoginModal/LoginModal';
 import MainPage from './pages/MainPage/MainPage';
 import SongLibrary from './pages/SongLibrary/SongLibrary';
 import Cabinet from './pages/Cabinet/Cabinet';
-
+import Generator from './pages/Generator/Generator';
 function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
@@ -24,7 +24,7 @@ function App() {
         <Route path="/library" element={<SongLibrary />} />
         {/* Placeholder routes for others links in HeaderLibrary */}
         <Route path="/cabinet" element={<Cabinet />} />
-        <Route path="/generator" element={<SongLibrary />} />
+        <Route path="/generator" element={<Generator />} />
         <Route path="/presentation" element={<SongLibrary />} />
       </Routes>
       

@@ -1,0 +1,299 @@
+import React, { useState } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import HeaderLibrary from '../../components/HeaderLibrary/HeaderLibrary';
+import SelectSongsModal from '../../components/SelectSongsModal/SelectSongsModal';
+import type { Song } from '../../components/SelectSongsModal/SelectSongsModal';
+import './Generator.css';
+
+// --- Types ---
+interface CardCellData {
+    row: number;
+    column: number;
+    songId: string;
+}
+
+interface CardDto {
+    id: string;
+    cells: CardCellData[];
+}
+
+// --- Sortable Cell Component ---
+const SortableCell = ({ cell, song }: { cell: CardCellData; song?: Song }) => {
+    // dnd-kit needs a unique id. We can use `cell.songId` or a combined id.
+    const id = `${cell.row}-${cell.column}`;
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            {...attributes}
+            {...listeners}
+            className={`bingo-cell ${isDragging ? 'bingo-cell-dragging' : ''}`}
+        >
+            <div className="cell-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 18V5l12-2v13"></path>
+                    <circle cx="6" cy="18" r="3"></circle>
+                    <circle cx="18" cy="16" r="3"></circle>
+                </svg>
+            </div>
+            <div className="cell-title" title={song ? `${song.title} - ${song.artist}` : 'Пустая ячейка'}>
+                {song ? song.title : '...'}
+            </div>
+        </div>
+    );
+};
+
+// --- Main Generator Component ---
+const Generator: React.FC = () => {
+    const [cardCount, setCardCount] = useState<number>(20);
+    const [selectedSongs, setSelectedSongs] = useState<Song[]>([]);
+    const [isSelectModalOpen, setIsSelectModalOpen] = useState(false);
+    
+    const [generatedCards, setGeneratedCards] = useState<CardDto[]>([]);
+    const [currentCardIndex, setCurrentCardIndex] = useState<number>(0);
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    );
+
+    const handleGenerate = async () => {
+        if (selectedSongs.length < 25) {
+            alert('Для карточки 5x5 нужно выбрать минимум 25 песен!');
+            return;
+        }
+
+        setIsGenerating(true);
+        try {
+            const response = await fetch('/api/Cards/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    count: cardCount,
+                    cardSize: 5,
+                    songIds: selectedSongs.map(s => s.id)
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setGeneratedCards(data);
+                setCurrentCardIndex(0);
+            } else {
+                const err = await response.text();
+                alert('Ошибка генерации: ' + err);
+            }
+        } catch (error) {
+            console.error('Failed to generate cards:', error);
+            alert('Не удалось связаться с сервером');
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+
+        setGeneratedCards((prevCards) => {
+            const newCards = [...prevCards];
+            const currentCard = { ...newCards[currentCardIndex] };
+            const cells = [...currentCard.cells];
+
+            const oldIndex = cells.findIndex((c) => `${c.row}-${c.column}` === active.id);
+            const newIndex = cells.findIndex((c) => `${c.row}-${c.column}` === over.id);
+
+            // Swap songIds between the two cells to keep row/col structure intact
+            const tempSongId = cells[oldIndex].songId;
+            cells[oldIndex].songId = cells[newIndex].songId;
+            cells[newIndex].songId = tempSongId;
+
+            currentCard.cells = cells;
+            newCards[currentCardIndex] = currentCard;
+            return newCards;
+        });
+    };
+
+    const currentCard = generatedCards[currentCardIndex];
+
+    return (
+        <div className="generator-wrapper">
+            <HeaderLibrary />
+
+            <main className="generator-main">
+                <div className="generator-header">
+                    <h1 className="generator-title">Генератор карточек</h1>
+                    <p className="generator-subtitle">Создайте уникальные 5x5 билеты для участников</p>
+                </div>
+
+                <div className="generator-settings">
+                    <div className="settings-left">
+                        <div className="settings-row">
+                            <span className="settings-label">Настройки генерации</span>
+                            <span className="settings-value">Количество карточек: {cardCount}</span>
+                        </div>
+                        <input 
+                            type="range" 
+                            className="range-slider" 
+                            min="1" max="100" 
+                            value={cardCount} 
+                            onChange={(e) => setCardCount(parseInt(e.target.value))} 
+                        />
+                        <button className="btn-select-songs" onClick={() => setIsSelectModalOpen(true)}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Выбрать песню из библиотеки
+                        </button>
+                    </div>
+
+                    <div className="settings-middle">
+                        <div className="settings-middle-val">{selectedSongs.length} песен выбрано</div>
+                        <div className="settings-middle-desc">
+                            {selectedSongs.length >= 25 ? 'Достаточно для 5x5' : 'Нужно минимум 25 для 5x5'}
+                        </div>
+                    </div>
+
+                    <div className="settings-right">
+                        <button className="btn-presentation">Перейти к презентации</button>
+                        <button 
+                            className="btn-generate" 
+                            onClick={handleGenerate}
+                            disabled={selectedSongs.length < 25 || isGenerating}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l5.64-4.28"/>
+                            </svg>
+                            {isGenerating ? 'Генерация...' : 'Сгенерировать'}
+                        </button>
+                    </div>
+                </div>
+
+                <div className="preview-section">
+                    <div className="preview-header">
+                        <h2 className="preview-title">Предварительный просмотр</h2>
+                        <button className="btn-load-bg">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                            Загрузить фон
+                        </button>
+                    </div>
+
+                    <div className="preview-container">
+                        <div className="pagination">
+                            <button 
+                                className="btn-page" 
+                                disabled={currentCardIndex === 0}
+                                onClick={() => setCurrentCardIndex(prev => prev - 1)}
+                            >
+                                &lt;
+                            </button>
+                            <span className="page-info">
+                                {generatedCards.length > 0 ? currentCardIndex + 1 : 0} / {generatedCards.length}
+                            </span>
+                            <button 
+                                className="btn-page" 
+                                disabled={currentCardIndex >= generatedCards.length - 1}
+                                onClick={() => setCurrentCardIndex(prev => prev + 1)}
+                            >
+                                &gt;
+                            </button>
+                        </div>
+
+                        {currentCard ? (
+                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                                <SortableContext 
+                                    items={currentCard.cells.map(c => `${c.row}-${c.column}`)} 
+                                    strategy={rectSortingStrategy}
+                                >
+                                    <div className="bingo-card">
+                                        {currentCard.cells.map(cell => {
+                                            const song = selectedSongs.find(s => s.id === cell.songId);
+                                            return <SortableCell key={`${cell.row}-${cell.column}`} cell={cell} song={song} />;
+                                        })}
+                                    </div>
+                                </SortableContext>
+                            </DndContext>
+                        ) : (
+                            <div className="bingo-card" style={{ opacity: 0.5, borderStyle: 'dashed' }}>
+                                {Array.from({ length: 25 }).map((_, i) => (
+                                    <div key={i} className="bingo-cell" style={{ cursor: 'default' }}>
+                                        <div className="cell-icon">...</div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="preview-hint">Перетаскивайте ячейки для изменения порядка внутри карточки</div>
+
+                        <button className="btn-download-pdf" disabled={generatedCards.length === 0}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            Скачать PDF (Офлайн)
+                        </button>
+                    </div>
+                </div>
+
+                <div className="generator-stats">
+                    <div className="stat-box">
+                        <div className="stat-box-val">{generatedCards.length > 0 ? generatedCards.length : '-'}</div>
+                        <div className="stat-box-label">Всего карточек</div>
+                    </div>
+                    <div className="stat-box">
+                        <div className="stat-box-val">25</div>
+                        <div className="stat-box-label">Ячеек на карточке</div>
+                    </div>
+                    <div className="stat-box">
+                        <div className="stat-box-val">∞</div>
+                        <div className="stat-box-label">Все карточки уникальны</div>
+                    </div>
+                    <div className="stat-box">
+                        <div className="stat-box-val">5×5</div>
+                        <div className="stat-box-label">Размер сетки</div>
+                    </div>
+                </div>
+            </main>
+
+            <SelectSongsModal 
+                isOpen={isSelectModalOpen} 
+                onClose={() => setIsSelectModalOpen(false)}
+                onSelect={(songs) => setSelectedSongs(songs)}
+                initialSelectedIds={selectedSongs.map(s => s.id)}
+            />
+        </div>
+    );
+};
+
+export default Generator;
