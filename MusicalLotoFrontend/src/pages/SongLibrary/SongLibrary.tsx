@@ -183,7 +183,11 @@ const SongLibrary: React.FC = () => {
                                         <div className="col-id">{index + 1}</div>
 
                                         <div className="col-name song-cell">
-                                            <div className="song-icon-placeholder">🎵</div>
+                                            {song.backgroundImagePath ? (
+                                                <img src={song.backgroundImagePath} alt="Cover" className="song-cover-image" />
+                                            ) : (
+                                                <div className="song-icon-placeholder">🎵</div>
+                                            )}
                                             <div className="song-details">
                                                 <span className="file-name">
                                                     {song.artist && song.title

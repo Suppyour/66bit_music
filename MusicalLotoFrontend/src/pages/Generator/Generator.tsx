@@ -18,6 +18,12 @@ import { CSS } from '@dnd-kit/utilities';
 import HeaderLibrary from '../../components/HeaderLibrary/HeaderLibrary';
 import SelectSongsModal from '../../components/SelectSongsModal/SelectSongsModal';
 import type { Song } from '../../components/SelectSongsModal/SelectSongsModal';
+
+import SelectSongIcon from '../../assets/Generator/Иконка в кнопке Выбрать песню из библиотеки.svg';
+import GenerateIcon from '../../assets/Generator/Иконка в кнопке Сгенерировать.svg';
+import LoadBgIcon from '../../assets/Generator/Иконка в кнопке Загрузить фон.svg';
+import InfinityIcon from '../../assets/Generator/Значек во все карточки уникальны.svg';
+
 import './Generator.css';
 
 // --- Types ---
@@ -201,22 +207,22 @@ const Generator: React.FC = () => {
 
                 <div className="generator-settings">
                     <div className="settings-left">
-                        <div className="settings-row">
-                            <span className="settings-label">Настройки генерации</span>
-                            <span className="settings-value">Количество карточек: {cardCount}</span>
+                        <div className="settings-header">
+                            <h2 className="settings-title">Настройки генерации</h2>
+                            <span className="settings-count">Количество карточек: {cardCount}</span>
                         </div>
-                        <input 
-                            type="range" 
-                            className="range-slider" 
-                            min="1" max="100" 
-                            value={cardCount} 
-                            onChange={(e) => setCardCount(parseInt(e.target.value))} 
-                        />
+                        <div className="settings-slider-wrapper">
+                            <input 
+                                type="range" 
+                                className="range-slider" 
+                                min="1" max="50" 
+                                value={cardCount} 
+                                onChange={(e) => setCardCount(parseInt(e.target.value))} 
+                                style={{ background: `linear-gradient(to right, #2563EB ${(cardCount / 50) * 100}%, #E5E7EB ${(cardCount / 50) * 100}%)` }}
+                            />
+                        </div>
                         <button className="btn-select-songs" onClick={() => setIsSelectModalOpen(true)}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg>
+                            <img src={SelectSongIcon} alt="Select" />
                             Выбрать песню из библиотеки
                         </button>
                     </div>
@@ -233,11 +239,9 @@ const Generator: React.FC = () => {
                         <button 
                             className="btn-generate" 
                             onClick={handleGenerate}
-                            disabled={selectedSongs.length < 25 || isGenerating}
+                            disabled={isGenerating}
                         >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l5.64-4.28"/>
-                            </svg>
+                            <img src={GenerateIcon} alt="Generate" />
                             {isGenerating ? 'Генерация...' : 'Сгенерировать'}
                         </button>
                     </div>
@@ -254,11 +258,7 @@ const Generator: React.FC = () => {
                             onChange={handleImageUpload}
                         />
                         <button className="btn-load-bg" onClick={() => fileInputRef.current?.click()}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                <polyline points="21 15 16 10 5 21"></polyline>
-                            </svg>
+                            <img src={LoadBgIcon} alt="Load" />
                             {backgroundImage ? 'Изменить фон' : 'Загрузить фон'}
                         </button>
                     </div>
@@ -333,7 +333,9 @@ const Generator: React.FC = () => {
                         <div className="stat-box-label">Ячеек на карточке</div>
                     </div>
                     <div className="stat-box">
-                        <div className="stat-box-val">∞</div>
+                        <div className="stat-box-val">
+                            <img src={InfinityIcon} alt="infinity" />
+                        </div>
                         <div className="stat-box-label">Все карточки уникальны</div>
                     </div>
                     <div className="stat-box">

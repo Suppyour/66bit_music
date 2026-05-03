@@ -123,7 +123,7 @@ const AddSongModal: React.FC<AddSongModalProps> = ({ isOpen, onClose, onUpload, 
 
                     <div className="form-group">
                         <label className="form-label">
-                            Фоновое изображение (обложка) <span className="required">*</span>
+                            Фоновое изображение (обложка)
                         </label>
                         <div className={`drag-drop-zone ${coverImagePreview ? 'has-preview' : ''}`}>
                             {coverImagePreview ? (
@@ -137,7 +137,7 @@ const AddSongModal: React.FC<AddSongModalProps> = ({ isOpen, onClose, onUpload, 
                                     <p className="drag-drop-subtext">Формат: JPG, PNG</p>
                                 </>
                             )}
-                            <input type="file" name="CoverImage" className="file-input" accept="image/jpeg,image/png" required onChange={handleCoverChange} />
+                            <input type="file" name="CoverImage" className="file-input" accept="image/jpeg,image/png" onChange={handleCoverChange} />
                         </div>
                     </div>
 

@@ -5,7 +5,7 @@
 }
 
 .generator-main {
-    max-width: 1200px;
+    max-width: 1374px; /* 1342 + 32px padding */
     margin: 0 auto;
     padding: 32px 16px;
 }
@@ -29,106 +29,146 @@
 
 .generator-settings {
     background: #FFFFFF;
-    border: 2px solid #3B82F6;
-    border-radius: 12px;
-    padding: 24px;
+    border: 1px solid #E5E7EB;
+    border-radius: 22px;
+    padding: 38px 34px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 32px;
+    align-items: flex-start;
+    margin-bottom: 48px;
+    box-shadow: 0 5.5px 19.25px rgba(47, 104, 245, 0.12);
 }
 
 .settings-left {
     flex: 1;
-    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    padding-right: 32px;
 }
 
-.settings-row {
+.settings-header {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 16px;
+    align-items: center;
+    margin-bottom: 34px;
 }
 
-.settings-label {
-    font-weight: 600;
+.settings-title {
+    font-size: 22px;
+    font-weight: 700;
     color: #111827;
+    margin: 0;
 }
 
-.settings-value {
-    color: #6B7280;
+.settings-count {
+    font-size: 16px;
+    color: #111827;
+    font-weight: 500;
+}
+
+.settings-slider-wrapper {
+    margin-bottom: 27px;
 }
 
 .range-slider {
+    -webkit-appearance: none;
+    appearance: none;
     width: 100%;
-    margin-bottom: 16px;
+    height: 6px;
+    border-radius: 3px;
+    outline: none;
+}
+
+.range-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #2563EB;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .btn-select-songs {
+    align-self: flex-start;
     background: white;
-    border: 1px dashed #D1D5DB;
-    padding: 8px 16px;
+    border: 1.38px dashed #9CA3AF;
+    padding: 10px 24px;
     border-radius: 20px;
-    color: #6B7280;
-    font-size: 14px;
+    color: #4B5563;
+    font-size: 16px;
     cursor: pointer;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: 8px;
     transition: all 0.2s;
 }
 
 .btn-select-songs:hover {
-    border-color: #9CA3AF;
-    color: #374151;
+    border-color: #6B7280;
+    color: #111827;
 }
 
 .settings-middle {
-    background: #EEF2FF;
-    border-radius: 12px;
-    padding: 16px 24px;
-    text-align: center;
+    background: #F8FAFC;
+    border-radius: 18.5px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 270px;
+    height: 88px;
+    box-sizing: border-box;
+    margin: 0 32px;
 }
 
 .settings-middle-val {
+    font-size: 18px;
     font-weight: 600;
-    color: #1E40AF;
+    color: #111827;
     margin-bottom: 4px;
 }
 
 .settings-middle-desc {
-    font-size: 12px;
+    font-size: 14px;
     color: #6B7280;
 }
 
 .settings-right {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
 }
 
 .btn-presentation {
-    background: #3B82F6;
+    background: #2563EB;
     color: white;
     border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
+    height: 60px;
+    border-radius: 8.25px;
+    font-size: 16px;
     font-weight: 600;
     cursor: pointer;
+    width: 268px;
     transition: background 0.2s;
 }
 
 .btn-presentation:hover {
-    background: #2563EB;
+    background: #1D4ED8;
 }
 
 .btn-generate {
-    background: #F3F4F6;
+    background: white;
     color: #111827;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
+    border: 1px solid #E5E7EB;
+    height: 60px;
+    border-radius: 8.25px;
+    font-size: 16px;
     font-weight: 600;
     cursor: pointer;
+    width: 268px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -137,8 +177,9 @@
 }
 
 .btn-generate:hover {
-    background: #E5E7EB;
+    background: #F9FAFB;
 }
+
 .btn-generate:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -152,36 +193,46 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
+    margin-bottom: 32px;
 }
 
 .preview-title {
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 20px;
+    font-weight: 700;
     color: #111827;
+    margin: 0;
 }
 
 .btn-load-bg {
     background: white;
-    border: 1px solid #D1D5DB;
-    padding: 8px 16px;
+    border: 1px solid #E5E7EB;
+    padding: 10px 20px;
     border-radius: 8px;
     color: #374151;
     font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 8px;
+    transition: all 0.2s;
+}
+
+.btn-load-bg:hover {
+    background: #F9FAFB;
 }
 
 .preview-container {
-    background: white;
-    border-radius: 16px;
-    padding: 40px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 22px;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+    min-height: 845px;
 }
 
 .pagination {
@@ -189,6 +240,10 @@
     align-items: center;
     gap: 16px;
     margin-bottom: 24px;
+    background: white;
+    padding: 8px 16px;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .btn-page {
@@ -293,28 +348,37 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    align-self: flex-end;
+    position: absolute;
+    bottom: 32px;
+    right: 32px;
 }
 
 .generator-stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 16px;
+    margin-top: 32px;
 }
 
 .stat-box {
-    background: white;
-    border-radius: 12px;
-    padding: 24px;
-    text-align: center;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 18.5px;
+    height: 113px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .stat-box-val {
     font-size: 24px;
     font-weight: 700;
     color: #3B82F6;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .stat-box-label {

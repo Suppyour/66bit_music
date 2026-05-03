@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import './CreateGameModal.css';
 import type { Song } from '../../pages/Cabinet/Cabinet';
 
+import closeIcon from '../../assets/Cabinet/Крестик закрыть.svg';
+import logoIcon from '../../assets/Cabinet/Лого в меню моздания игры.svg';
+import horizontalIcon from '../../assets/Cabinet/Горизонталь.svg';
+import verticalIcon from '../../assets/Cabinet/Вертикаль.svg';
+import diagonalIcon from '../../assets/Cabinet/Диагональ.svg';
+import fullFieldIcon from '../../assets/Cabinet/Полное поле.svg';
 interface CreateGameModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -85,18 +91,12 @@ const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, song
         <div className="cgm-overlay" onClick={onClose}>
             <div className="cgm-content" onClick={e => e.stopPropagation()}>
                 <button className="cgm-close-btn" onClick={onClose}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M18 6L6 18M6 6L18 18" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
+                    <img src={closeIcon} alt="Закрыть" />
                 </button>
                 
                 <div className="cgm-header">
                     <div className="cgm-icon">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M9 18V5L21 3V16" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <circle cx="6" cy="18" r="3" stroke="white" strokeWidth="2"/>
-                            <circle cx="18" cy="16" r="3" stroke="white" strokeWidth="2"/>
-                        </svg>
+                        <img src={logoIcon} alt="Logo" />
                     </div>
                     <h2 className="cgm-title">Создание новой игры</h2>
                     <p className="cgm-subtitle">Заполните поля для настройки вашей игровой сессии</p>
@@ -123,42 +123,25 @@ const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, song
                         <div className="cgm-rules-grid">
                             <div className={`cgm-rule-card ${(rules & 1) ? 'active' : ''}`} onClick={() => toggleRule(1)}>
                                 <div className="cgm-rule-icon">
-                                    <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <rect width="60" height="60" rx="4" fill="white" stroke="#E5E7EB" strokeWidth="1"/>
-                                        <path d="M20 0V60M40 0V60M0 20H60M0 40H60" stroke="#E5E7EB" strokeWidth="1"/>
-                                        <rect x="0" y="20" width="60" height="20" fill="#3B82F6" fillOpacity="0.1"/>
-                                        <line x1="0" y1="30" x2="60" y2="30" stroke="#2563EB" strokeWidth="2"/>
-                                    </svg>
+                                    <img src={horizontalIcon} alt="Горизонталь" />
                                 </div>
                                 <span>Горизонталь</span>
                             </div>
                             <div className={`cgm-rule-card ${(rules & 2) ? 'active' : ''}`} onClick={() => toggleRule(2)}>
                                 <div className="cgm-rule-icon">
-                                    <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <rect width="60" height="60" rx="4" fill="white" stroke="#E5E7EB" strokeWidth="1"/>
-                                        <path d="M20 0V60M40 0V60M0 20H60M0 40H60" stroke="#E5E7EB" strokeWidth="1"/>
-                                        <rect x="20" y="0" width="20" height="60" fill="#3B82F6" fillOpacity="0.1"/>
-                                        <line x1="30" y1="0" x2="30" y2="60" stroke="#2563EB" strokeWidth="2"/>
-                                    </svg>
+                                    <img src={verticalIcon} alt="Вертикаль" />
                                 </div>
                                 <span>Вертикаль</span>
                             </div>
                             <div className={`cgm-rule-card ${(rules & 8) ? 'active' : ''}`} onClick={() => toggleRule(8)}>
                                 <div className="cgm-rule-icon">
-                                    <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <rect width="60" height="60" rx="4" fill="white" stroke="#E5E7EB" strokeWidth="1"/>
-                                        <path d="M20 0V60M40 0V60M0 20H60M0 40H60" stroke="#E5E7EB" strokeWidth="1"/>
-                                        <line x1="0" y1="0" x2="60" y2="60" stroke="#2563EB" strokeWidth="2"/>
-                                    </svg>
+                                    <img src={diagonalIcon} alt="Диагональ" />
                                 </div>
                                 <span>Диагональ</span>
                             </div>
                             <div className={`cgm-rule-card ${(rules & 4) ? 'active' : ''}`} onClick={() => toggleRule(4)}>
                                 <div className="cgm-rule-icon">
-                                    <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <rect width="60" height="60" rx="4" fill="#2563EB" stroke="#2563EB" strokeWidth="1"/>
-                                        <path d="M20 0V60M40 0V60M0 20H60M0 40H60" stroke="#60A5FA" strokeWidth="1"/>
-                                    </svg>
+                                    <img src={fullFieldIcon} alt="Полное поле" />
                                 </div>
                                 <span>Полное поле</span>
                             </div>
