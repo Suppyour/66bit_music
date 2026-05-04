@@ -35,19 +35,19 @@
 }
 
 .nav-link {
-    font-family: var(--font-main);
-    font-size: 18.25px;
+    font-family: 'Inter', sans-serif;
+    font-size: 22px;
     font-weight: 500;
     color: #64748B;
     text-decoration: none;
-    padding: 10px 20px;
-    border-radius: 8.25px;
+    padding: 10px 24px;
+    border-radius: 12px;
     transition: all 0.2s ease;
 }
 
 .nav-link.active {
     background-color: #EEF2FF;
-    color: #2E68F5;
+    color: #2168F5;
     font-weight: 600;
 }
 

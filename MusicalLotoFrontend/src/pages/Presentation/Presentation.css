@@ -1,6 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 .presentation-page {
     min-height: 100vh;
-    background-color: #F8FAFC; /* light gray background */
+    background-color: #F8FAFC;
+    font-family: 'Inter', sans-serif;
 }
 
 .presentation-main {
@@ -17,10 +20,7 @@
 /* --- Left Column --- */
 .presentation-left {
     flex: 1;
-    background: #FFFFFF;
-    border-radius: 22px;
-    padding: 32px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    padding: 0;
 }
 
 .presentation-header {
@@ -31,8 +31,9 @@
 }
 
 .game-title {
-    font-size: 32px;
+    font-size: 33px;
     font-weight: 700;
+    line-height: 44px;
     color: #111827;
     margin: 0;
 }
@@ -44,46 +45,75 @@
 
 .btn-add-slide {
     background: #FFFFFF;
-    border: 1px solid #E5E7EB;
-    color: #374151;
+    border: 1px solid #F3F0F9;
+    color: #64748B;
     padding: 10px 20px;
-    border-radius: 12px;
+    border-radius: 18.5px;
     font-weight: 600;
+    font-size: 22px;
+    line-height: 27.5px;
+    letter-spacing: -0.69px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    gap: 10px;
     cursor: pointer;
+    height: 71.5px;
+    width: 258.5px;
+    transition: background-color 0.2s;
+}
+
+.btn-add-slide:hover {
+    background: #F9FAFB;
 }
 
 .plus-icon {
-    font-size: 18px;
-    color: #9CA3AF;
+    font-size: 24px;
+    color: #64748B;
+    font-weight: 600;
 }
 
 .btn-preview-scenario,
 .btn-play-scenario {
-    padding: 10px 20px;
+    padding: 10px 24px;
     border-radius: 18.5px;
     font-weight: 600;
+    font-size: 22px;
+    line-height: 27.5px;
+    letter-spacing: -0.69px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 12px;
     cursor: pointer;
     border: none;
     height: 71.5px;
     width: 258.5px;
+    transition: background-color 0.2s;
 }
 
 .btn-preview-scenario {
-    background: #2E68F5;
+    background: #2168F5;
     color: #FFFFFF;
-    border: none;
+}
+
+.btn-preview-scenario:hover {
+    background: #1a56cc;
 }
 
 .btn-play-scenario {
-    background: #2E68F5;
+    background: #2168F5;
     color: #FFFFFF;
+}
+
+.btn-play-scenario:hover {
+    background: #1a56cc;
+}
+
+.btn-preview-scenario img,
+.btn-play-scenario img {
+    height: 24px;
+    width: auto;
 }
 
 .slides-header {
@@ -94,15 +124,18 @@
 }
 
 .slides-title {
-    font-size: 20px;
+    font-size: 33px;
     font-weight: 700;
+    line-height: 44px;
     color: #111827;
     margin: 0;
 }
 
 .drag-hint {
-    font-size: 14px;
-    color: #9CA3AF;
+    font-size: 24.75px;
+    font-weight: 600;
+    line-height: 44px;
+    color: #D1D5DC;
 }
 
 .slides-list {
@@ -143,6 +176,11 @@
 .slide-icon-box.type-song { background: #EFF6FF; color: #3B82F6; }
 .slide-icon-box.type-qr { background: #F0FDF4; color: #16A34A; }
 .slide-icon-box.type-winner { background: #FEFCE8; color: #CA8A04; }
+
+.slide-icon-box.empty {
+    background: #F9FAFB;
+    border: 1px dashed #D1D5DC;
+}
 
 .slide-texts {
     flex: 1;
