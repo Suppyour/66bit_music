@@ -67,7 +67,7 @@
     transform: scale(0.98);
 }
 
-/* Stats Section */
+
 .cabinet-stats-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -117,7 +117,7 @@
     line-height: 22px;
 }
 
-/* Games Section */
+
 .cabinet-games-section {
     margin-top: 20px;
 }
@@ -218,7 +218,7 @@
     padding: 20px 0;
 }
 
-/* Actions */
+
 .game-actions-col {
     display: flex;
     align-items: center;

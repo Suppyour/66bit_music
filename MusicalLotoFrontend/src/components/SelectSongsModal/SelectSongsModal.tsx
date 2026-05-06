@@ -72,10 +72,10 @@ const SelectSongsModal: React.FC<SelectSongsModalProps> = ({ isOpen, onClose, on
             <div className="ssm-content" onClick={e => e.stopPropagation()}>
                 <button className="ssm-close-btn" onClick={onClose}>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M18 6L6 18M6 6L18 18" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M18 6L6 18M6 6L18 18" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                 </button>
-                
+
                 <div className="ssm-header">
                     <h2 className="ssm-title">Выбор песен</h2>
                     <p className="ssm-subtitle">Выберите минимум 9 песен для генерации карточек</p>
@@ -87,8 +87,8 @@ const SelectSongsModal: React.FC<SelectSongsModalProps> = ({ isOpen, onClose, on
                     <>
                         <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span style={{ fontSize: '14px', color: '#6B7280' }}>Выбрано: {selectedIds.size} / {songs.length}</span>
-                            <button 
-                                onClick={handleToggleAll} 
+                            <button
+                                onClick={handleToggleAll}
                                 style={{ background: 'none', border: 'none', color: '#3B82F6', cursor: 'pointer', fontSize: '14px' }}
                             >
                                 {selectedIds.size === songs.length ? 'Снять выделение' : 'Выбрать все'}
@@ -97,10 +97,10 @@ const SelectSongsModal: React.FC<SelectSongsModalProps> = ({ isOpen, onClose, on
                         <div className="ssm-list">
                             {songs.map(song => (
                                 <div key={song.id} className="ssm-item" onClick={() => handleToggle(song.id)}>
-                                    <input 
-                                        type="checkbox" 
-                                        checked={selectedIds.has(song.id)} 
-                                        onChange={() => {}} // Handle on parent div click
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedIds.has(song.id)}
+                                        onChange={() => { }}
                                     />
                                     <div className="ssm-item-info">
                                         <span className="ssm-item-title">{song.title}</span>
@@ -114,9 +114,9 @@ const SelectSongsModal: React.FC<SelectSongsModalProps> = ({ isOpen, onClose, on
 
                 <div className="ssm-actions">
                     <button className="ssm-btn-cancel" onClick={onClose}>Отмена</button>
-                    <button 
-                        className="ssm-btn-submit" 
-                        onClick={handleSubmit} 
+                    <button
+                        className="ssm-btn-submit"
+                        onClick={handleSubmit}
                         disabled={selectedIds.size < 9}
                     >
                         Сохранить ({selectedIds.size})

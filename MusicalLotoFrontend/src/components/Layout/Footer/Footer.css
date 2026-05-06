@@ -1,7 +1,7 @@
 .footer {
   width: 100%;
   background-color: #ffffff;
-  /* border-top removed */
+  
   display: flex;
   justify-content: center;
 }

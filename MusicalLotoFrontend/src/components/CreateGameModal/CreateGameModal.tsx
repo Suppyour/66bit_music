@@ -50,7 +50,7 @@ const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, song
         const cSize = parseInt(cardSize);
         if (isNaN(cSize) || cSize < 3 || cSize > 7) { setError("Размер карточки должен быть от 3 до 7"); return; }
         if (rules === 0) { setError("Выберите хотя бы одно правило победы"); return; }
-        
+
         const requiredSongs = cSize * cSize;
         if (songs.length < requiredSongs) {
             setError(`В библиотеке недостаточно песен. Нужно минимум ${requiredSongs}.`);
@@ -68,7 +68,7 @@ const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, song
                     participantsCount: pCount,
                     cardSize: cSize,
                     rules,
-                    // Auto-select all songs to satisfy the backend requirement
+
                     selectedSongIds: songs.map(s => s.id)
                 })
             });
@@ -93,7 +93,7 @@ const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, song
                 <button className="cgm-close-btn" onClick={onClose}>
                     <img src={closeIcon} alt="Закрыть" />
                 </button>
-                
+
                 <div className="cgm-header">
                     <div className="cgm-icon">
                         <img src={logoIcon} alt="Logo" />
@@ -117,7 +117,7 @@ const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, song
                         <label>Размер карточки (N x N) <span className="cgm-req">*</span></label>
                         <input type="number" placeholder="Например, 5" value={cardSize} onChange={e => setCardSize(e.target.value)} />
                     </div>
-                    
+
                     <div className="cgm-field" style={{ marginTop: '8px' }}>
                         <label>Правила победы <span className="cgm-req">*</span></label>
                         <div className="cgm-rules-grid">

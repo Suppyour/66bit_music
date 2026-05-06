@@ -18,7 +18,7 @@ const EditSongModal: React.FC<EditSongModalProps> = ({ isOpen, onClose, onEdit, 
     const [audioFileName, setAudioFileName] = useState<string | null>(null);
     const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
 
-    // Initial state for form fields
+    
     const [title, setTitle] = useState('');
     const [artist, setArtist] = useState('');
 
@@ -137,7 +137,7 @@ const EditSongModal: React.FC<EditSongModalProps> = ({ isOpen, onClose, onEdit, 
                                     </p>
                                 </>
                             )}
-                            {/* Не делаем required для редактирования */}
+                            {}
                             <input type="file" name="AudioFile" className="file-input" accept="audio/*,video/mp4" onChange={handleAudioChange} />
                         </div>
                     </div>
@@ -158,7 +158,7 @@ const EditSongModal: React.FC<EditSongModalProps> = ({ isOpen, onClose, onEdit, 
                                     <p className="drag-drop-subtext">Формат: JPG, PNG</p>
                                 </>
                             )}
-                            {/* Имя должно совпадать с бэкендом, в AddSongModal было CoverImage, но бэкенд ждет BackgroundImageFile. Если бэкенд не принимает CoverImage, это проблема. Я оставлю BackgroundImageFile, так как в новом UpdateSong.cs это свойство */}
+                            {}
                             <input type="file" name="BackgroundImageFile" className="file-input" accept="image/jpeg,image/png" onChange={handleCoverChange} />
                         </div>
                     </div>

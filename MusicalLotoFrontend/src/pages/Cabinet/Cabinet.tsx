@@ -6,7 +6,7 @@ import './Cabinet.css';
 import playBtn from '../../assets/Cabinet/Значек плей в Играть.svg';
 import deleteBtn from '../../assets/Cabinet/Кнопка удалить в кабинет.svg';
 
-// Newly added icons
+
 import plusIcon from '../../assets/Cabinet/Плюсик из Создать игру.svg';
 import noteIcon from '../../assets/Cabinet/Нота в кабинет.svg';
 import totalGamesIcon from '../../assets/Cabinet/Иконка в Всего игр.svg';
@@ -33,7 +33,7 @@ const Cabinet: React.FC = () => {
     const [totalSongs, setTotalSongs] = useState<number>(0);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
 
-    // Вычисляемые параметры на основе текущего списка игр
+
     const totalGames = games.length;
     const activePlayers = games.filter(g => g.status === 'Active').reduce((sum, g) => sum + g.participants, 0);
 
@@ -45,9 +45,9 @@ const Cabinet: React.FC = () => {
                 const mappedGames = data.map((g: any) => ({
                     id: g.id,
                     title: g.name,
-                    status: 'Active', // Mocking status as backend doesn't provide it yet
+                    status: 'Active',
                     participants: g.participantCount,
-                    date: new Date().toLocaleDateString() // Mocking date
+                    date: new Date().toLocaleDateString()
                 }));
                 setGames(mappedGames);
             }
@@ -59,7 +59,7 @@ const Cabinet: React.FC = () => {
     useEffect(() => {
         fetchGames();
 
-        // Получение списка песен
+
         const fetchSongs = async () => {
             try {
                 const response = await fetch('/api/Songs');
@@ -88,7 +88,7 @@ const Cabinet: React.FC = () => {
 
             <main className="container cabinet-main">
                 <div className="cabinet-card">
-                    {/* Header Section */}
+                    { }
                     <div className="cabinet-header-section">
                         <div>
                             <h1 className="cabinet-heading">Личный кабинет</h1>
@@ -100,7 +100,7 @@ const Cabinet: React.FC = () => {
                         </button>
                     </div>
 
-                    {/* Stats Section */}
+                    { }
                     <div className="cabinet-stats-grid">
                         <div className="stat-card">
                             <div className="stat-icon-wrapper">
@@ -133,7 +133,7 @@ const Cabinet: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Games List Section */}
+                    { }
                     <div className="cabinet-games-section">
                         <h2 className="games-heading">Ваши игры</h2>
                         <div className="games-list">
@@ -185,7 +185,7 @@ const Cabinet: React.FC = () => {
                     songs={songs}
                     onGameCreated={() => {
                         setIsCreateModalOpen(false);
-                        fetchGames(); // Refresh games after creation
+                        fetchGames();
                     }}
                 />
             )}

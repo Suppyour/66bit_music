@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import HeaderLibrary from '../../components/HeaderLibrary/HeaderLibrary';
 import './Presentation.css';
 
-// We will use standard SVG or text if icons are not exported properly, but let's try to use the provided ones for the buttons.
+
 import PlayIcon from '../../assets/Presentation/Иконка в кнопке запустить.svg';
 import PreviewIcon from '../../assets/Presentation/Иконка в кнопке предпросмотр.svg';
 
 
 
 const Presentation: React.FC = () => {
-    // In a real app, this would come from a global state or API based on the selected game
+    
     const [gameName] = useState('Корпоратив 2026');
 
 
@@ -21,7 +21,7 @@ const Presentation: React.FC = () => {
             <main className="container presentation-main">
                 <div className="presentation-content">
 
-                    {/* Left Column */}
+                    {}
                     <div className="presentation-left">
                         <div className="presentation-header">
                             <h1 className="game-title">{gameName}</h1>
@@ -61,7 +61,7 @@ const Presentation: React.FC = () => {
                                         </div>
 
                                         <div className="slide-icon-box empty">
-                                            {/* Placeholder for icon */}
+                                            {}
                                         </div>
 
                                         <div className="slide-texts">

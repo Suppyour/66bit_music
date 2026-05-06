@@ -78,7 +78,7 @@
     border-color: #2E68F5;
 }
 
-/* Обновленная сетка: 4 колонки */
+
 .table-header,
 .table-row {
     display: grid;

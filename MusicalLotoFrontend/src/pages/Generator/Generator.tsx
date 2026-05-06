@@ -26,7 +26,7 @@ import InfinityIcon from '../../assets/Generator/Значек во все кар
 
 import './Generator.css';
 
-// --- Types ---
+
 interface CardCellData {
     row: number;
     column: number;
@@ -38,9 +38,9 @@ interface CardDto {
     cells: CardCellData[];
 }
 
-// --- Sortable Cell Component ---
+
 const SortableCell = ({ cell, song }: { cell: CardCellData; song?: Song }) => {
-    // dnd-kit needs a unique id. We can use `cell.songId` or a combined id.
+    
     const id = `${cell.row}-${cell.column}`;
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
@@ -71,7 +71,7 @@ const SortableCell = ({ cell, song }: { cell: CardCellData; song?: Song }) => {
     );
 };
 
-// --- Main Generator Component ---
+
 const Generator: React.FC = () => {
     const [cardCount, setCardCount] = useState<number>(20);
     const [selectedSongs, setSelectedSongs] = useState<Song[]>([]);
@@ -182,7 +182,7 @@ const Generator: React.FC = () => {
             const oldIndex = cells.findIndex((c) => `${c.row}-${c.column}` === active.id);
             const newIndex = cells.findIndex((c) => `${c.row}-${c.column}` === over.id);
 
-            // Swap songIds between the two cells to keep row/col structure intact
+            
             const tempSongId = cells[oldIndex].songId;
             cells[oldIndex].songId = cells[newIndex].songId;
             cells[newIndex].songId = tempSongId;

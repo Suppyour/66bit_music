@@ -42,9 +42,9 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
         const data = await response.json();
         
         if (response.ok) {
-            // Успешно! Сохраняем токен
+            
             localStorage.setItem('token', data.token);
-            // Сбрасываем форму
+            
             setEmail('');
             setPassword('');
             setIsRegisterMode(false);

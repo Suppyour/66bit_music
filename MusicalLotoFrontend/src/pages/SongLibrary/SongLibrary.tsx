@@ -10,7 +10,7 @@ import editBtn from '../../assets/SongLibrary/Кнопка изменить.svg'
 import deleteBtn from '../../assets/SongLibrary/Кнопка удалить.svg';
 import searchIcon from '../../assets/SongLibrary/Значок лупы в строке поиска.svg';
 
-// Описываем структуру данных, которую возвращает бэкенд (SongDto)
+
 interface BackendSong {
     id: string;
     title: string;
@@ -21,17 +21,17 @@ interface BackendSong {
 }
 
 const SongLibrary: React.FC = () => {
-    // Состояние для хранения списка песен с бэкенда
+    
     const [songs, setSongs] = useState<BackendSong[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
     const [isUploading, setIsUploading] = useState(false);
     const [showUploadForm, setShowUploadForm] = useState(false);
 
-    // Стэйт для проигрывания песни
+    
     const [playingSongId, setPlayingSongId] = useState<string | null>(null);
 
-    // Уведомления
+    
     const [notification, setNotification] = useState<{ show: boolean, type: NotificationType, text: string }>({
         show: false,
         type: 'add',
@@ -42,13 +42,13 @@ const SongLibrary: React.FC = () => {
         setNotification({ show: true, type, text });
     };
 
-    // Удаление песни
+    
     const handleDeleteSong = async (id: string, name: string) => {
         if (!window.confirm(`Вы уверены, что хотите удалить песню "${name}"?`)) return;
         try {
             const response = await fetch(`/api/Songs/${id}`, { method: 'DELETE' });
             if (response.ok) {
-                // Если успешно удалено, показываем уведомление
+                
                 triggerNotification('delete', name);
                 await fetchSongs();
             } else {
@@ -59,7 +59,7 @@ const SongLibrary: React.FC = () => {
         }
     };
 
-    // Форматирование секунд в мм:сс
+    
     const formatDuration = (seconds?: number) => {
         if (!seconds) return '--:--';
         const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -67,7 +67,7 @@ const SongLibrary: React.FC = () => {
         return `${m}:${s}`;
     };
 
-    // Выносим функцию наружу, чтобы ее можно было вызвать и при старте, и после загрузки
+    
     const fetchSongs = async () => {
         setIsLoading(true);
         try {
@@ -86,12 +86,12 @@ const SongLibrary: React.FC = () => {
         }
     };
 
-    // useEffect сработает при монтировании компонента и загрузит данные
+    
     useEffect(() => {
         fetchSongs();
     }, []);
 
-    // Стандартный путь веба: отправляем файл и сразу вызываем fetchSongs
+    
     const handleUploadSong = async (formData: FormData) => {
         setIsUploading(true);
         try {
@@ -106,7 +106,7 @@ const SongLibrary: React.FC = () => {
                 const artist = formData.get('Artist') as string;
                 triggerNotification('add', `${title} - ${artist}`);
 
-                // Магия стандартного веба: перерисовываем таблицу новыми данными
+                
                 await fetchSongs();
             } else {
                 const errText = await response.text();
@@ -206,7 +206,7 @@ const SongLibrary: React.FC = () => {
                                                     triggerNotification('play', song.title);
                                                 }
                                             }}>
-                                                { /* Немного приглушаем иконку, если песня играет, чтобы визуально отличить "Стоп" от "Плэй" */}
+                                                { }
                                                 <img src={playBtn} alt="Play" style={{ opacity: playingSongId === song.id ? 0.3 : 1 }} />
                                             </button>
                                             <button className="icon-btn" title="Изменить" onClick={() => triggerNotification('edit', song.title)}>
@@ -217,7 +217,7 @@ const SongLibrary: React.FC = () => {
                                             </button>
                                         </div>
 
-                                        {/* Скрытый аудиоплеер, который играет только если песня активна */}
+                                        {}
                                         {playingSongId === song.id && (
                                             <audio autoPlay src={song.audioPath} onEnded={() => setPlayingSongId(null)} />
                                         )}

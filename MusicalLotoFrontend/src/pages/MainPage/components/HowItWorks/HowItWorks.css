@@ -3,7 +3,7 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
-  margin-top: 176px; /* From Figma: 1720.81 (top of section) - 1544.81 (bottom of cards) */
+  margin-top: 176px; 
   margin-bottom: 120px;
 }
 
@@ -12,7 +12,7 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  /* Top of cards is 165px from the top of the container in Figma */
+  
   margin-bottom: 72px; 
 }
 
@@ -45,7 +45,7 @@
   height: 231px;
   background-color: #ffffff;
   border-radius: 20px;
-  box-shadow: 0px 5.5px 19.25px rgba(46, 104, 245, 0.08); /* Same shadow as before approx */
+  box-shadow: 0px 5.5px 19.25px rgba(46, 104, 245, 0.08); 
   display: flex;
   flex-direction: column;
   align-items: center;
