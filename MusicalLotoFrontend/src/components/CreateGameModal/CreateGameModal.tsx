@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './CreateGameModal.css';
+import { apiFetch } from '../../utils/api';
 import type { Song } from '../../pages/Cabinet/Cabinet';
 
 import closeIcon from '../../assets/Cabinet/Крестик закрыть.svg';
@@ -60,7 +61,7 @@ const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, song
         setIsSubmitting(true);
         setError(null);
         try {
-            const response = await fetch('/api/Games', {
+            const response = await apiFetch('/api/Games', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

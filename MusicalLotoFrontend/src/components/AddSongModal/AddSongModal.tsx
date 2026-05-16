@@ -137,7 +137,7 @@ const AddSongModal: React.FC<AddSongModalProps> = ({ isOpen, onClose, onUpload, 
                                     <p className="drag-drop-subtext">Формат: JPG, PNG</p>
                                 </>
                             )}
-                            <input type="file" name="CoverImage" className="file-input" accept="image/jpeg,image/png" onChange={handleCoverChange} />
+                            <input type="file" name="BackgroundImageFile" className="file-input" accept="image/jpeg,image/png" onChange={handleCoverChange} />
                         </div>
                     </div>
 

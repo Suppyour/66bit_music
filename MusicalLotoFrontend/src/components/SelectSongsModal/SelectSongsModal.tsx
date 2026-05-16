@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './SelectSongsModal.css';
+import { apiFetch } from '../../utils/api';
 
 export interface Song {
     id: string;
@@ -29,7 +30,7 @@ const SelectSongsModal: React.FC<SelectSongsModalProps> = ({ isOpen, onClose, on
     const fetchSongs = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch('/api/Songs');
+            const response = await apiFetch('/api/Songs');
             if (response.ok) {
                 const data = await response.json();
                 setSongs(data || []);

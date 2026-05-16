@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './LoginModal.css';
 
 import closeIcon from '../../../assets/MainPage/Закрыть на входе.svg';
@@ -8,22 +8,39 @@ import passwordIcon from '../../../assets/MainPage/Значок скрыть п�
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialRegisterMode?: boolean;
 }
 
-const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
+const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, initialRegisterMode = false }) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isRegisterMode, setIsRegisterMode] = useState(initialRegisterMode);
   const [errorStr, setErrorStr] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsRegisterMode(initialRegisterMode);
+      setErrorStr('');
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, initialRegisterMode]);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-        setErrorStr('Заполните все поля');
+    if (isRegisterMode && password !== confirmPassword) {
+        setErrorStr('Пароли не совпадают');
         return;
     }
     
@@ -42,11 +59,10 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
         const data = await response.json();
         
         if (response.ok) {
-            
             localStorage.setItem('token', data.token);
-            
             setEmail('');
             setPassword('');
+            setConfirmPassword('');
             setIsRegisterMode(false);
             onClose();
         } else {
@@ -70,7 +86,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
         <div className="modalHeader">
           <img src={loginIcon} alt="Вход" className="modalLoginIcon" />
           <h2 className="modalTitle">{isRegisterMode ? 'Регистрация' : 'Вход в панель управления'}</h2>
-          <p className="modalSubtitle">Введите ваши данные для доступа к играм</p>
+          <p className="modalSubtitle">
+            {isRegisterMode 
+              ? 'Создайте учетную запись для организации игровых сессий' 
+              : 'Введите ваши данные для доступа к играм'}
+          </p>
         </div>
 
         <form className="modalForm" onSubmit={handleSubmit}>
@@ -105,6 +125,28 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
+          {isRegisterMode && (
+            <div className="formGroup" style={{ marginTop: '27.5px' }}>
+              <label className="formLabel">Подтверждение пароля</label>
+              <div className="passwordInputContainer">
+                 <input 
+                   type={showConfirmPassword ? "text" : "password"} 
+                   className="formInput passwordInput" 
+                   placeholder="•••••••••"
+                   value={confirmPassword}
+                   onChange={(e) => setConfirmPassword(e.target.value)}
+                 />
+                 <button 
+                   type="button" 
+                   className="passwordToggleBtn"
+                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                 >
+                   <img src={passwordIcon} alt="Показать/скрыть пароль" />
+                 </button>
+              </div>
+            </div>
+          )}
+
           {!isRegisterMode && (
             <div className="formOptions">
               <label className="checkboxLabel">
@@ -117,8 +159,8 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
           {errorStr && <div style={{color: 'red', marginTop: 10, fontSize: 14, textAlign: 'center'}}>{errorStr}</div>}
 
-          <button type="submit" className="loginSubmitBtn" disabled={isLoading} style={{marginTop: 20}}>
-             {isLoading ? 'Загрузка...' : (isRegisterMode ? 'Создать аккаунт' : 'Войти')}
+          <button type="submit" className="loginSubmitBtn" disabled={isLoading} style={{marginTop: 40}}>
+             {isLoading ? 'Загрузка...' : (isRegisterMode ? 'Зарегистрироваться' : 'Войти')}
           </button>
           
           <div className="modalFooter">
@@ -131,12 +173,12 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                 setErrorStr('');
             }}>
                 {isRegisterMode ? 'Войти' : 'Создать аккаунт'}
-            </a>
-          </div>
-        </form>
+              </a>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 export default LoginModal;

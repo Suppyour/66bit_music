@@ -6,9 +6,10 @@ import registerIcon from '../../../assets/MainPage/SVG регистрация.sv
 
 interface HeaderProps {
   onLoginClick?: () => void;
+  onRegisterClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onLoginClick }) => {
+const Header: React.FC<HeaderProps> = ({ onLoginClick, onRegisterClick }) => {
   return (
     <header className="header">
       <div className="header-content">
@@ -22,7 +23,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick }) => {
             <img src={loginIcon} alt="Login" />
             Войти
           </button>
-          <button className="btnRegister">
+          <button className="btnRegister" onClick={onRegisterClick}>
             <img src={registerIcon} alt="Register" />
             Регистрация
           </button>

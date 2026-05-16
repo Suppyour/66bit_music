@@ -1,7 +1,11 @@
 import React from 'react';
 import './Hero.css';
 
-const Hero: React.FC = () => {
+interface HeroProps {
+  onLoginClick?: () => void;
+}
+
+const Hero: React.FC<HeroProps> = ({ onLoginClick }) => {
   return (
     <section className="heroSection">
       <div className="heroContent">
@@ -14,7 +18,7 @@ const Hero: React.FC = () => {
           Создавайте сессии в реальном времени, загружайте треки,<br />
           синхронизируйте участников через QR-код.
         </p>
-        <button className="btnPanel">
+        <button className="btnPanel" onClick={onLoginClick}>
           Войти в панель управления
         </button>
       </div>

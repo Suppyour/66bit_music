@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import HeaderLibrary from '../../components/HeaderLibrary/HeaderLibrary';
 import AddSongModal from '../../components/AddSongModal/AddSongModal';
 import NotificationToast, { type NotificationType } from '../../components/NotificationToast/NotificationToast';
+import { apiFetch } from '../../utils/api';
 import './SongLibrary.css';
 
 import plusIcon from '../../assets/SongLibrary/Плюсик в добавить песню.svg';
@@ -20,18 +21,20 @@ interface BackendSong {
     durationSeconds?: number;
 }
 
+import { useMusic, type MusicSong } from '../../context/MusicContext';
+
 const SongLibrary: React.FC = () => {
-    
     const [songs, setSongs] = useState<BackendSong[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
-
     const [isUploading, setIsUploading] = useState(false);
     const [showUploadForm, setShowUploadForm] = useState(false);
 
-    
-    const [playingSongId, setPlayingSongId] = useState<string | null>(null);
+    const { 
+        currentSong, 
+        isPlaying, 
+        playSong 
+    } = useMusic();
 
-    
     const [notification, setNotification] = useState<{ show: boolean, type: NotificationType, text: string }>({
         show: false,
         type: 'add',
@@ -42,13 +45,17 @@ const SongLibrary: React.FC = () => {
         setNotification({ show: true, type, text });
     };
 
-    
+    const handleCloseNotification = React.useCallback(() => {
+        setNotification(prev => ({ ...prev, show: false }));
+    }, []);
+
     const handleDeleteSong = async (id: string, name: string) => {
         if (!window.confirm(`Вы уверены, что хотите удалить песню "${name}"?`)) return;
         try {
-            const response = await fetch(`/api/Songs/${id}`, { method: 'DELETE' });
+            const response = await apiFetch(`/api/Songs/${id}`, { 
+                method: 'DELETE'
+            });
             if (response.ok) {
-                
                 triggerNotification('delete', name);
                 await fetchSongs();
             } else {
@@ -59,7 +66,6 @@ const SongLibrary: React.FC = () => {
         }
     };
 
-    
     const formatDuration = (seconds?: number) => {
         if (!seconds) return '--:--';
         const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -67,11 +73,10 @@ const SongLibrary: React.FC = () => {
         return `${m}:${s}`;
     };
 
-    
     const fetchSongs = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch('/api/Songs');
+            const response = await apiFetch('/api/Songs');
 
             if (response.ok) {
                 const data = await response.json();
@@ -86,16 +91,14 @@ const SongLibrary: React.FC = () => {
         }
     };
 
-    
     useEffect(() => {
         fetchSongs();
     }, []);
 
-    
     const handleUploadSong = async (formData: FormData) => {
         setIsUploading(true);
         try {
-            const response = await fetch('/api/Songs', {
+            const response = await apiFetch('/api/Songs', {
                 method: 'POST',
                 body: formData,
             });
@@ -106,7 +109,6 @@ const SongLibrary: React.FC = () => {
                 const artist = formData.get('Artist') as string;
                 triggerNotification('add', `${title} - ${artist}`);
 
-                
                 await fetchSongs();
             } else {
                 const errText = await response.text();
@@ -127,7 +129,7 @@ const SongLibrary: React.FC = () => {
                 show={notification.show}
                 type={notification.type}
                 songDetails={notification.text}
-                onClose={() => setNotification(prev => ({ ...prev, show: false }))}
+                onClose={handleCloseNotification}
             />
             <HeaderLibrary />
 
@@ -200,14 +202,16 @@ const SongLibrary: React.FC = () => {
                                         <div className="col-time">{formatDuration(song.durationSeconds)}</div>
 
                                         <div className="col-actions">
-                                            <button className="icon-btn" title="Воспроизвести" onClick={() => {
-                                                setPlayingSongId(playingSongId === song.id ? null : song.id);
-                                                if (playingSongId !== song.id) {
-                                                    triggerNotification('play', song.title);
-                                                }
-                                            }}>
-                                                { }
-                                                <img src={playBtn} alt="Play" style={{ opacity: playingSongId === song.id ? 0.3 : 1 }} />
+                                            <button className="icon-btn" title={currentSong?.id === song.id && isPlaying ? "Пауза" : "Воспроизвести"} onClick={() => playSong(song)}>
+                                                {currentSong?.id === song.id && isPlaying ? (
+                                                    <div className="pause-icon-wrapper">
+                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                            <path d="M10 19H6V5H10V19ZM18 19H14V5H18V19Z" fill="#2563EB"/>
+                                                        </svg>
+                                                    </div>
+                                                ) : (
+                                                    <img src={playBtn} alt="Play" />
+                                                )}
                                             </button>
                                             <button className="icon-btn" title="Изменить" onClick={() => triggerNotification('edit', song.title)}>
                                                 <img src={editBtn} alt="Edit" />
@@ -217,10 +221,6 @@ const SongLibrary: React.FC = () => {
                                             </button>
                                         </div>
 
-                                        {}
-                                        {playingSongId === song.id && (
-                                            <audio autoPlay src={song.audioPath} onEnded={() => setPlayingSongId(null)} />
-                                        )}
                                     </div>
                                 ))
                             )}

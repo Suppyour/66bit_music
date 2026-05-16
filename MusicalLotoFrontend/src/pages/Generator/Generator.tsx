@@ -25,6 +25,7 @@ import LoadBgIcon from '../../assets/Generator/Иконка в кнопке За
 import InfinityIcon from '../../assets/Generator/Значек во все карточки уникальны.svg';
 
 import './Generator.css';
+import { apiFetch } from '../../utils/api';
 
 
 interface CardCellData {
@@ -105,7 +106,7 @@ const Generator: React.FC = () => {
         }
 
         try {
-            const response = await fetch('/api/Pdf/generateArchive', {
+            const response = await apiFetch('/api/Pdf/generateArchive', {
                 method: 'POST',
                 body: formData,
             });
@@ -144,7 +145,7 @@ const Generator: React.FC = () => {
 
         setIsGenerating(true);
         try {
-            const response = await fetch('/api/Cards/generate', {
+            const response = await apiFetch('/api/Cards/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

@@ -4,10 +4,14 @@ import Cards from './components/Cards/Cards';
 import HowItWorks from './components/HowItWorks/HowItWorks';
 import CallToAction from './components/CallToAction/CallToAction';
 
-const MainPage: React.FC = () => {
+interface MainPageProps {
+  onLoginClick?: () => void;
+}
+
+const MainPage: React.FC<MainPageProps> = ({ onLoginClick }) => {
   return (
     <main className="main-content">
-      <Hero />
+      <Hero onLoginClick={onLoginClick} />
       <Cards />
       <HowItWorks />
       <CallToAction />

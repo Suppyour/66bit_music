@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import HeaderLibrary from '../../components/HeaderLibrary/HeaderLibrary';
 import CreateGameModal from '../../components/CreateGameModal/CreateGameModal';
 import './Cabinet.css';
+import { apiFetch } from '../../utils/api';
 
 import playBtn from '../../assets/Cabinet/Значек плей в Играть.svg';
 import deleteBtn from '../../assets/Cabinet/Кнопка удалить в кабинет.svg';
@@ -35,11 +36,11 @@ const Cabinet: React.FC = () => {
 
 
     const totalGames = games.length;
-    const activePlayers = games.filter(g => g.status === 'Active').reduce((sum, g) => sum + g.participants, 0);
+    const activeGamesCount = games.filter(g => g.status === 'Active').length;
 
     const fetchGames = async () => {
         try {
-            const response = await fetch('/api/Games');
+            const response = await apiFetch('/api/Games');
             if (response.ok) {
                 const data = await response.json();
                 const mappedGames = data.map((g: any) => ({
@@ -62,7 +63,7 @@ const Cabinet: React.FC = () => {
 
         const fetchSongs = async () => {
             try {
-                const response = await fetch('/api/Songs');
+                const response = await apiFetch('/api/Songs');
                 if (response.ok) {
                     const data = await response.json();
                     setSongs(data || []);
@@ -88,7 +89,7 @@ const Cabinet: React.FC = () => {
 
             <main className="container cabinet-main">
                 <div className="cabinet-card">
-                    { }
+                    
                     <div className="cabinet-header-section">
                         <div>
                             <h1 className="cabinet-heading">Личный кабинет</h1>
@@ -100,7 +101,7 @@ const Cabinet: React.FC = () => {
                         </button>
                     </div>
 
-                    { }
+                    
                     <div className="cabinet-stats-grid">
                         <div className="stat-card">
                             <div className="stat-icon-wrapper">
@@ -114,11 +115,11 @@ const Cabinet: React.FC = () => {
 
                         <div className="stat-card">
                             <div className="stat-icon-wrapper">
-                                <img src={activePlayersIcon} alt="Активных игроков" />
+                                <img src={activePlayersIcon} alt="Активных игр" />
                             </div>
                             <div className="stat-info">
-                                <div className="stat-value">{activePlayers}</div>
-                                <div className="stat-label">Активных игроков</div>
+                                <div className="stat-value">{activeGamesCount}</div>
+                                <div className="stat-label">Активных игр</div>
                             </div>
                         </div>
 
@@ -133,7 +134,7 @@ const Cabinet: React.FC = () => {
                         </div>
                     </div>
 
-                    { }
+                    
                     <div className="cabinet-games-section">
                         <h2 className="games-heading">Ваши игры</h2>
                         <div className="games-list">

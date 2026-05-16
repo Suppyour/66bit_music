@@ -10,31 +10,48 @@ import Cabinet from './pages/Cabinet/Cabinet';
 import Generator from './pages/Generator/Generator';
 import Presentation from './pages/Presentation/Presentation';
 
+import { MusicProvider } from './context/MusicContext';
+import MusicPlayer from './components/MusicPlayer/MusicPlayer';
+
 function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+
+  const openLogin = () => {
+    setIsRegisterMode(false);
+    setIsLoginModalOpen(true);
+  };
+
+  const openRegister = () => {
+    setIsRegisterMode(true);
+    setIsLoginModalOpen(true);
+  };
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={
-          <>
-            <Header onLoginClick={() => setIsLoginModalOpen(true)} />
-            <MainPage />
-            <Footer />
-          </>
-        } />
-        <Route path="/library" element={<SongLibrary />} />
-        {/* Placeholder routes for others links in HeaderLibrary */}
-        <Route path="/cabinet" element={<Cabinet />} />
-        <Route path="/generator" element={<Generator />} />
-        <Route path="/presentation" element={<Presentation />} />
-      </Routes>
-      
-      <LoginModal 
-        isOpen={isLoginModalOpen} 
-        onClose={() => setIsLoginModalOpen(false)} 
-      />
-    </Router>
+    <MusicProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={
+            <>
+              <Header onLoginClick={openLogin} onRegisterClick={openRegister} />
+              <MainPage onLoginClick={openLogin} />
+              <Footer />
+            </>
+          } />
+          <Route path="/library" element={<SongLibrary />} />
+          <Route path="/cabinet" element={<Cabinet />} />
+          <Route path="/generator" element={<Generator />} />
+          <Route path="/presentation" element={<Presentation />} />
+        </Routes>
+        
+        <LoginModal 
+          isOpen={isLoginModalOpen} 
+          onClose={() => setIsLoginModalOpen(false)} 
+          initialRegisterMode={isRegisterMode}
+        />
+        <MusicPlayer />
+      </Router>
+    </MusicProvider>
   );
 }
 

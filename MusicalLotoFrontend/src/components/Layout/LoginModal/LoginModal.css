@@ -24,7 +24,7 @@
   flex-direction: column;
   align-items: center;
   box-sizing: border-box;
-  padding-bottom: 137.5px;
+  padding-bottom: 80px;
 }
 
 .modalCloseBtn {
@@ -99,12 +99,11 @@
 
 .formLabel {
   font-family: 'Inter', sans-serif;
-  font-weight: 400;
-  font-size: 24.75px; 
-  font-size: 16px;
+  font-weight: 500;
+  font-size: 20px;
   line-height: 27.5px; 
   color: #0F172A;
-  margin-bottom: 0px; 
+  margin-bottom: 11px; 
 }
 
 .formInput {
@@ -112,7 +111,7 @@
   height: 55px; 
   background: #FFFFFF;
   border: 2.75px solid #E2E8F0;
-  border-radius: 16.5px;
+  border-radius: 12px;
   padding: 0 20px;
   font-family: 'Inter', sans-serif;
   font-weight: 400;
@@ -148,12 +147,19 @@
   background: transparent;
   border: none;
   outline: none;
+  box-shadow: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   transition: opacity 0.2s ease;
+}
+
+.passwordToggleBtn img {
+  border: none;
+  outline: none;
+  display: block;
 }
 
 .passwordToggleBtn:hover {
@@ -225,7 +231,7 @@
   width: 100%;
   height: 71.5px;
   background: #2563EB;
-  border-radius: 27.5px;
+  border-radius: 20px;
   border: none;
   color: #FFFFFF;
   font-family: 'Inter', sans-serif;
