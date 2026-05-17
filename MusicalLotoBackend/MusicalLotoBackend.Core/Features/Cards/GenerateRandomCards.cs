@@ -39,7 +39,6 @@ public class GenerateRandomCardsHandler : IRequestHandler<GenerateRandomCardsCom
             bool isUnique = false;
             List<Guid> selectedSongs = new List<Guid>();
 
-            // Защита от зацикливания, если просят слишком много уникальных карточек из малого пула песен
             int attempts = 0; 
 
             while (!isUnique && attempts < 100)

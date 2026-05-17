@@ -23,7 +23,6 @@ public class GameplayController : ControllerBase
         return Ok(result);
     }
 
-    // POST: /api/gameplay/previous-song
     [HttpPost("previous-song")]
     public async Task<IActionResult> PreviousSong([FromBody] PreviousSongCommand command)
     {
