@@ -21,7 +21,7 @@ interface BackendSong {
     durationSeconds?: number;
 }
 
-import { useMusic, type MusicSong } from '../../context/MusicContext';
+import { useMusic } from '../../context/MusicContext';
 
 const SongLibrary: React.FC = () => {
     const [songs, setSongs] = useState<BackendSong[]>([]);

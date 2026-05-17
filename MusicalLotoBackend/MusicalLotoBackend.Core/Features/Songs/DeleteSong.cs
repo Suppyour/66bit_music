@@ -1,5 +1,6 @@
-﻿using MediatR;
+using MediatR;
 using MusicalLotoBackend.Database;
+using MusicalLotoBackend.Core.Services;
 
 namespace MusicalLotoBackend.Core.Features.Songs;
 public class DeleteSongCommand : IRequest<bool>
@@ -10,35 +11,26 @@ public class DeleteSongCommand : IRequest<bool>
 public class DeleteSongHandler : IRequestHandler<DeleteSongCommand, bool>
 {
     private readonly AppDbContext _dbContext;
+    private readonly IFileStorageService _fileStorageService;
 
-    public DeleteSongHandler(AppDbContext dbContext)
+    public DeleteSongHandler(AppDbContext dbContext, IFileStorageService fileStorageService)
     {
         _dbContext = dbContext;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<bool> Handle(DeleteSongCommand request, CancellationToken cancellationToken)
     {
         var song = await _dbContext.Songs.FindAsync(new object[] { request.Id }, cancellationToken);
         if (song == null) return false;
-        DeletePhysicalFile(song.AudioPath);
+        await _fileStorageService.DeleteFileAsync(song.AudioPath, cancellationToken);
         if (song.BackgoundImagePath != null)
         {
-            DeletePhysicalFile(song.BackgoundImagePath);
+            await _fileStorageService.DeleteFileAsync(song.BackgoundImagePath, cancellationToken);
         }
         _dbContext.Songs.Remove(song);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return true;
-    }
-    // заглушка для wwwroot
-    private void DeletePhysicalFile(string relativePath)
-    {
-        var formattedPath = relativePath.TrimStart('/'); 
-        var physicalPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", formattedPath);
-
-        if (File.Exists(physicalPath))
-        {
-            File.Delete(physicalPath);
-        }
     }
 }

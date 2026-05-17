@@ -3,6 +3,7 @@ using MediatR;
 using MusicalLotoBackend.Database;
 using MusicalLotoBackend.Domain.Models;
 
+using MusicalLotoBackend.Core.Services;
 namespace MusicalLotoBackend.Core.Features.Songs;
 
 public class CreateSongCommand : IRequest<Guid>
@@ -20,32 +21,46 @@ public class CreateSongCommand : IRequest<Guid>
 public class CreateSongHandler : IRequestHandler<CreateSongCommand, Guid>
 {
     private readonly AppDbContext _dbContext;
+    private readonly IFileStorageService _fileStorageService;
 
-    public CreateSongHandler(AppDbContext dbContext)
+    public CreateSongHandler(AppDbContext dbContext, IFileStorageService fileStorageService)
     {
         _dbContext = dbContext;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<Guid> Handle(CreateSongCommand request, CancellationToken cancellationToken)
     {
-        var audioPath = await SaveFileAsync(request.AudioFile, "audio", cancellationToken);
+        var audioPath = await _fileStorageService.UploadFileAsync(request.AudioFile, "audio", cancellationToken);
         
         string? imagePath = null;
         if (request.BackgroundImageFile != null)
         {
-            imagePath = await SaveFileAsync(request.BackgroundImageFile, "images", cancellationToken);
+            imagePath = await _fileStorageService.UploadFileAsync(request.BackgroundImageFile, "images", cancellationToken);
         }
         
         int durationSeconds = 0;
-        var fullAudioPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", audioPath.TrimStart('/'));
+        
+        var tempFilePath = Path.GetTempFileName();
         try
         {
-            using var tfile = TagLib.File.Create(fullAudioPath);
+            using (var stream = new FileStream(tempFilePath, FileMode.Create))
+            {
+                await request.AudioFile.CopyToAsync(stream, cancellationToken);
+            }
+            using var tfile = TagLib.File.Create(tempFilePath);
             durationSeconds = (int)tfile.Properties.Duration.TotalSeconds;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Не удалось прочитать длительность: {ex.Message}");
+        }
+        finally
+        {
+            if (File.Exists(tempFilePath))
+            {
+                File.Delete(tempFilePath);
+            }
         }
 
         // здесь готовые уже данные
@@ -61,35 +76,5 @@ public class CreateSongHandler : IRequestHandler<CreateSongCommand, Guid>
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return song.Id;
-    }
-
-    private async Task<string> SaveFileAsync(IFormFile file, string folderName, CancellationToken cancellationToken)
-    {
-        var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", folderName);
-        if (!Directory.Exists(uploadsPath))
-            Directory.CreateDirectory(uploadsPath);
-        var extension = Path.GetExtension(file.FileName);
-        var uniqueFileName = $"{Guid.NewGuid()}{extension}";
-        
-        var filePath = Path.Combine(uploadsPath, uniqueFileName);
-        // нейросетка 
-        FileStream? stream = null;
-        try
-        {
-            stream = new FileStream(filePath, FileMode.Create);
-            await file.CopyToAsync(stream, cancellationToken);
-        }
-        finally
-        {
-            // Обязательно освобождаем файл, чтобы его могли читать другие программы!
-            if (stream != null)
-            {
-                stream.Dispose();
-            }
-        }
-
-        // Возвращаем относительный путь, чтобы потом легко вставлять его в HTML
-        return $"/{folderName}/{uniqueFileName}";
-        // конец нейросетки
     }
 }
