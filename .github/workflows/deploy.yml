@@ -15,6 +15,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}       
           username: ${{ secrets.VPS_USERNAME }}   
           password: ${{ secrets.PASSWORD }}
+          command_timeout: 30m
           script: |
             cd ~/66bit_music
             
