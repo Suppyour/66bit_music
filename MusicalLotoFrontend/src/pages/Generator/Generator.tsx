@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
 } from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
 import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  rectSortingStrategy,
-  useSortable
+    SortableContext,
+    sortableKeyboardCoordinates,
+    rectSortingStrategy,
+    useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import HeaderLibrary from '../../components/HeaderLibrary/HeaderLibrary';
@@ -41,7 +41,7 @@ interface CardDto {
 
 
 const SortableCell = ({ cell, song }: { cell: CardCellData; song?: Song }) => {
-    
+
     const id = `${cell.row}-${cell.column}`;
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
@@ -77,7 +77,7 @@ const Generator: React.FC = () => {
     const [cardCount, setCardCount] = useState<number>(20);
     const [selectedSongs, setSelectedSongs] = useState<Song[]>([]);
     const [isSelectModalOpen, setIsSelectModalOpen] = useState(false);
-    
+
     const [generatedCards, setGeneratedCards] = useState<CardDto[]>([]);
     const [currentCardIndex, setCurrentCardIndex] = useState<number>(0);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -85,6 +85,12 @@ const Generator: React.FC = () => {
     const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
     const [backgroundImageFile, setBackgroundImageFile] = useState<File | null>(null);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const [companyName, setCompanyName] = useState('Название компании');
+    const [editionName, setEditionName] = useState('Название издания');
+    const [titleText, setTitleText] = useState('Заголовок');
+    const [footerText, setFooterText] = useState('Подзаголовок');
+
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -101,6 +107,11 @@ const Generator: React.FC = () => {
         const formData = new FormData();
         formData.append('cardsJson', JSON.stringify(generatedCards));
         formData.append('songsJson', JSON.stringify(selectedSongs));
+        formData.append('companyName', companyName);
+        formData.append('editionName', editionName);
+        formData.append('titleText', titleText);
+        formData.append('footerText', footerText);
+
         if (backgroundImageFile) {
             formData.append('background', backgroundImageFile);
         }
@@ -183,7 +194,7 @@ const Generator: React.FC = () => {
             const oldIndex = cells.findIndex((c) => `${c.row}-${c.column}` === active.id);
             const newIndex = cells.findIndex((c) => `${c.row}-${c.column}` === over.id);
 
-            
+
             const tempSongId = cells[oldIndex].songId;
             cells[oldIndex].songId = cells[newIndex].songId;
             cells[newIndex].songId = tempSongId;
@@ -213,12 +224,12 @@ const Generator: React.FC = () => {
                             <span className="settings-count">Количество карточек: {cardCount}</span>
                         </div>
                         <div className="settings-slider-wrapper">
-                            <input 
-                                type="range" 
-                                className="range-slider" 
-                                min="1" max="50" 
-                                value={cardCount} 
-                                onChange={(e) => setCardCount(parseInt(e.target.value))} 
+                            <input
+                                type="range"
+                                className="range-slider"
+                                min="1" max="50"
+                                value={cardCount}
+                                onChange={(e) => setCardCount(parseInt(e.target.value))}
                                 style={{ background: `linear-gradient(to right, #2563EB ${(cardCount / 50) * 100}%, #E5E7EB ${(cardCount / 50) * 100}%)` }}
                             />
                         </div>
@@ -237,8 +248,8 @@ const Generator: React.FC = () => {
 
                     <div className="settings-right">
                         <button className="btn-presentation">Перейти к презентации</button>
-                        <button 
-                            className="btn-generate" 
+                        <button
+                            className="btn-generate"
                             onClick={handleGenerate}
                             disabled={isGenerating}
                         >
@@ -248,13 +259,33 @@ const Generator: React.FC = () => {
                     </div>
                 </div>
 
+                <div className="generator-settings" style={{ marginTop: '20px', padding: '20px', display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: '200px' }}>
+                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: '#6B7280' }}>Название компании</label>
+                        <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E5E7EB' }} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: '200px' }}>
+                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: '#6B7280' }}>Название издания</label>
+                        <input type="text" value={editionName} onChange={e => setEditionName(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E5E7EB' }} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: '200px' }}>
+                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: '#6B7280' }}>Главный заголовок</label>
+                        <input type="text" value={titleText} onChange={e => setTitleText(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E5E7EB' }} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: '200px' }}>
+                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: '#6B7280' }}>Текст в подвале</label>
+                        <input type="text" value={footerText} onChange={e => setFooterText(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E5E7EB' }} />
+                    </div>
+                </div>
+
+
                 <div className="preview-section">
                     <div className="preview-header">
                         <h2 className="preview-title">Предварительный просмотр</h2>
-                        <input 
-                            type="file" 
-                            accept="image/*" 
-                            style={{ display: 'none' }} 
+                        <input
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
                             ref={fileInputRef}
                             onChange={handleImageUpload}
                         />
@@ -266,8 +297,8 @@ const Generator: React.FC = () => {
 
                     <div className="preview-container">
                         <div className="pagination">
-                            <button 
-                                className="btn-page" 
+                            <button
+                                className="btn-page"
                                 disabled={currentCardIndex === 0}
                                 onClick={() => setCurrentCardIndex(prev => prev - 1)}
                             >
@@ -276,8 +307,8 @@ const Generator: React.FC = () => {
                             <span className="page-info">
                                 {generatedCards.length > 0 ? currentCardIndex + 1 : 0} / {generatedCards.length}
                             </span>
-                            <button 
-                                className="btn-page" 
+                            <button
+                                className="btn-page"
                                 disabled={currentCardIndex >= generatedCards.length - 1}
                                 onClick={() => setCurrentCardIndex(prev => prev + 1)}
                             >
@@ -287,8 +318,8 @@ const Generator: React.FC = () => {
 
                         {currentCard ? (
                             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                                <SortableContext 
-                                    items={currentCard.cells.map(c => `${c.row}-${c.column}`)} 
+                                <SortableContext
+                                    items={currentCard.cells.map(c => `${c.row}-${c.column}`)}
                                     strategy={rectSortingStrategy}
                                 >
                                     <div className="bingo-card" style={backgroundImage ? { backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: 'transparent' } : {}}>
@@ -346,8 +377,8 @@ const Generator: React.FC = () => {
                 </div>
             </main>
 
-            <SelectSongsModal 
-                isOpen={isSelectModalOpen} 
+            <SelectSongsModal
+                isOpen={isSelectModalOpen}
                 onClose={() => setIsSelectModalOpen(false)}
                 onSelect={(songs) => setSelectedSongs(songs)}
                 initialSelectedIds={selectedSongs.map(s => s.id)}

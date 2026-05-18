@@ -9,8 +9,8 @@ namespace MusicalLotoBackend.Core.Features.Auth;
 
 public class RegisterCommand : IRequest<string>
 {
-    public required string Name{ get; set; }
-    public required string SurName{ get; set; }
+    public string? Name{ get; set; }
+    public string? SurName{ get; set; }
     public required string Email { get; set; }
     public required string Password { get; set; }
 }
@@ -46,8 +46,8 @@ public class RegisterHandler : IRequestHandler<RegisterCommand, string>
 
         var user = new User
         {
-            Name = request.Name,
-            SurName = request.SurName,
+            Name = request.Name ?? "Игрок",
+            SurName = request.SurName ?? "",
             Email = request.Email,
             PasswordHash = _passwordHasher.Generate(request.Password)
         };
