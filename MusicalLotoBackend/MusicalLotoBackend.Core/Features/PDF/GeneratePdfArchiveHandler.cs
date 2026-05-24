@@ -27,17 +27,15 @@ public class GeneratePdfArchiveHandler : IRequestHandler<GeneratePdfArchiveComma
             bgImageBytes = msBg.ToArray();
         }
 
-        // --- Настройки текста и цветов для легкого изменения ---
         string companyName = request.CompanyName ?? "Название компании";
         string editionName = request.EditionName ?? "Название издания";
         string titleText = request.TitleText ?? "Заголовок";
         string footerText = request.FooterText ?? "Подзаголовок";
         string rulesTitle = "Победные комбинации";
         
-        string redAccent = "#B21016"; // Красный цвет из макета
-        // Слегка прозрачный фон (90% белого), чтобы фон (картинка) просвечивал, но текст хорошо читался
+        string redAccent = "#B21016";
         string panelBackgroundColor = "#E6FFFFFF"; 
-        string cellBackgroundColor = "#F2FFFFFF"; // Ячейки чуть более плотные
+        string cellBackgroundColor = "#F2FFFFFF";
 
         using var memoryStream = new MemoryStream();
         using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
@@ -50,23 +48,20 @@ public class GeneratePdfArchiveHandler : IRequestHandler<GeneratePdfArchiveComma
                     container.Page(page =>
                     {
                         page.Size(PageSizes.A4.Landscape());
-                        page.Margin(10); // Уменьшен отступ, чтобы точно влезло
+                        page.Margin(15);
                         
                         page.Background().Element(c => 
                         {
                             if (bgImageBytes != null)
-                                c.Image(bgImageBytes).FitUnproportionally(); // Растягиваем на весь лист
+                                c.Image(bgImageBytes).FitUnproportionally();
                             else
                                 c.Background(redAccent);
                         });
 
-                        // Общий полупрозрачный белый фон для карточки (Glassmorphism эффект)
                         page.Content().Background(panelBackgroundColor).Row(row => 
                         {
-                            // Левая часть (Основная сетка)
                             row.RelativeItem(3).Padding(15).Column(col => 
                             {
-                                // Заголовок с линиями
                                 col.Item().Row(r => {
                                     r.RelativeItem().PaddingTop(8).LineHorizontal(1).LineColor(redAccent);
                                     r.AutoItem().PaddingHorizontal(10).Text(companyName).FontSize(12).FontColor(Colors.Grey.Darken3);
@@ -74,11 +69,9 @@ public class GeneratePdfArchiveHandler : IRequestHandler<GeneratePdfArchiveComma
                                     r.AutoItem().PaddingHorizontal(10).Text(editionName).FontSize(12).FontColor(Colors.Grey.Darken3);
                                     r.RelativeItem().PaddingTop(8).LineHorizontal(1).LineColor(redAccent);
                                 });
-
-                                // Главный заголовок
+                                
                                 col.Item().PaddingVertical(10).AlignCenter().Text(titleText).FontSize(30).Bold().FontColor(Colors.Black);
-
-                                // Сетка 5x5
+                                
                                 col.Item().Table(table => 
                                 {
                                     table.ColumnsDefinition(columns =>
@@ -95,12 +88,13 @@ public class GeneratePdfArchiveHandler : IRequestHandler<GeneratePdfArchiveComma
                                         string artist = song?.Artist ?? "";
 
                                         table.Cell().Row((uint)cell.Row + 1).Column((uint)cell.Column + 1)
-                                            .Padding(4) // Уменьшен отступ
+                                            .Padding(5)
                                             .Element(e => e
                                                 .Border(1.5f).BorderColor(redAccent)
                                                 .Background(cellBackgroundColor)
-                                                .Padding(4)
-                                                .Height(52) // Уменьшена высота ячейки, чтобы точно всё влезло на 1 страницу
+                                                .Padding(5)
+                                                .CornerRadius(10)
+                                                .Height(55)
                                                 .AlignCenter().AlignMiddle()
                                                 .Column(c => 
                                                 {
@@ -111,7 +105,6 @@ public class GeneratePdfArchiveHandler : IRequestHandler<GeneratePdfArchiveComma
                                     }
                                 });
 
-                                // Подвал
                                 col.Item().PaddingTop(15).Row(r => {
                                     r.RelativeItem().PaddingTop(8).LineHorizontal(1).LineColor(redAccent);
                                     r.AutoItem().PaddingHorizontal(10).Text(footerText).FontSize(12).FontColor(Colors.Grey.Darken3);
@@ -119,17 +112,14 @@ public class GeneratePdfArchiveHandler : IRequestHandler<GeneratePdfArchiveComma
                                 });
                             });
 
-                            // Линия отреза
                             row.AutoItem().Width(1).Background(redAccent);
 
-                            // Правая часть (Правила)
                             row.RelativeItem(1).Padding(20).Column(col => 
                             {
                                 col.Spacing(15);
-                                col.Item().AlignCenter().Text("✂  твоя уникальная песня").FontSize(10).FontColor(Colors.Grey.Darken2);
+                                col.Item().AlignCenter().Text("Твоя уникальная песня в центре").FontSize(10).FontColor(Colors.Grey.Darken2);
                                 col.Item().AlignCenter().Text(rulesTitle).FontSize(12).SemiBold();
 
-                                // Рисуем 3 мини-сетки правил
                                 DrawMiniGrid(col, "5 песен подряд в одном ряду", "horizontal", redAccent);
                                 DrawMiniGrid(col, "5 песен подряд в одной колонке", "vertical", redAccent);
                                 DrawMiniGrid(col, "комбинация из всех песен", "full", redAccent);
