@@ -23,9 +23,18 @@ import EditSlideModal from '../../components/EditSlideModal/EditSlideModal';
 import type { Slide } from '../../components/EditSlideModal/EditSlideModal';
 import './Presentation.css';
 import { apiFetch } from '../../utils/api';
-
 import PlayIcon from '../../assets/Presentation/Иконка в кнопке запустить.svg';
 import PreviewIcon from '../../assets/Presentation/Иконка в кнопке предпросмотр.svg';
+const generateUUID = () => {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+};
 
 interface SortableSlideItemProps {
     slide: Slide;
@@ -42,6 +51,11 @@ const SortableSlideItem: React.FC<SortableSlideItemProps> = ({ slide, index, onE
         opacity: isDragging ? 0.6 : 1,
         zIndex: isDragging ? 100 : 1,
     };
+
+    // Safe conversion of slide.type from number to string representation
+    const slideTypeStr = typeof slide.type === 'number'
+        ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][slide.type] || 'Title'
+        : String(slide.type);
 
     const getSlideTypeName = (type: string) => {
         switch (type) {
@@ -80,8 +94,8 @@ const SortableSlideItem: React.FC<SortableSlideItemProps> = ({ slide, index, onE
                 </svg>
             </div>
 
-            <div className={`slide-icon-box type-${slide.type.toLowerCase()}`}>
-                <span style={{ fontSize: '20px' }}>{renderIcon(slide.type)}</span>
+            <div className={`slide-icon-box type-${slideTypeStr.toLowerCase()}`}>
+                <span style={{ fontSize: '20px' }}>{renderIcon(slideTypeStr)}</span>
             </div>
 
             <div className="slide-texts">
@@ -89,10 +103,10 @@ const SortableSlideItem: React.FC<SortableSlideItemProps> = ({ slide, index, onE
                     <span className="slide-number">Слайд {index + 1}</span>
                     {slide.isRequired && <span className="slide-badge">Обязательный</span>}
                 </div>
-                <div className="slide-main-title">{slide.title || getSlideTypeName(slide.type)}</div>
+                <div className="slide-main-title">{slide.title || getSlideTypeName(slideTypeStr)}</div>
                 <div className="slide-subtitle">
-                    {slide.type === 'Song' 
-                        ? (slide.content || 'Исполнитель не указан') 
+                    {slideTypeStr === 'Song'
+                        ? (slide.content || 'Исполнитель не указан')
                         : (slide.content ? (slide.content.length > 80 ? slide.content.substring(0, 80) + '...' : slide.content) : 'Нет дополнительного контента')}
                 </div>
             </div>
@@ -128,7 +142,7 @@ const Presentation: React.FC = () => {
             if (!activeSessionId) {
                 // Fallback to localStorage or fetch latest session from API
                 activeSessionId = localStorage.getItem('currentGameSessionId');
-                
+
                 if (!activeSessionId) {
                     try {
                         const response = await apiFetch('/api/Games');
@@ -163,10 +177,17 @@ const Presentation: React.FC = () => {
             const response = await apiFetch(`/api/Games/${sid}/presentation`);
             if (response.ok) {
                 const data = await response.json();
-                setSlides(data || []);
-                
-                // Find Game Title
-                const titleSlide = data.find((s: Slide) => s.type === 'Title');
+                const slidesList = Array.isArray(data) ? data : [];
+                setSlides(slidesList);
+
+                // Find Game Title safely
+                const titleSlide = slidesList.find((s: Slide) => {
+                    const typeStr = typeof s.type === 'number'
+                        ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type]
+                        : String(s.type);
+                    return typeStr === 'Title';
+                });
+
                 if (titleSlide && titleSlide.title) {
                     setGameName(titleSlide.title);
                 }
@@ -213,6 +234,42 @@ const Presentation: React.FC = () => {
                 });
             } catch (error) {
                 console.error('Ошибка сохранения порядка слайдов:', error);
+            }
+        }
+    };
+
+    const handleAddSlideClick = async () => {
+        const newSlide: Slide = {
+            id: generateUUID(),
+            type: 'GameBoard',
+            title: 'Новый слайд игрового поля',
+            content: 'Введите текст на слайде...',
+            backgroundColor: '#1E293B',
+            order: slides.length + 1,
+            isRequired: false
+        };
+
+        const newSlides = [...slides, newSlide].map((s, idx) => ({
+            ...s,
+            order: idx + 1
+        }));
+
+        setSlides(newSlides);
+
+        if (sessionId) {
+            try {
+                const response = await apiFetch(`/api/Games/${sessionId}/presentation`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ slides: newSlides })
+                });
+
+                if (!response.ok) {
+                    alert('Не удалось сохранить новый слайд на сервере');
+                }
+            } catch (error) {
+                console.error('Ошибка сохранения нового слайда:', error);
+                alert('Ошибка сети при сохранении нового слайда');
             }
         }
     };
@@ -288,15 +345,15 @@ const Presentation: React.FC = () => {
                         <div className="presentation-header">
                             <h1 className="game-title">{gameName}</h1>
                             <div className="presentation-actions">
-                                <button className="btn-add-slide" onClick={() => alert('Слайды добавляются автоматически при генерации игр в Личном Кабинете!')}>
+                                <button className="btn-add-slide" onClick={handleAddSlideClick}>
                                     <span className="plus-icon">+</span>
                                     Добавить слайд
                                 </button>
-                                <button className="btn-preview-scenario" onClick={() => alert('Режим предпросмотра сценария...')}>
+                                <button className="btn-preview-scenario" onClick={() => navigate(`/gameplay?sessionId=${sessionId}&preview=true`)}>
                                     <img src={PreviewIcon} alt="Preview" />
                                     Предпросмотр
                                 </button>
-                                <button className="btn-play-scenario" onClick={() => alert('Запуск игрового сценария для игроков...')}>
+                                <button className="btn-play-scenario" onClick={() => navigate(`/gameplay?sessionId=${sessionId}`)}>
                                     <img src={PlayIcon} alt="Play" />
                                     Запустить
                                 </button>
@@ -313,11 +370,11 @@ const Presentation: React.FC = () => {
                                 <SortableContext items={slides.map(s => s.id)} strategy={verticalListSortingStrategy}>
                                     <div className="slides-list">
                                         {slides.map((slide, index) => (
-                                            <SortableSlideItem 
-                                                key={slide.id} 
-                                                slide={slide} 
-                                                index={index} 
-                                                onEdit={handleEditSlideClick} 
+                                            <SortableSlideItem
+                                                key={slide.id}
+                                                slide={slide}
+                                                index={index}
+                                                onEdit={handleEditSlideClick}
                                             />
                                         ))}
                                     </div>

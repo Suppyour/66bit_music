@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import CreateGameModal from '../../components/CreateGameModal/CreateGameModal';
 import {
     DndContext,
     closestCenter,
@@ -74,9 +76,44 @@ const SortableCell = ({ cell, song }: { cell: CardCellData; song?: Song }) => {
 
 
 const Generator: React.FC = () => {
+    const navigate = useNavigate();
     const [cardCount, setCardCount] = useState<number>(20);
     const [selectedSongs, setSelectedSongs] = useState<Song[]>([]);
     const [isSelectModalOpen, setIsSelectModalOpen] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+    useEffect(() => {
+        const fetchAllSongs = async () => {
+            try {
+                const response = await apiFetch('/api/Songs');
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    const generatorSongsJson = localStorage.getItem('generatorSelectedSongIds');
+                    if (generatorSongsJson) {
+                        try {
+                            const selectedIds: string[] = JSON.parse(generatorSongsJson);
+                            const filtered = data.filter((s: any) => selectedIds.includes(s.id));
+                            setSelectedSongs(filtered);
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Ошибка при получении всех песен в генераторе:", error);
+            }
+        };
+        fetchAllSongs();
+    }, []);
+
+    const handleGoToPresentation = () => {
+        if (selectedSongs.length < 25) {
+            alert('Пожалуйста, сначала выберите минимум 25 песен из библиотеки!');
+            return;
+        }
+        setIsCreateModalOpen(true);
+    };
 
     const [generatedCards, setGeneratedCards] = useState<CardDto[]>([]);
     const [currentCardIndex, setCurrentCardIndex] = useState<number>(0);
@@ -247,7 +284,7 @@ const Generator: React.FC = () => {
                     </div>
 
                     <div className="settings-right">
-                        <button className="btn-presentation">Перейти к презентации</button>
+                        <button className="btn-presentation" onClick={handleGoToPresentation}>Перейти к презентации</button>
                         <button
                             className="btn-generate"
                             onClick={handleGenerate}
@@ -380,9 +417,24 @@ const Generator: React.FC = () => {
             <SelectSongsModal
                 isOpen={isSelectModalOpen}
                 onClose={() => setIsSelectModalOpen(false)}
-                onSelect={(songs) => setSelectedSongs(songs)}
+                onSelect={(songs) => {
+                    setSelectedSongs(songs);
+                    localStorage.setItem('generatorSelectedSongIds', JSON.stringify(songs.map(s => s.id)));
+                }}
                 initialSelectedIds={selectedSongs.map(s => s.id)}
             />
+
+            {isCreateModalOpen && (
+                <CreateGameModal
+                    isOpen={isCreateModalOpen}
+                    onClose={() => setIsCreateModalOpen(false)}
+                    songs={selectedSongs}
+                    onGameCreated={(gameId) => {
+                        setIsCreateModalOpen(false);
+                        navigate(`/presentation?sessionId=${gameId}`);
+                    }}
+                />
+            )}
         </div>
     );
 };

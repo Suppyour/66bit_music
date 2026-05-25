@@ -24,6 +24,8 @@ const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, song
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const [selectedSongsPool, setSelectedSongsPool] = useState<Song[]>(songs);
+
     useEffect(() => {
         if (isOpen) {
             setName('');
@@ -31,8 +33,25 @@ const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, song
             setCardSize('');
             setRules(0);
             setError(null);
+
+            const generatorSongsJson = localStorage.getItem('generatorSelectedSongIds');
+            if (generatorSongsJson) {
+                try {
+                    const selectedIds: string[] = JSON.parse(generatorSongsJson);
+                    if (selectedIds.length > 0) {
+                        const filtered = songs.filter(s => selectedIds.includes(s.id));
+                        if (filtered.length > 0) {
+                            setSelectedSongsPool(filtered);
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+            setSelectedSongsPool(songs);
         }
-    }, [isOpen]);
+    }, [isOpen, songs]);
 
     if (!isOpen) return null;
 
@@ -53,8 +72,8 @@ const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, song
         if (rules === 0) { setError("Выберите хотя бы одно правило победы"); return; }
 
         const requiredSongs = cSize * cSize;
-        if (songs.length < requiredSongs) {
-            setError(`В библиотеке недостаточно песен. Нужно минимум ${requiredSongs}.`);
+        if (selectedSongsPool.length < requiredSongs) {
+            setError(`Выбранного пула песен недостаточно. Нужно минимум ${requiredSongs} (выбрано: ${selectedSongsPool.length}).`);
             return;
         }
 
@@ -69,8 +88,7 @@ const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, song
                     participantsCount: pCount,
                     cardSize: cSize,
                     rules,
-
-                    selectedSongIds: songs.map(s => s.id)
+                    selectedSongIds: selectedSongsPool.map(s => s.id)
                 })
             });
 
@@ -100,7 +118,7 @@ const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, song
                         <img src={logoIcon} alt="Logo" />
                     </div>
                     <h2 className="cgm-title">Создание новой игры</h2>
-                    <p className="cgm-subtitle">Заполните поля для настройки вашей игровой сессии</p>
+                    <p className="cgm-subtitle">Заполните поля для настройки ({selectedSongsPool.length} песен в пуле игры)</p>
                 </div>
 
                 {error && <div className="cgm-error">{error}</div>}

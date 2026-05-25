@@ -36,6 +36,11 @@ const EditSlideModal: React.FC<EditSlideModalProps> = ({
     onClose,
     onSave,
 }) => {
+    // Safe conversion of slide.type from number to string representation
+    const slideTypeStr = typeof slide.type === 'number'
+        ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][slide.type] || 'Title'
+        : String(slide.type);
+
     const [title, setTitle] = useState(slide.title || '');
     const [content, setContent] = useState(slide.content || '');
     const [bgColor, setBgColor] = useState(slide.backgroundColor || '#2563EB');
@@ -139,16 +144,16 @@ const EditSlideModal: React.FC<EditSlideModalProps> = ({
                 </button>
 
                 <h2 className="edit-slide-modal-title">
-                    {slide.type === 'Title' && 'Редактирование титульного слайда'}
-                    {slide.type === 'Rules' && 'Редактирование правила игры'}
-                    {slide.type === 'GameBoard' && 'Редактирование игрового поля'}
-                    {slide.type === 'QrCode' && 'Редактирование QR-кода'}
-                    {slide.type === 'Song' && 'Редактирование слайда песни'}
-                    {slide.type === 'Winner' && 'Редактирование слайда победителя'}
+                    {slideTypeStr === 'Title' && 'Редактирование титульного слайда'}
+                    {slideTypeStr === 'Rules' && 'Редактирование правила игры'}
+                    {slideTypeStr === 'GameBoard' && 'Редактирование игрового поля'}
+                    {slideTypeStr === 'QrCode' && 'Редактирование QR-кода'}
+                    {slideTypeStr === 'Song' && 'Редактирование слайда песни'}
+                    {slideTypeStr === 'Winner' && 'Редактирование слайда победителя'}
                 </h2>
 
                 <div className="edit-slide-modal-content">
-                    {slide.type === 'Title' && (
+                    {(slideTypeStr === 'Title' || slideTypeStr === 'GameBoard') && (
                         <div className="edit-slide-field-group">
                             <label className="edit-slide-field-label">Название</label>
                             <input
@@ -156,12 +161,12 @@ const EditSlideModal: React.FC<EditSlideModalProps> = ({
                                 className="edit-slide-field-input"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
-                                placeholder="Введите название игры"
+                                placeholder={slideTypeStr === 'Title' ? "Введите название игры" : "Введите заголовок слайда"}
                             />
                         </div>
                     )}
 
-                    {slide.type === 'Rules' && (
+                    {slideTypeStr === 'Rules' && (
                         <div className="edit-slide-field-group">
                             <label className="edit-slide-field-label">Текст правил</label>
                             <div className="rules-editor-toolbar">
@@ -199,7 +204,7 @@ const EditSlideModal: React.FC<EditSlideModalProps> = ({
                         </div>
                     )}
 
-                    {(slide.type === 'GameBoard' || slide.type === 'QrCode' || slide.type === 'Winner') && (
+                    {(slideTypeStr === 'GameBoard' || slideTypeStr === 'QrCode' || slideTypeStr === 'Winner') && (
                         <div className="edit-slide-field-group">
                             <label className="edit-slide-field-label">Текст</label>
                             <input
@@ -208,13 +213,13 @@ const EditSlideModal: React.FC<EditSlideModalProps> = ({
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}
                                 placeholder={
-                                    slide.type === 'QrCode' ? 'Ссылка для входа' : 'Введите текст на слайде'
+                                    slideTypeStr === 'QrCode' ? 'Ссылка для входа' : 'Введите текст на слайде'
                                 }
                             />
                         </div>
                     )}
 
-                    {slide.type === 'Song' && (
+                    {slideTypeStr === 'Song' && (
                         <>
                             <div className="edit-slide-field-group">
                                 <label className="edit-slide-field-label">Название песни</label>

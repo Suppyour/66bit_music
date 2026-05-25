@@ -104,7 +104,7 @@ public class CreateGameSessionHandler : IRequestHandler<CreateGameSessionCommand
             Content = "musloto/join",
             BackgroundColor = "#16A34A",
             Order = 4,
-            IsRequired = true
+            IsRequired = false
         });
 
         int orderIndex = 5;

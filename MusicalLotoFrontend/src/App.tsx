@@ -9,6 +9,7 @@ import SongLibrary from './pages/SongLibrary/SongLibrary';
 import Cabinet from './pages/Cabinet/Cabinet';
 import Generator from './pages/Generator/Generator';
 import Presentation from './pages/Presentation/Presentation';
+import Gameplay from './pages/Gameplay/Gameplay';
 
 import { MusicProvider } from './context/MusicContext';
 import MusicPlayer from './components/MusicPlayer/MusicPlayer';
@@ -42,6 +43,7 @@ function App() {
           <Route path="/cabinet" element={<Cabinet />} />
           <Route path="/generator" element={<Generator />} />
           <Route path="/presentation" element={<Presentation />} />
+          <Route path="/gameplay" element={<Gameplay />} />
         </Routes>
         
         <LoginModal 

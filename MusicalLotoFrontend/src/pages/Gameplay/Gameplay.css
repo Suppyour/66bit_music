@@ -1,0 +1,618 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.gameplay-wrapper {
+    min-height: 100vh;
+    background-color: #F8FAFC;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    flex-direction: column;
+}
+
+.gameplay-header-title {
+    margin-top: 32px;
+    margin-bottom: 24px;
+    font-family: 'Inter', sans-serif;
+}
+
+.gameplay-header-title h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 6px 0;
+    letter-spacing: -0.02em;
+}
+
+.gameplay-header-title p {
+    font-size: 16px;
+    color: #6B7280;
+    font-weight: 500;
+    margin: 0;
+}
+
+/* Трехколоночная сетка */
+.gameplay-main-grid {
+    display: grid;
+    grid-template-columns: 280px 1fr 300px;
+    gap: 24px;
+    align-items: start;
+    flex: 1;
+    padding-bottom: 60px;
+}
+
+@media (max-width: 1024px) {
+    .gameplay-main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Стили сайдбаров (левого и правого) */
+.gameplay-sidebar {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-heading {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 20px 0;
+    letter-spacing: -0.01em;
+}
+
+/* Левый сайдбар: Сценарий */
+.scenario-sidebar {
+    height: calc(100vh - 220px);
+    position: sticky;
+    top: 24px;
+}
+
+.scenario-list-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+    flex: 1;
+    padding-right: 4px;
+}
+
+.scenario-list-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.scenario-list-scroll::-webkit-scrollbar-thumb {
+    background-color: #E5E7EB;
+    border-radius: 3px;
+}
+
+.scenario-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    border: 1px solid transparent;
+}
+
+.scenario-item:hover {
+    background-color: #F9FAFB;
+}
+
+.scenario-item.active {
+    background-color: #EFF6FF;
+    border-color: #DBEAFE;
+}
+
+.scenario-icon-box {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: #F3F4F6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.scenario-item.active .scenario-icon-box {
+    background: #3B82F6;
+    color: #FFFFFF;
+}
+
+.scenario-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+}
+
+.scenario-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.scenario-item.active .scenario-title {
+    color: #1E40AF;
+}
+
+.scenario-desc {
+    font-size: 12px;
+    color: #9CA3AF;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.scenario-item.active .scenario-desc {
+    color: #60A5FA;
+}
+
+/* Центральная колонка */
+.gameplay-center {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.active-slide-card {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 24px;
+    padding: 32px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.02);
+    box-sizing: border-box;
+}
+
+.active-slide-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #9CA3AF;
+    letter-spacing: 0.1em;
+    margin-bottom: 20px;
+}
+
+/* Слайд-превью бокс */
+.slide-preview-box {
+    height: 340px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFFFFF;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.15);
+    margin-bottom: 28px;
+    transition: background 0.3s ease;
+}
+
+.slide-preview-content {
+    padding: 24px;
+    text-align: center;
+    width: 100%;
+    max-width: 520px;
+    z-index: 2;
+    box-sizing: border-box;
+}
+
+.slide-view-logo {
+    font-size: 48px;
+    margin-bottom: 12px;
+    animation: pulse 2s infinite;
+}
+
+/* Рендеринг типов слайдов */
+.slide-title-view .title-view-heading {
+    font-size: 28px;
+    font-weight: 800;
+    margin: 0 0 6px 0;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+}
+
+.slide-title-view .title-view-desc {
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0.8;
+    letter-spacing: 0.15em;
+    margin: 0;
+}
+
+.slide-rules-view h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+    letter-spacing: 0.05em;
+}
+
+.rules-markdown-card {
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(4px);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: left;
+    max-height: 180px;
+    overflow-y: auto;
+    font-size: 14px;
+    line-height: 1.5;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.rules-markdown-card p {
+    margin: 0 0 8px 0;
+}
+
+.rules-markdown-card p:last-child {
+    margin: 0;
+}
+
+.slide-gameboard-view h2 {
+    font-size: 24px;
+    font-weight: 800;
+    margin: 0 0 8px 0;
+}
+
+.gameboard-view-start {
+    font-size: 18px;
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+.slide-qr-view h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 16px 0;
+}
+
+.slide-qr-code-placeholder {
+    width: 130px;
+    height: 130px;
+    background: #FFFFFF;
+    border-radius: 14px;
+    margin: 0 auto 16px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.slide-qr-link {
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0.9;
+    margin: 0;
+}
+
+.slide-song-view .slide-song-badge {
+    background: rgba(255, 255, 255, 0.18);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.slide-song-title {
+    font-size: 26px;
+    font-weight: 800;
+    margin: 14px 0 6px 0;
+    letter-spacing: -0.01em;
+}
+
+.slide-song-artist {
+    font-size: 16px;
+    opacity: 0.85;
+    margin: 0 0 24px 0;
+}
+
+.btn-run-loto {
+    background: #FFFFFF;
+    color: #2563EB;
+    padding: 12px 28px;
+    border-radius: 16px;
+    border: none;
+    font-weight: 700;
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.15);
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.btn-run-loto:hover {
+    transform: translateY(-2px);
+    background-color: #F9FAFB;
+}
+
+.btn-run-loto.playing {
+    background: #EF4444;
+    color: #FFFFFF;
+    box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.25);
+}
+
+.btn-run-loto.playing:hover {
+    background-color: #DC2626;
+}
+
+.loto-status-text {
+    font-size: 12px;
+    margin-top: 8px;
+    opacity: 0.8;
+}
+
+.slide-winner-view h2 {
+    font-size: 26px;
+    font-weight: 800;
+    margin: 0 0 8px 0;
+}
+
+.winner-view-congrats {
+    font-size: 18px;
+    opacity: 0.9;
+}
+
+/* Панель шагов */
+.slide-navigation-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.btn-nav-step {
+    background: #F3F4F6;
+    color: #4B5563;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-nav-step:hover:not(:disabled) {
+    background-color: #E5E7EB;
+}
+
+.btn-nav-step:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.step-info-counter {
+    font-size: 15px;
+    font-weight: 600;
+    color: #6B7280;
+}
+
+.center-end-game-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
+.btn-end-game-session {
+    background: none;
+    border: 1px solid #EF4444;
+    color: #EF4444;
+    padding: 10px 24px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.btn-end-game-session:hover {
+    background-color: #FEF2F2;
+}
+
+/* Статистика внизу */
+.gameplay-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.gameplay-stat-box {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.01);
+}
+
+.gameplay-stat-box .stat-icon {
+    font-size: 24px;
+    background: #F8FAFC;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gameplay-stat-box .stat-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.gameplay-stat-box .stat-val {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.gameplay-stat-box .stat-lbl {
+    font-size: 12px;
+    color: #6B7280;
+    font-weight: 500;
+}
+
+/* Правый сайдбар: Проверка победителей */
+.winners-sidebar {
+    height: calc(100vh - 220px);
+    position: sticky;
+    top: 24px;
+}
+
+.winner-actions-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.btn-winner-action {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s, opacity 0.2s;
+}
+
+.btn-winner-action.check-bingo {
+    background-color: #2563EB;
+    color: #FFFFFF;
+}
+
+.btn-winner-action.check-bingo:hover:not(:disabled) {
+    background-color: #1D4ED8;
+}
+
+.btn-winner-action.confirm-bingo {
+    background-color: #2563EB;
+    color: #FFFFFF;
+}
+
+.btn-winner-action.confirm-bingo:hover:not(:disabled) {
+    background-color: #1D4ED8;
+}
+
+.btn-winner-action:disabled {
+    background-color: #F3F4F6;
+    color: #9CA3AF;
+    cursor: not-allowed;
+}
+
+.claims-list-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.claims-header {
+    font-size: 13px;
+    font-weight: 700;
+    color: #9CA3AF;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+}
+
+.empty-claims-text {
+    text-align: center;
+    color: #9CA3AF;
+    font-size: 13px;
+    padding: 24px 0;
+    border: 1px dashed #E5E7EB;
+    border-radius: 12px;
+}
+
+.claim-card {
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-sizing: border-box;
+}
+
+.claim-card.confirmed {
+    border-color: #86EFAC;
+    background: #F0FDF4;
+}
+
+.claim-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.claim-number {
+    font-size: 12px;
+    font-weight: 700;
+    color: #2563EB;
+}
+
+.claim-user-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.claim-footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.claim-time {
+    font-size: 11px;
+    color: #9CA3AF;
+}
+
+.claim-status-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 20px;
+}
+
+.claim-status-badge.pending {
+    background-color: #FFF3CD;
+    color: #856404;
+}
+
+.claim-status-badge.confirmed {
+    background-color: #D4EDDA;
+    color: #155724;
+}
+
+/* Animations */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.06);
+    }
+    100% {
+        transform: scale(1);
+    }
+}

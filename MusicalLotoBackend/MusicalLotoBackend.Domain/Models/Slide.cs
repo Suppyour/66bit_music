@@ -1,7 +1,9 @@
 using System;
+using System.Text.Json.Serialization;
 
 namespace MusicalLotoBackend.Domain.Models;
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum SlideType
 {
     Title,
