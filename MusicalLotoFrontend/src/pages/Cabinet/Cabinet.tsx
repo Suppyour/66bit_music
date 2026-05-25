@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import HeaderLibrary from '../../components/HeaderLibrary/HeaderLibrary';
 import CreateGameModal from '../../components/CreateGameModal/CreateGameModal';
 import './Cabinet.css';
@@ -29,6 +30,7 @@ export interface Song {
 }
 
 const Cabinet: React.FC = () => {
+    const navigate = useNavigate();
     const [games, setGames] = useState<Game[]>([]);
     const [songs, setSongs] = useState<Song[]>([]);
     const [totalSongs, setTotalSongs] = useState<number>(0);
@@ -163,7 +165,7 @@ const Cabinet: React.FC = () => {
                                             </div>
                                         </div>
                                         <div className="game-actions-col">
-                                            <button className="play-game-btn">
+                                            <button className="play-game-btn" onClick={() => navigate(`/presentation?sessionId=${game.id}`)}>
                                                 <img src={playBtn} alt="Play" className="play-game-icon" />
                                                 Играть
                                             </button>

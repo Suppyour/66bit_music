@@ -40,4 +40,53 @@ public class GamesController : ControllerBase
     
         return Ok(new { Message = "Сессия удалена" });
     }
+
+    [HttpGet("{sessionId}/presentation")]
+    public async Task<IActionResult> GetPresentation(Guid sessionId)
+    {
+        try
+        {
+            var slides = await _mediator.Send(new GetGamePresentationQuery { SessionId = sessionId });
+            return Ok(slides);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { Message = ex.Message });
+        }
+    }
+
+    [HttpPut("{sessionId}/presentation")]
+    public async Task<IActionResult> UpdatePresentation(Guid sessionId, [FromBody] UpdateGamePresentationCommand command)
+    {
+        var updatedCommand = new UpdateGamePresentationCommand
+        {
+            SessionId = sessionId,
+            Slides = command.Slides
+        };
+
+        var result = await _mediator.Send(updatedCommand);
+        if (!result) return NotFound(new { Message = "Сессия не найдена" });
+
+        return Ok(new { Message = "Презентация обновлена успешно" });
+    }
+
+    [HttpPost("{sessionId}/presentation/slides/{slideId}/background")]
+    public async Task<IActionResult> UploadSlideBackground(Guid sessionId, Guid slideId, IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { Message = "Файл изображения отсутствует" });
+
+        var command = new UploadSlideBackgroundCommand
+        {
+            SessionId = sessionId,
+            SlideId = slideId,
+            BackgroundImageFile = file
+        };
+
+        var resultUrl = await _mediator.Send(command);
+        if (resultUrl == null)
+            return NotFound(new { Message = "Сессия или слайд не найдены" });
+
+        return Ok(new { Url = resultUrl });
+    }
 }

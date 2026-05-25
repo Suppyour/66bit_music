@@ -234,4 +234,70 @@
     stroke: #3B82F6;
 }
 
+/* Polished Dragging & Loading Styles */
+.slide-item.dragging {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+    background-color: #F9FAFB;
+    border-color: #3B82F6;
+    cursor: grabbing;
+}
+
+.presentation-page.loading-screen,
+.presentation-page.empty-screen {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #F8FAFC;
+}
+
+.loader-container,
+.empty-message-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    text-align: center;
+    padding: 40px;
+    font-family: 'Inter', sans-serif;
+}
+
+.loader-container p {
+    margin-top: 16px;
+    font-size: 16px;
+    color: #6B7280;
+    font-weight: 500;
+}
+
+.empty-message-container h2 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 12px;
+}
+
+.empty-message-container p {
+    font-size: 16px;
+    color: #6B7280;
+    max-width: 460px;
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+.spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid #E5E7EB;
+    border-top-color: #2563EB;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
 

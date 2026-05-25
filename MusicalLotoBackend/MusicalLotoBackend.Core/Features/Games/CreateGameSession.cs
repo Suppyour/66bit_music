@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using MusicalLotoBackend.Database;
 using MusicalLotoBackend.Domain.Models;
 
@@ -59,6 +60,78 @@ public class CreateGameSessionHandler : IRequestHandler<CreateGameSessionCommand
         };
 
         session.Cards = GenerateUniqueCards(request.ParticipantsCount, request.CardSize, request.SelectedSongIds);
+
+        // Fetch song details to construct presentation slides
+        var songsDict = await _dbContext.Songs
+            .Where(s => request.SelectedSongIds.Contains(s.Id))
+            .ToDictionaryAsync(s => s.Id, cancellationToken);
+
+        // Populate default slides
+        session.Slides.Add(new Slide
+        {
+            Type = SlideType.Title,
+            Title = request.Name,
+            Content = "",
+            BackgroundColor = "#2168F5",
+            Order = 1,
+            IsRequired = true
+        });
+
+        session.Slides.Add(new Slide
+        {
+            Type = SlideType.Rules,
+            Title = "Правила игры",
+            Content = $"Правила:\n- Количество карточек: {request.ParticipantsCount}\n- Выигрышная комбинация: {(request.Rules == WinningRules.None ? "Свободная игра" : request.Rules.ToString())}",
+            BackgroundColor = "#EA580C",
+            Order = 2,
+            IsRequired = true
+        });
+
+        session.Slides.Add(new Slide
+        {
+            Type = SlideType.GameBoard,
+            Title = "Игровое поле",
+            Content = "Игра началась",
+            BackgroundColor = "#1E293B",
+            Order = 3,
+            IsRequired = true
+        });
+
+        session.Slides.Add(new Slide
+        {
+            Type = SlideType.QrCode,
+            Title = "QR-код для входа",
+            Content = "musloto/join",
+            BackgroundColor = "#16A34A",
+            Order = 4,
+            IsRequired = true
+        });
+
+        int orderIndex = 5;
+        foreach (var songId in randomizedPlaylist)
+        {
+            songsDict.TryGetValue(songId, out var song);
+            session.Slides.Add(new Slide
+            {
+                Type = SlideType.Song,
+                SongId = songId,
+                Title = song?.Title ?? "Неизвестная песня",
+                Content = song?.Artist ?? "Неизвестный исполнитель",
+                BackgroundColor = "#2168F5",
+                Order = orderIndex++,
+                IsRequired = false
+            });
+        }
+
+        session.Slides.Add(new Slide
+        {
+            Type = SlideType.Winner,
+            Title = "Слайд победителя",
+            Content = "Финал и поздравление",
+            BackgroundColor = "#CA8A04",
+            Order = orderIndex,
+            IsRequired = true
+        });
 
         _dbContext.Sessions.Add(session);
         await _dbContext.SaveChangesAsync(cancellationToken);

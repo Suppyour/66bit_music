@@ -21,5 +21,9 @@ public class AppDbContext : DbContext
         {
             cells.ToJson();
         });
+        modelBuilder.Entity<GameSession>().OwnsMany(session => session.Slides, slides =>
+        {
+            slides.ToJson();
+        });
     }
 }
