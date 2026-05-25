@@ -1,27 +1,84 @@
-name: Deploy to VPS
+name: Build and Deploy to VPS
 
 on:
   push:
     branches:
       - main
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
-  deploy:
+  build-and-push:
     runs-on: ubuntu-latest
     steps:
-      - name: Выполнение команд на сервере по SSH
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          host: ${{ secrets.VPS_HOST }}       
-          username: ${{ secrets.VPS_USERNAME }}   
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push API Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./MusicalLotoBackend
+          file: ./MusicalLotoBackend/Dockerfile
+          push: true
+          tags: ghcr.io/suppyour/music_loto_api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and Push Frontend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./MusicalLotoFrontend
+          file: ./MusicalLotoFrontend/Dockerfile
+          push: true
+          tags: ghcr.io/suppyour/music_loto_frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
           password: ${{ secrets.PASSWORD }}
+          # Alternatively, use private keys which is safer:
+          # key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: GITHUB_TOKEN,GITHUB_ACTOR
           command_timeout: 30m
           script: |
             cd ~/66bit_music
             
+            # Pull the latest changes (like docker-compose.yml)
             git reset --hard
             git pull origin main
             
-            docker compose up -d --build
+            # Create production .env file dynamically from GitHub Secret
+            echo "${{ secrets.ENV_FILE }}" > .env
             
+            # Login to GHCR on the VPS and pull the latest images
+            echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+            docker compose pull
+            
+            # Up the new services
+            docker compose up -d
+            
+            # Prune old images to free up disk space
             docker image prune -f

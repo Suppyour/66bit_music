@@ -1,13 +1,11 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:16-alpine
     container_name: music_loto_db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: misha
-      POSTGRES_DB: MusicLotoDb
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "127.0.0.1:5433:5432"
     volumes:
@@ -15,6 +13,7 @@ services:
     restart: unless-stopped
 
   api:
+    image: ghcr.io/suppyour/music_loto_api:latest
     build:
       context: ./MusicalLotoBackend
       dockerfile: Dockerfile
@@ -26,14 +25,15 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_HTTP_PORTS=8080
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=MusicLotoDb;Username=postgres;Password=misha
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}
       - Minio__Endpoint=minio:9000
-      - Minio__PublicEndpoint=s3.porsev.space
+      - Minio__PublicEndpoint=${MINIO_PUBLIC_ENDPOINT}
     volumes:
       - app_wwwroot:/app/wwwroot
     restart: unless-stopped
 
   frontend:
+    image: ghcr.io/suppyour/music_loto_frontend:latest
     build:
       context: ./MusicalLotoFrontend
       dockerfile: Dockerfile
@@ -48,8 +48,8 @@ services:
     image: minio/minio:latest
     container_name: music_loto_minio
     environment:
-      MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: password
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
       - "127.0.0.1:9000:9000"
       - "127.0.0.1:9001:9001"
@@ -64,7 +64,13 @@ services:
     depends_on:
       - minio
     entrypoint: >
-      /bin/sh -c " sleep 5; /usr/bin/mc alias set myminio http://minio:9000 admin password; /usr/bin/mc mb myminio/music-loto --ignore-existing; /usr/bin/mc anonymous set download myminio/music-loto; exit 0; "
+      /bin/sh -c "
+      sleep 5;
+      /usr/bin/mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+      /usr/bin/mc mb myminio/music-loto --ignore-existing;
+      /usr/bin/mc anonymous set download myminio/music-loto;
+      exit 0;
+      "
 
 volumes:
   postgres_data:
