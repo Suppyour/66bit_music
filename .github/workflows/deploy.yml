@@ -59,7 +59,6 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           password: ${{ secrets.PASSWORD }}
-          # Alternatively, use private keys which is safer:
           # key: ${{ secrets.SSH_PRIVATE_KEY }}
           envs: GITHUB_TOKEN,GITHUB_ACTOR
           command_timeout: 30m
@@ -70,8 +69,13 @@ jobs:
             git reset --hard
             git pull origin main
             
-            # Create production .env file dynamically from GitHub Secret
-            echo "${{ secrets.ENV_FILE }}" > .env
+            # Create production .env file dynamically from individual GitHub Secrets
+            echo "DB_USER=${{ secrets.DB_USER }}" > .env
+            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+            echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+            echo "MINIO_ROOT_USER=${{ secrets.MINIO_ROOT_USER }}" >> .env
+            echo "MINIO_ROOT_PASSWORD=${{ secrets.MINIO_ROOT_PASSWORD }}" >> .env
+            echo "MINIO_PUBLIC_ENDPOINT=${{ secrets.MINIO_PUBLIC_ENDPOINT }}" >> .env
             
             # Login to GHCR on the VPS and pull the latest images
             echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
