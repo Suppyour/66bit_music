@@ -15,6 +15,8 @@ public class GameSession : BaseEntity
     public bool IsVerticalClaimed { get; set; } = false;
     public bool IsFullCardClaimed { get; set; } = false;
     public List<Slide> Slides { get; set; } = new();
+    
+    public Guid UserId { get; set; }
 
 }
 

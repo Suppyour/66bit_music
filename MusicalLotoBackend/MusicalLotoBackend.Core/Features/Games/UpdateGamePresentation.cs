@@ -14,6 +14,7 @@ public class UpdateGamePresentationCommand : IRequest<bool>
 {
     public Guid SessionId { get; init; }
     public required List<SlideUpdateDto> Slides { get; init; }
+    public Guid UserId { get; set; }
 }
 
 public class SlideUpdateDto
@@ -40,7 +41,7 @@ public class UpdateGamePresentationHandler : IRequestHandler<UpdateGamePresentat
         var session = await _dbContext.Sessions
             .FirstOrDefaultAsync(s => s.Id == request.SessionId, cancellationToken);
 
-        if (session == null) return false;
+        if (session == null || session.UserId != request.UserId) return false;
 
         foreach (var slideDto in request.Slides)
         {

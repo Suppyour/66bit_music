@@ -29,6 +29,7 @@ public class SongsController : ControllerBase
     }
 
     [HttpPost]
+    [RequestSizeLimit(104857600)] // 100 MB
     public async Task<IActionResult> CreateSong([FromForm] CreateSongCommand command)
     {
         try
@@ -64,6 +65,7 @@ public class SongsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [RequestSizeLimit(104857600)] // 100 MB
     public async Task<IActionResult> UpdateSong(Guid id, [FromForm] UpdateSongCommand command)
     {
         try

@@ -15,6 +15,7 @@ public class UploadSlideBackgroundCommand : IRequest<string?>
     public Guid SessionId { get; init; }
     public Guid SlideId { get; init; }
     public required IFormFile BackgroundImageFile { get; init; }
+    public Guid UserId { get; set; }
 }
 
 public class UploadSlideBackgroundHandler : IRequestHandler<UploadSlideBackgroundCommand, string?>
@@ -33,7 +34,7 @@ public class UploadSlideBackgroundHandler : IRequestHandler<UploadSlideBackgroun
         var session = await _dbContext.Sessions
             .FirstOrDefaultAsync(s => s.Id == request.SessionId, cancellationToken);
 
-        if (session == null) return null;
+        if (session == null || session.UserId != request.UserId) return null;
 
         var slide = session.Slides.FirstOrDefault(s => s.Id == request.SlideId);
         if (slide == null) return null;

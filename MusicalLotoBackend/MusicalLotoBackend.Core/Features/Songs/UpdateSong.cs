@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using MediatR;
 using MusicalLotoBackend.Database;
 using MusicalLotoBackend.Domain.Models;
+using MusicalLotoBackend.Core.Services;
 
 namespace MusicalLotoBackend.Core.Features.Songs;
 
@@ -24,10 +25,12 @@ public class UpdateSongCommand : IRequest<bool>
 public class UpdateSongHandler : IRequestHandler<UpdateSongCommand, bool>
 {
     private readonly AppDbContext _dbContext;
+    private readonly IFileStorageService _fileStorageService;
 
-    public UpdateSongHandler(AppDbContext dbContext)
+    public UpdateSongHandler(AppDbContext dbContext, IFileStorageService fileStorageService)
     {
         _dbContext = dbContext;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<bool> Handle(UpdateSongCommand request, CancellationToken cancellationToken)
@@ -40,81 +43,55 @@ public class UpdateSongHandler : IRequestHandler<UpdateSongCommand, bool>
 
         if (request.AudioFile != null)
         {
-            DeletePhysicalFile(song.AudioPath);
+            // Delete old audio from MinIO
+            await _fileStorageService.DeleteFileAsync(song.AudioPath, cancellationToken);
 
-            var audioPath = await SaveFileAsync(request.AudioFile, "audio", cancellationToken);
+            // Upload new audio to MinIO
+            var audioPath = await _fileStorageService.UploadFileAsync(request.AudioFile, "audio", cancellationToken);
             song.AudioPath = audioPath;
 
+            // Calculate duration using a safe temp file with correct extension
             int durationSeconds = 0;
-            var fullAudioPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", audioPath.TrimStart('/'));
+            var extension = Path.GetExtension(request.AudioFile.FileName);
+            var tempFilePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}{extension}");
             try
             {
-                using var tfile = TagLib.File.Create(fullAudioPath);
+                using (var stream = new FileStream(tempFilePath, FileMode.Create))
+                {
+                    await request.AudioFile.CopyToAsync(stream, cancellationToken);
+                }
+                using var tfile = TagLib.File.Create(tempFilePath);
                 durationSeconds = (int)tfile.Properties.Duration.TotalSeconds;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Не удалось прочитать длительность: {ex.Message}");
             }
+            finally
+            {
+                if (File.Exists(tempFilePath))
+                {
+                    File.Delete(tempFilePath);
+                }
+            }
             song.DurationSeconds = durationSeconds;
         }
 
         if (request.BackgroundImageFile != null)
         {
+            // Delete old background image from MinIO if exists
             if (song.BackgoundImagePath != null)
             {
-                DeletePhysicalFile(song.BackgoundImagePath);
+                await _fileStorageService.DeleteFileAsync(song.BackgoundImagePath, cancellationToken);
             }
-            song.BackgoundImagePath = await SaveFileAsync(request.BackgroundImageFile, "images", cancellationToken);
+
+            // Upload new background image to MinIO
+            var imagePath = await _fileStorageService.UploadFileAsync(request.BackgroundImageFile, "images", cancellationToken);
+            song.BackgoundImagePath = imagePath;
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return true;
-    }
-
-    private async Task<string> SaveFileAsync(IFormFile file, string folderName, CancellationToken cancellationToken)
-    {
-        var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", folderName);
-        if (!Directory.Exists(uploadsPath))
-            Directory.CreateDirectory(uploadsPath);
-        var extension = Path.GetExtension(file.FileName);
-        var uniqueFileName = $"{Guid.NewGuid()}{extension}";
-        
-        var filePath = Path.Combine(uploadsPath, uniqueFileName);
-        
-        FileStream? stream = null;
-        try
-        {
-            stream = new FileStream(filePath, FileMode.Create);
-            await file.CopyToAsync(stream, cancellationToken);
-        }
-        finally
-        {
-            if (stream != null)
-            {
-                stream.Dispose();
-            }
-        }
-
-        return $"/{folderName}/{uniqueFileName}";
-    }
-
-    private void DeletePhysicalFile(string relativePath)
-    {
-        var formattedPath = relativePath.TrimStart('/'); 
-        var physicalPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", formattedPath);
-
-        if (File.Exists(physicalPath))
-        {
-            try
-            {
-                File.Delete(physicalPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Не удалось удалить старый файл: {ex.Message}");
-            }
-        }
     }
 }

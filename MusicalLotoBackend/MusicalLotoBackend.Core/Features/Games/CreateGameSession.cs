@@ -27,6 +27,8 @@ public class CreateGameSessionCommand : IRequest<Guid>
     [Required]
     [MinLength(9, ErrorMessage = "Для игры нужно хотя бы 9 песен")]
     public required List<Guid> SelectedSongIds { get; init; }
+    
+    public Guid UserId { get; set; }
 }
 
 public class CreateGameSessionHandler : IRequestHandler<CreateGameSessionCommand, Guid>
@@ -56,7 +58,8 @@ public class CreateGameSessionHandler : IRequestHandler<CreateGameSessionCommand
             ParticipantCount = request.ParticipantsCount,
             CardSize = request.CardSize,
             Rules = request.Rules,
-            Playlist = randomizedPlaylist
+            Playlist = randomizedPlaylist,
+            UserId = request.UserId
         };
 
         session.Cards = GenerateUniqueCards(request.ParticipantsCount, request.CardSize, request.SelectedSongIds);

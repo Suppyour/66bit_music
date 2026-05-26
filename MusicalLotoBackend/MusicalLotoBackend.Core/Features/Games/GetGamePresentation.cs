@@ -13,6 +13,7 @@ namespace MusicalLotoBackend.Core.Features.Games;
 public class GetGamePresentationQuery : IRequest<List<Slide>>
 {
     public Guid SessionId { get; init; }
+    public Guid UserId { get; set; }
 }
 
 public class GetGamePresentationHandler : IRequestHandler<GetGamePresentationQuery, List<Slide>>
@@ -30,7 +31,7 @@ public class GetGamePresentationHandler : IRequestHandler<GetGamePresentationQue
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.Id == request.SessionId, cancellationToken);
 
-        if (session == null)
+        if (session == null || session.UserId != request.UserId)
             throw new KeyNotFoundException("Сессия не найдена");
 
         return session.Slides.OrderBy(s => s.Order).ToList();

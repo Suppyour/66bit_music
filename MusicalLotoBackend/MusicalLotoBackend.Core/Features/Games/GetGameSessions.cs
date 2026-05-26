@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using MusicalLotoBackend.Database;
 using MusicalLotoBackend.Domain.Models;
@@ -17,7 +17,10 @@ public class GetGameSessions
     }
 
     
-    public class GetGameSessionQuery : IRequest<List<GameSessionDto>> { }
+    public class GetGameSessionQuery : IRequest<List<GameSessionDto>>
+    {
+        public Guid UserId { get; set; }
+    }
 
     public class GetSongsHandler : IRequestHandler<GetGameSessionQuery, List<GameSessionDto>>
     {
@@ -32,6 +35,7 @@ public class GetGameSessions
         {
             var songs = await _dbContext.Sessions
                 .AsNoTracking()
+                .Where(s => s.UserId == request.UserId)
                 .Select(s => new GameSessionDto()
                 {
                     Id = s.Id,

@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using MusicalLotoBackend.Database;
 
 namespace MusicalLotoBackend.Core.Features.Games;
@@ -8,6 +8,7 @@ public class DeleteGameSession
     public class DeleteSessionCommand : IRequest<bool>
     {
         public required Guid Id { get; init; }
+        public Guid UserId { get; set; }
     }
     
     public class DeleteSessionHandler : IRequestHandler<DeleteSessionCommand, bool>
@@ -22,7 +23,7 @@ public class DeleteGameSession
         public async Task<bool> Handle(DeleteSessionCommand request, CancellationToken cancellationToken)
         {
             var session = await _dbContext.Sessions.FindAsync(new object[] { request.Id }, cancellationToken);
-            if (session == null) return false;
+            if (session == null || session.UserId != request.UserId) return false;
             _dbContext.Sessions.Remove(session);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
