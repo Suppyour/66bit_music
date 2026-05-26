@@ -14,7 +14,10 @@ public class SongDto
     public string? BackgroundImagePath { get; set; }
     public int DurationSeconds { get; set; }
 }
-public class GetSongsQuery : IRequest<List<SongDto>> { }
+public class GetSongsQuery : IRequest<List<SongDto>>
+{
+    public Guid UserId { get; set; }
+}
 
 public class GetSongsHandler : IRequestHandler<GetSongsQuery, List<SongDto>>
 {
@@ -29,6 +32,7 @@ public class GetSongsHandler : IRequestHandler<GetSongsQuery, List<SongDto>>
     {
         var songs = await _dbContext.Songs
             .AsNoTracking()
+            .Where(s => s.UserId == request.UserId)
             .Select(s => new SongDto
             {
                 Id = s.Id,

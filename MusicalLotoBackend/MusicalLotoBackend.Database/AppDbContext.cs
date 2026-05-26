@@ -25,5 +25,10 @@ public class AppDbContext : DbContext
         {
             slides.ToJson();
         });
+        modelBuilder.Entity<Song>()
+            .HasOne<User>()
+            .WithMany()
+            .HasForeignKey(s => s.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

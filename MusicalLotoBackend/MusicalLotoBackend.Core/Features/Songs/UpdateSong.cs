@@ -8,6 +8,7 @@ namespace MusicalLotoBackend.Core.Features.Songs;
 public class UpdateSongCommand : IRequest<bool>
 {
     public Guid Id { get; set; }
+    public Guid UserId { get; set; }
 
     [Required(ErrorMessage = "Название песни обязательно")]
     [MaxLength(100, ErrorMessage = "Слишком длинное название")]
@@ -32,7 +33,7 @@ public class UpdateSongHandler : IRequestHandler<UpdateSongCommand, bool>
     public async Task<bool> Handle(UpdateSongCommand request, CancellationToken cancellationToken)
     {
         var song = await _dbContext.Songs.FindAsync(new object[] { request.Id }, cancellationToken);
-        if (song == null) return false;
+        if (song == null || song.UserId != request.UserId) return false;
 
         song.Title = request.Title;
         song.Artist = request.Artist;

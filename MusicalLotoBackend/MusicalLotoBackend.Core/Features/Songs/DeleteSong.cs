@@ -6,6 +6,7 @@ namespace MusicalLotoBackend.Core.Features.Songs;
 public class DeleteSongCommand : IRequest<bool>
 {
     public required Guid Id { get; init; }
+    public Guid UserId { get; set; }
 }
 
 public class DeleteSongHandler : IRequestHandler<DeleteSongCommand, bool>
@@ -22,7 +23,7 @@ public class DeleteSongHandler : IRequestHandler<DeleteSongCommand, bool>
     public async Task<bool> Handle(DeleteSongCommand request, CancellationToken cancellationToken)
     {
         var song = await _dbContext.Songs.FindAsync(new object[] { request.Id }, cancellationToken);
-        if (song == null) return false;
+        if (song == null || song.UserId != request.UserId) return false;
         await _fileStorageService.DeleteFileAsync(song.AudioPath, cancellationToken);
         if (song.BackgoundImagePath != null)
         {

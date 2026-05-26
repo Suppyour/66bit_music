@@ -17,9 +17,29 @@ public class SongsController : ControllerBase
         _mediator = mediator;
     }
 
+    private Guid GetUserId()
+    {
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) 
+                          ?? User.FindFirst("sub");
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+        {
+            throw new UnauthorizedAccessException("Пользователь не авторизован");
+        }
+        return userId;
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateSong([FromForm] CreateSongCommand command)
     {
+        try
+        {
+            command.UserId = GetUserId();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+
         var songId = await _mediator.Send(command);
         
         return Ok(new { Id = songId });
@@ -28,14 +48,34 @@ public class SongsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetSongs()
     {
-        var songs = await _mediator.Send(new GetSongsQuery());
+        Guid userId;
+        try
+        {
+            userId = GetUserId();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+
+        var songs = await _mediator.Send(new GetSongsQuery { UserId = userId });
     
         return Ok(songs); 
     }
+
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateSong(Guid id, [FromForm] UpdateSongCommand command)
     {
-        command.Id = id;
+        try
+        {
+            command.Id = id;
+            command.UserId = GetUserId();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+
         var result = await _mediator.Send(command);
     
         if (!result) return NotFound(new { Message = "Такой песни не существует" });
@@ -46,7 +86,17 @@ public class SongsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteSong(Guid id)
     {
-        var command = new DeleteSongCommand { Id = id };
+        Guid userId;
+        try
+        {
+            userId = GetUserId();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+
+        var command = new DeleteSongCommand { Id = id, UserId = userId };
     
         var result = await _mediator.Send(command);
     

@@ -16,6 +16,7 @@ public class CreateSongCommand : IRequest<Guid>
     [Required(ErrorMessage = "Загрузите аудиофайл")]
     public required IFormFile AudioFile { get; init; }
     public IFormFile? BackgroundImageFile { get; init; }
+    public Guid UserId { get; set; }
 }
 
 public class CreateSongHandler : IRequestHandler<CreateSongCommand, Guid>
@@ -41,7 +42,8 @@ public class CreateSongHandler : IRequestHandler<CreateSongCommand, Guid>
         
         int durationSeconds = 0;
         
-        var tempFilePath = Path.GetTempFileName();
+        var extension = Path.GetExtension(request.AudioFile.FileName);
+        var tempFilePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}{extension}");
         try
         {
             using (var stream = new FileStream(tempFilePath, FileMode.Create))
@@ -69,6 +71,7 @@ public class CreateSongHandler : IRequestHandler<CreateSongCommand, Guid>
             artist: request.Artist, 
             audioPath: audioPath, 
             durationSeconds: durationSeconds,
+            userId: request.UserId,
             backgoundImagePath: imagePath
         );
 
