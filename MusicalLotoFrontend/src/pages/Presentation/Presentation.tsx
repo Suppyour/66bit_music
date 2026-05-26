@@ -178,7 +178,13 @@ const Presentation: React.FC = () => {
             if (response.ok) {
                 const data = await response.json();
                 const slidesList = Array.isArray(data) ? data : [];
-                setSlides(slidesList);
+                const filteredSlides = slidesList.filter((s: Slide) => {
+                    const typeStr = typeof s.type === 'number'
+                        ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type]
+                        : String(s.type);
+                    return typeStr !== 'QrCode';
+                });
+                setSlides(filteredSlides);
 
                 // Find Game Title safely
                 const titleSlide = slidesList.find((s: Slide) => {

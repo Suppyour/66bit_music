@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import CreateGameModal from '../../components/CreateGameModal/CreateGameModal';
 import {
     DndContext,
@@ -77,13 +77,57 @@ const SortableCell = ({ cell, song }: { cell: CardCellData; song?: Song }) => {
 
 const Generator: React.FC = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const sessionId = searchParams.get('sessionId');
+
     const [cardCount, setCardCount] = useState<number>(20);
     const [selectedSongs, setSelectedSongs] = useState<Song[]>([]);
     const [isSelectModalOpen, setIsSelectModalOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     useEffect(() => {
-        const fetchAllSongs = async () => {
+        const initializeGenerator = async () => {
+            if (sessionId) {
+                try {
+                    // Fetch the session details to get participant count
+                    const gamesResponse = await apiFetch('/api/Games');
+                    if (gamesResponse.ok) {
+                        const sessions = await gamesResponse.json();
+                        const currentSession = sessions.find((s: any) => s.id === sessionId);
+                        if (currentSession) {
+                            setCardCount(currentSession.participantCount || 20);
+                        }
+                    }
+
+                    // Fetch the presentation/slides to get the songs
+                    const presResponse = await apiFetch(`/api/Games/${sessionId}/presentation`);
+                    if (presResponse.ok) {
+                        const slidesData = await presResponse.json();
+                        const slidesList = Array.isArray(slidesData) ? slidesData : [];
+                        const songsFromSlides: Song[] = slidesList
+                            .filter((s: any) => {
+                                const typeStr = typeof s.type === 'number'
+                                    ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type]
+                                    : String(s.type);
+                                return typeStr === 'Song';
+                            })
+                            .map((s: any) => ({
+                                id: s.songId || s.id,
+                                title: s.title || '',
+                                artist: s.content || ''
+                            }));
+
+                        if (songsFromSlides.length > 0) {
+                            setSelectedSongs(songsFromSlides);
+                            return; // skip loading from localStorage
+                        }
+                    }
+                } catch (error) {
+                    console.error("Ошибка при инициализации генератора по sessionId:", error);
+                }
+            }
+
+            // Fallback / default behavior: fetch all songs and load from localStorage
             try {
                 const response = await apiFetch('/api/Songs');
                 if (response.ok) {
@@ -104,15 +148,20 @@ const Generator: React.FC = () => {
                 console.error("Ошибка при получении всех песен в генераторе:", error);
             }
         };
-        fetchAllSongs();
-    }, []);
+
+        initializeGenerator();
+    }, [sessionId]);
 
     const handleGoToPresentation = () => {
         if (selectedSongs.length < 25) {
             alert('Пожалуйста, сначала выберите минимум 25 песен из библиотеки!');
             return;
         }
-        setIsCreateModalOpen(true);
+        if (sessionId) {
+            navigate(`/presentation?sessionId=${sessionId}`);
+        } else {
+            setIsCreateModalOpen(true);
+        }
     };
 
     const [generatedCards, setGeneratedCards] = useState<CardDto[]>([]);
@@ -431,7 +480,7 @@ const Generator: React.FC = () => {
                     songs={selectedSongs}
                     onGameCreated={(gameId) => {
                         setIsCreateModalOpen(false);
-                        navigate(`/presentation?sessionId=${gameId}`);
+                        navigate(`/generator?sessionId=${gameId}`);
                     }}
                 />
             )}

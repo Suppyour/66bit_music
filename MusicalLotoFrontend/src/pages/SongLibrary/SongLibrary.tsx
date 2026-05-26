@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import HeaderLibrary from '../../components/HeaderLibrary/HeaderLibrary';
 import AddSongModal from '../../components/AddSongModal/AddSongModal';
+import EditSongModal from '../../components/EditSongModal/EditSongModal';
 import NotificationToast, { type NotificationType } from '../../components/NotificationToast/NotificationToast';
 import { apiFetch } from '../../utils/api';
 import './SongLibrary.css';
@@ -10,6 +11,42 @@ import playBtn from '../../assets/SongLibrary/Кнопка Play.svg';
 import editBtn from '../../assets/SongLibrary/Кнопка изменить.svg';
 import deleteBtn from '../../assets/SongLibrary/Кнопка удалить.svg';
 import searchIcon from '../../assets/SongLibrary/Значок лупы в строке поиска.svg';
+
+interface DeleteConfirmModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onConfirm: () => void;
+    songTitle: string;
+}
+
+const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({ isOpen, onClose, onConfirm, songTitle }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-content" style={{ maxWidth: '500px', padding: '30px' }} onClick={(e) => e.stopPropagation()}>
+                <button className="close-btn" onClick={onClose}>✕</button>
+                
+                <div style={{ textAlign: 'center', marginTop: '10px' }}>
+                    <div style={{ fontSize: '50px', marginBottom: '20px' }}>⚠️</div>
+                    <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '28px', color: '#0F172A', margin: '0 0 12px 0' }}>Удалить песню?</h2>
+                    <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '18px', color: '#64748B', margin: '0 0 30px 0', lineHeight: '24px' }}>
+                        Вы уверены, что хотите удалить песню <strong style={{ color: '#0F172A' }}>"{songTitle}"</strong>? Это действие нельзя будет отменить.
+                    </p>
+                </div>
+
+                <div className="modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                    <button className="btn-cancel" style={{ flex: 1, padding: '12px 20px', fontSize: '16px' }} onClick={onClose}>
+                        Отмена
+                    </button>
+                    <button className="btn-submit" style={{ flex: 1, padding: '12px 20px', fontSize: '16px', backgroundColor: '#EF4444' }} onClick={onConfirm}>
+                        Удалить
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 
 interface BackendSong {
@@ -21,6 +58,43 @@ interface BackendSong {
     durationSeconds?: number;
 }
 
+interface SongDurationProps {
+    audioPath: string;
+    durationSeconds?: number;
+}
+
+const SongDuration: React.FC<SongDurationProps> = ({ audioPath, durationSeconds }) => {
+    const [duration, setDuration] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (durationSeconds && durationSeconds > 0) {
+            setDuration(durationSeconds);
+            return;
+        }
+
+        const audio = new Audio(audioPath);
+        const handleLoadedMetadata = () => {
+            setDuration(audio.duration);
+        };
+        
+        audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+        audio.load();
+
+        return () => {
+            audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        };
+    }, [audioPath, durationSeconds]);
+
+    const format = (seconds: number | null) => {
+        if (seconds === null || isNaN(seconds) || seconds <= 0) return '--:--';
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+    };
+
+    return <>{format(duration)}</>;
+};
+
 import { useMusic } from '../../context/MusicContext';
 
 const SongLibrary: React.FC = () => {
@@ -28,6 +102,19 @@ const SongLibrary: React.FC = () => {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [isUploading, setIsUploading] = useState(false);
     const [showUploadForm, setShowUploadForm] = useState(false);
+    const [editingSong, setEditingSong] = useState<BackendSong | null>(null);
+    const [deletingSong, setDeletingSong] = useState<BackendSong | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredSongs = songs.filter(song => {
+        const query = searchQuery.toLowerCase().trim();
+        if (!query) return true;
+        
+        const titleMatch = song.title?.toLowerCase().includes(query);
+        const artistMatch = song.artist?.toLowerCase().includes(query);
+        
+        return titleMatch || artistMatch;
+    });
 
     const { 
         currentSong, 
@@ -49,13 +136,16 @@ const SongLibrary: React.FC = () => {
         setNotification(prev => ({ ...prev, show: false }));
     }, []);
 
-    const handleDeleteSong = async (id: string, name: string) => {
-        if (!window.confirm(`Вы уверены, что хотите удалить песню "${name}"?`)) return;
+    const handleConfirmDelete = async () => {
+        if (!deletingSong) return;
+        const name = deletingSong.title;
+        const id = deletingSong.id;
         try {
             const response = await apiFetch(`/api/Songs/${id}`, { 
                 method: 'DELETE'
             });
             if (response.ok) {
+                setDeletingSong(null);
                 triggerNotification('delete', name);
                 await fetchSongs();
             } else {
@@ -66,12 +156,33 @@ const SongLibrary: React.FC = () => {
         }
     };
 
-    const formatDuration = (seconds?: number) => {
-        if (!seconds) return '--:--';
-        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-        const s = (seconds % 60).toString().padStart(2, '0');
-        return `${m}:${s}`;
+    const handleEditSong = async (id: string, formData: FormData) => {
+        setIsUploading(true);
+        try {
+            const response = await apiFetch(`/api/Songs/${id}`, {
+                method: 'PUT',
+                body: formData,
+            });
+
+            if (response.ok) {
+                setEditingSong(null);
+                const title = formData.get('Title') as string;
+                const artist = formData.get('Artist') as string;
+                triggerNotification('edit', `${title} - ${artist}`);
+                await fetchSongs();
+            } else {
+                const errText = await response.text();
+                alert(`Ошибка от сервера при изменении: ${response.status}\n${errText}`);
+            }
+        } catch (err) {
+            console.error('Ошибка сети:', err);
+            alert('Сетевая ошибка при изменении');
+        } finally {
+            setIsUploading(false);
+        }
     };
+
+
 
     const fetchSongs = async () => {
         setIsLoading(true);
@@ -152,6 +263,25 @@ const SongLibrary: React.FC = () => {
                     isUploading={isUploading}
                 />
 
+                {editingSong && (
+                    <EditSongModal
+                        isOpen={!!editingSong}
+                        onClose={() => setEditingSong(null)}
+                        onEdit={handleEditSong}
+                        isUploading={isUploading}
+                        initialData={editingSong}
+                    />
+                )}
+
+                {deletingSong && (
+                    <DeleteConfirmModal
+                        isOpen={!!deletingSong}
+                        onClose={() => setDeletingSong(null)}
+                        onConfirm={handleConfirmDelete}
+                        songTitle={deletingSong.title}
+                    />
+                )}
+
                 <div className="library-card">
                     <div className="search-bar">
                         <img src={searchIcon} alt="Search" className="search-icon" />
@@ -159,6 +289,8 @@ const SongLibrary: React.FC = () => {
                             type="text"
                             placeholder="Поиск по названию или исполнителю..."
                             className="search-input"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
 
@@ -179,8 +311,12 @@ const SongLibrary: React.FC = () => {
                                 <div className="table-row">
                                     <div className="col-name song-cell">Список песен пуст</div>
                                 </div>
+                            ) : filteredSongs.length === 0 ? (
+                                <div className="table-row">
+                                    <div className="col-name song-cell">Ничего не найдено по запросу "{searchQuery}"</div>
+                                </div>
                             ) : (
-                                songs.map((song, index) => (
+                                filteredSongs.map((song, index) => (
                                     <div className="table-row" key={song.id}>
                                         <div className="col-id">{index + 1}</div>
 
@@ -199,7 +335,9 @@ const SongLibrary: React.FC = () => {
                                             </div>
                                         </div>
 
-                                        <div className="col-time">{formatDuration(song.durationSeconds)}</div>
+                                        <div className="col-time">
+                                            <SongDuration audioPath={song.audioPath} durationSeconds={song.durationSeconds} />
+                                        </div>
 
                                         <div className="col-actions">
                                             <button className="icon-btn" title={currentSong?.id === song.id && isPlaying ? "Пауза" : "Воспроизвести"} onClick={() => playSong(song)}>
@@ -213,12 +351,12 @@ const SongLibrary: React.FC = () => {
                                                     <img src={playBtn} alt="Play" />
                                                 )}
                                             </button>
-                                            <button className="icon-btn" title="Изменить" onClick={() => triggerNotification('edit', song.title)}>
-                                                <img src={editBtn} alt="Edit" />
-                                            </button>
-                                            <button className="icon-btn" title="Удалить" onClick={() => handleDeleteSong(song.id, song.title)}>
-                                                <img src={deleteBtn} alt="Delete" />
-                                            </button>
+                                             <button className="icon-btn" title="Изменить" onClick={() => setEditingSong(song)}>
+                                                 <img src={editBtn} alt="Edit" />
+                                             </button>
+                                             <button className="icon-btn" title="Удалить" onClick={() => setDeletingSong(song)}>
+                                                 <img src={deleteBtn} alt="Delete" />
+                                             </button>
                                         </div>
 
                                     </div>

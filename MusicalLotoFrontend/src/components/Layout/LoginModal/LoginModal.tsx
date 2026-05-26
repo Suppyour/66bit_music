@@ -18,12 +18,16 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, initialRegiste
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isRegisterMode, setIsRegisterMode] = useState(initialRegisterMode);
+  const [isForgotPasswordMode, setIsForgotPasswordMode] = useState(false);
+  const [isResetSuccess, setIsResetSuccess] = useState(false);
   const [errorStr, setErrorStr] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setIsRegisterMode(initialRegisterMode);
+      setIsForgotPasswordMode(false);
+      setIsResetSuccess(false);
       setErrorStr('');
       document.body.style.overflow = 'hidden';
     } else {
@@ -39,6 +43,21 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, initialRegiste
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isForgotPasswordMode) {
+        if (!email) {
+            setErrorStr('Введите email');
+            return;
+        }
+        setErrorStr('');
+        setIsLoading(true);
+        setTimeout(() => {
+            setIsLoading(false);
+            setIsResetSuccess(true);
+        }, 800);
+        return;
+    }
+    
     if (isRegisterMode && password !== confirmPassword) {
         setErrorStr('Пароли не совпадают');
         return;
@@ -60,6 +79,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, initialRegiste
         
         if (response.ok) {
             localStorage.setItem('token', data.token);
+            window.dispatchEvent(new Event('auth-change'));
             setEmail('');
             setPassword('');
             setConfirmPassword('');
@@ -85,100 +105,136 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, initialRegiste
 
         <div className="modalHeader">
           <img src={loginIcon} alt="Вход" className="modalLoginIcon" />
-          <h2 className="modalTitle">{isRegisterMode ? 'Регистрация' : 'Вход в панель управления'}</h2>
+          <h2 className="modalTitle">
+            {isForgotPasswordMode 
+              ? 'Восстановление пароля' 
+              : (isRegisterMode ? 'Регистрация' : 'Вход в панель управления')}
+          </h2>
           <p className="modalSubtitle">
-            {isRegisterMode 
-              ? 'Создайте учетную запись для организации игровых сессий' 
-              : 'Введите ваши данные для доступа к играм'}
+            {isForgotPasswordMode 
+              ? 'Введите ваш Email, чтобы получить инструкции по сбросу пароля' 
+              : (isRegisterMode 
+                ? 'Создайте учетную запись для организации игровых сессий' 
+                : 'Введите ваши данные для доступа к играм')}
           </p>
         </div>
 
         <form className="modalForm" onSubmit={handleSubmit}>
           <div className="formGroup">
-            <label className="formLabel">Email / Логин</label>
+            <label className="formLabel">{isForgotPasswordMode ? 'Email' : 'Email / Логин'}</label>
             <input 
               type="text" 
               className="formInput" 
               placeholder="admin@bingo.ru"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
             />
           </div>
 
-          <div className="formGroup" style={{ marginTop: '27.5px' }}>
-            <label className="formLabel">Пароль</label>
-            <div className="passwordInputContainer">
-               <input 
-                 type={showPassword ? "text" : "password"} 
-                 className="formInput passwordInput" 
-                 placeholder="•••••••••"
-                 value={password}
-                 onChange={(e) => setPassword(e.target.value)}
-               />
-               <button 
-                 type="button" 
-                 className="passwordToggleBtn"
-                 onClick={() => setShowPassword(!showPassword)}
-               >
-                 <img src={passwordIcon} alt="Показать/скрыть пароль" />
-               </button>
-            </div>
-          </div>
-
-          {isRegisterMode && (
-            <div className="formGroup" style={{ marginTop: '27.5px' }}>
-              <label className="formLabel">Подтверждение пароля</label>
-              <div className="passwordInputContainer">
-                 <input 
-                   type={showConfirmPassword ? "text" : "password"} 
-                   className="formInput passwordInput" 
-                   placeholder="•••••••••"
-                   value={confirmPassword}
-                   onChange={(e) => setConfirmPassword(e.target.value)}
-                 />
-                 <button 
-                   type="button" 
-                   className="passwordToggleBtn"
-                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                 >
-                   <img src={passwordIcon} alt="Показать/скрыть пароль" />
-                 </button>
+          {!isForgotPasswordMode && (
+            <>
+              <div className="formGroup" style={{ marginTop: '27.5px' }}>
+                <label className="formLabel">Пароль</label>
+                <div className="passwordInputContainer">
+                   <input 
+                     type={showPassword ? "text" : "password"} 
+                     className="formInput passwordInput" 
+                     placeholder="•••••••••"
+                     value={password}
+                     onChange={(e) => setPassword(e.target.value)}
+                     required
+                   />
+                   <button 
+                     type="button" 
+                     className="passwordToggleBtn"
+                     onClick={() => setShowPassword(!showPassword)}
+                   >
+                     <img src={passwordIcon} alt="Показать/скрыть пароль" />
+                   </button>
+                </div>
               </div>
-            </div>
-          )}
 
-          {!isRegisterMode && (
-            <div className="formOptions">
-              <label className="checkboxLabel">
-                <input type="checkbox" className="customCheckbox" />
-                Запомнить меня
-              </label>
-              <a href="#" className="forgotPassword">Забыли пароль?</a>
-            </div>
+              {isRegisterMode && (
+                <div className="formGroup" style={{ marginTop: '27.5px' }}>
+                  <label className="formLabel">Подтверждение пароля</label>
+                  <div className="passwordInputContainer">
+                     <input 
+                       type={showConfirmPassword ? "text" : "password"} 
+                       className="formInput passwordInput" 
+                       placeholder="•••••••••"
+                       value={confirmPassword}
+                       onChange={(e) => setConfirmPassword(e.target.value)}
+                       required
+                     />
+                     <button 
+                       type="button" 
+                       className="passwordToggleBtn"
+                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                     >
+                       <img src={passwordIcon} alt="Показать/скрыть пароль" />
+                     </button>
+                  </div>
+                </div>
+              )}
+
+              {!isRegisterMode && (
+                <div className="formOptions">
+                  <label className="checkboxLabel">
+                    <input type="checkbox" className="customCheckbox" />
+                    Запомнить меня
+                  </label>
+                  <a href="#" className="forgotPassword" onClick={(e) => {
+                      e.preventDefault();
+                      setIsForgotPasswordMode(true);
+                      setErrorStr('');
+                  }}>Забыли пароль?</a>
+                </div>
+              )}
+            </>
           )}
 
           {errorStr && <div style={{color: 'red', marginTop: 10, fontSize: 14, textAlign: 'center'}}>{errorStr}</div>}
 
           <button type="submit" className="loginSubmitBtn" disabled={isLoading} style={{marginTop: 40}}>
-             {isLoading ? 'Загрузка...' : (isRegisterMode ? 'Зарегистрироваться' : 'Войти')}
+             {isLoading ? 'Загрузка...' : (isForgotPasswordMode ? 'Сбросить пароль' : (isRegisterMode ? 'Зарегистрироваться' : 'Войти'))}
           </button>
           
-          <div className="modalFooter">
-            <span className="noAccountText">
-                {isRegisterMode ? 'Уже есть аккаунт? ' : 'Нет аккаунта? '}
-            </span>
-            <a href="#" className="createAccountLink" onClick={(e) => {
-                e.preventDefault();
-                setIsRegisterMode(!isRegisterMode);
-                setErrorStr('');
-            }}>
-                {isRegisterMode ? 'Войти' : 'Создать аккаунт'}
-              </a>
-            </div>
-          </form>
-        </div>
+          {isForgotPasswordMode && isResetSuccess && (
+              <div className="resetSuccessMessage">
+                  Если указанный email зарегистрирован в системе, инструкции отправлены на него
+              </div>
+          )}
+
+          {isForgotPasswordMode ? (
+              <div className="modalFooter">
+                  <a href="#" className="backToLoginLink" onClick={(e) => {
+                      e.preventDefault();
+                      setIsForgotPasswordMode(false);
+                      setIsResetSuccess(false);
+                      setErrorStr('');
+                  }}>
+                      Вернуться ко входу
+                  </a>
+              </div>
+          ) : (
+              <div className="modalFooter">
+                <span className="noAccountText">
+                    {isRegisterMode ? 'Уже есть аккаунт? ' : 'Нет аккаунта? '}
+                </span>
+                <a href="#" className="createAccountLink" onClick={(e) => {
+                    e.preventDefault();
+                    setIsRegisterMode(!isRegisterMode);
+                    setErrorStr('');
+                }}>
+                    {isRegisterMode ? 'Войти' : 'Создать аккаунт'}
+                </a>
+              </div>
+          )}
+        </form>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
 export default LoginModal;

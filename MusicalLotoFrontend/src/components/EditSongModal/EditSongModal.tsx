@@ -38,7 +38,22 @@ const EditSongModal: React.FC<EditSongModalProps> = ({ isOpen, onClose, onEdit, 
 
     const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
-            setAudioFileName(e.target.files[0].name);
+            const file = e.target.files[0];
+            setAudioFileName(file.name);
+
+            // Extract base name without extension
+            const lastDotIndex = file.name.lastIndexOf('.');
+            const baseName = lastDotIndex !== -1 ? file.name.substring(0, lastDotIndex) : file.name;
+
+            // Try to split by any type of dash (hyphen, en-dash, em-dash) surrounded by optional spaces
+            const parts = baseName.split(/\s*[-–—]\s*/);
+            if (parts.length > 1) {
+                setArtist(parts[0].trim());
+                setTitle(parts.slice(1).join(' - ').trim());
+            } else {
+                setTitle(baseName.trim());
+                setArtist('');
+            }
         }
     };
 

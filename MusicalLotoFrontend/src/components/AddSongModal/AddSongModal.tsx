@@ -13,17 +13,36 @@ interface AddSongModalProps {
 const AddSongModal: React.FC<AddSongModalProps> = ({ isOpen, onClose, onUpload, isUploading }) => {
     const [audioFileName, setAudioFileName] = useState<string | null>(null);
     const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+    const [title, setTitle] = useState('');
+    const [artist, setArtist] = useState('');
 
     useEffect(() => {
         if (!isOpen) {
             setAudioFileName(null);
             setCoverImagePreview(null);
+            setTitle('');
+            setArtist('');
         }
     }, [isOpen]);
 
     const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
-            setAudioFileName(e.target.files[0].name);
+            const file = e.target.files[0];
+            setAudioFileName(file.name);
+
+            // Extract base name without extension
+            const lastDotIndex = file.name.lastIndexOf('.');
+            const baseName = lastDotIndex !== -1 ? file.name.substring(0, lastDotIndex) : file.name;
+
+            // Try to split by any type of dash (hyphen, en-dash, em-dash) surrounded by optional spaces
+            const parts = baseName.split(/\s*[-–—]\s*/);
+            if (parts.length > 1) {
+                setArtist(parts[0].trim());
+                setTitle(parts.slice(1).join(' - ').trim());
+            } else {
+                setTitle(baseName.trim());
+                setArtist('');
+            }
         }
     };
 
@@ -69,6 +88,8 @@ const AddSongModal: React.FC<AddSongModalProps> = ({ isOpen, onClose, onUpload, 
                             name="Title"
                             placeholder="Введите название песни"
                             className="form-input"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
                             required
                         />
                     </div>
@@ -82,6 +103,8 @@ const AddSongModal: React.FC<AddSongModalProps> = ({ isOpen, onClose, onUpload, 
                             name="Artist"
                             placeholder="Введите имя исполнителя"
                             className="form-input"
+                            value={artist}
+                            onChange={(e) => setArtist(e.target.value)}
                             required
                         />
                     </div>

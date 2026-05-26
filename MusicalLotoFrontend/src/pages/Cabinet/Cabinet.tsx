@@ -186,9 +186,9 @@ const Cabinet: React.FC = () => {
                     isOpen={isCreateModalOpen}
                     onClose={() => setIsCreateModalOpen(false)}
                     songs={songs}
-                    onGameCreated={() => {
+                    onGameCreated={(gameId) => {
                         setIsCreateModalOpen(false);
-                        fetchGames();
+                        navigate(`/generator?sessionId=${gameId}`);
                     }}
                 />
             )}

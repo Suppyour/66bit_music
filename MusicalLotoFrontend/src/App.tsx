@@ -1,7 +1,8 @@
 import './App.css';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Layout/Header/Header';
+import HeaderLibrary from './components/HeaderLibrary/HeaderLibrary';
 import Footer from './components/Layout/Footer/Footer';
 import LoginModal from './components/Layout/LoginModal/LoginModal';
 import MainPage from './pages/MainPage/MainPage';
@@ -17,6 +18,15 @@ import MusicPlayer from './components/MusicPlayer/MusicPlayer';
 function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
+
+  useEffect(() => {
+    const handleAuthChange = () => {
+      setIsLoggedIn(!!localStorage.getItem('token'));
+    };
+    window.addEventListener('auth-change', handleAuthChange);
+    return () => window.removeEventListener('auth-change', handleAuthChange);
+  }, []);
 
   const openLogin = () => {
     setIsRegisterMode(false);
@@ -34,7 +44,11 @@ function App() {
         <Routes>
           <Route path="/" element={
             <>
-              <Header onLoginClick={openLogin} onRegisterClick={openRegister} />
+              {isLoggedIn ? (
+                <HeaderLibrary />
+              ) : (
+                <Header onLoginClick={openLogin} onRegisterClick={openRegister} />
+              )}
               <MainPage onLoginClick={openLogin} />
               <Footer />
             </>

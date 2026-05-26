@@ -19,12 +19,32 @@ interface Slide {
     songId?: string;
 }
 
+interface SimulatedCell {
+    row: number;
+    col: number;
+    songId: string;
+    title: string;
+    artist: string;
+}
+
+interface SimulatedCard {
+    id: string;
+    playerName: string;
+    cells: SimulatedCell[];
+}
+
 interface Claim {
     id: string;
     name: string;
     time: string;
     status: 'Pending' | 'Confirmed' | 'Rejected';
+    card?: SimulatedCard;
 }
+
+const NAMES_POOL = [
+    'Алексей С.', 'Евгений М.', 'Ольга К.', 'Дмитрий В.', 'Мария П.',
+    'Анна Б.', 'Николай Т.', 'Сергей П.', 'Ирина Г.', 'Елена Д.'
+];
 
 const Gameplay: React.FC = () => {
     const [searchParams] = useSearchParams();
@@ -39,12 +59,11 @@ const Gameplay: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     const [participantCount, setParticipantCount] = useState(23);
-    const [claims, setClaims] = useState<Claim[]>([
-        { id: '1', name: 'Игрок №5', time: 'Только что', status: 'Pending' }
-    ]);
-    const [checkedWinners, setCheckedWinners] = useState<string[]>([]);
+    const [claims, setClaims] = useState<Claim[]>([]);
     const [currentLotoSong, setCurrentLotoSong] = useState<MusicSong | null>(null);
     const [isLotoRunning, setIsLotoRunning] = useState(false);
+    const [isSongRevealed, setIsSongRevealed] = useState(false);
+    const [activeCheckingClaim, setActiveCheckingClaim] = useState<Claim | null>(null);
 
     useEffect(() => {
         if (!sessionId) {
@@ -60,10 +79,16 @@ const Gameplay: React.FC = () => {
                 if (response.ok) {
                     const data = await response.json();
                     const slidesList = Array.isArray(data) ? data : [];
-                    setSlides(slidesList);
+                    const filteredSlides = slidesList.filter((s: Slide) => {
+                        const typeStr = typeof s.type === 'number'
+                            ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type]
+                            : String(s.type);
+                        return typeStr !== 'QrCode';
+                    });
+                    setSlides(filteredSlides);
 
                     // Find Title Slide for Game Name
-                    const titleSlide = slidesList.find((s: Slide) => {
+                    const titleSlide = filteredSlides.find((s: Slide) => {
                         const typeStr = typeof s.type === 'number'
                             ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type]
                             : String(s.type);
@@ -92,6 +117,55 @@ const Gameplay: React.FC = () => {
 
         fetchGameplayDetails();
     }, [sessionId]);
+
+    useEffect(() => {
+        setIsSongRevealed(false);
+    }, [activeSlideIndex]);
+
+    const generateSimulatedCard = (playerName: string): SimulatedCard => {
+        const songs = slides.filter(s => {
+            const t = typeof s.type === 'number' ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type] : String(s.type);
+            return t === 'Song';
+        });
+
+        // Shuffle session songs
+        const shuffled = [...songs].sort(() => Math.random() - 0.5);
+        
+        // Take 25 or pad if not enough
+        const cells: SimulatedCell[] = [];
+        for (let row = 0; row < 5; row++) {
+            for (let col = 0; col < 5; col++) {
+                const songIndex = (row * 5 + col) % Math.max(1, shuffled.length);
+                const song = shuffled[songIndex];
+                cells.push({
+                    row,
+                    col,
+                    songId: song ? (song.songId || song.id) : '',
+                    title: song ? (song.title || 'Песня') : 'Пустая ячейка',
+                    artist: song ? (song.content || 'Исполнитель') : ''
+                });
+            }
+        }
+
+        return {
+            id: 'card-' + Math.random().toString(36).substr(2, 9),
+            playerName,
+            cells
+        };
+    };
+
+    const handleSimulateClaim = () => {
+        const randomName = NAMES_POOL[Math.floor(Math.random() * NAMES_POOL.length)];
+        const newClaim: Claim = {
+            id: String(claims.length + 1),
+            name: randomName,
+            time: 'Только что',
+            status: 'Pending',
+            card: generateSimulatedCard(randomName)
+        };
+        setClaims(prev => [newClaim, ...prev]);
+    };
+
 
     const activeSlide = slides[activeSlideIndex];
 
@@ -252,20 +326,101 @@ const Gameplay: React.FC = () => {
         }
     };
 
-    const handleCheckBingo = () => {
-        // Simulates claims checking
-        if (claims.length === 0) return;
-
-        const claim = claims[0];
-        alert(`Проверка билета для игрока: ${claim.name}. Все ячейки совпадают с выпавшими песнями!`);
-        setCheckedWinners(prev => [...prev, claim.id]);
+    const handleLotoButtonClick = () => {
+        if (isPlaying) {
+            togglePlay();
+        } else {
+            if (currentSong && currentSong.id === activeSlide.songId) {
+                togglePlay();
+            } else {
+                handleRunLoto();
+            }
+        }
     };
 
-    const handleConfirmBingo = () => {
-        if (claims.length === 0) return;
+    const checkWinStatus = (card: SimulatedCard, playedIds: string[]) => {
+        const size = 5;
+        const grid: boolean[][] = Array(size).fill(null).map(() => Array(size).fill(false));
+        
+        card.cells.forEach(cell => {
+            if (playedIds.includes(cell.songId)) {
+                grid[cell.row][cell.col] = true;
+            }
+        });
 
-        setClaims(prev => prev.map(c => c.id === '1' ? { ...c, status: 'Confirmed' as const } : c));
-        alert('Бинго успешно подтверждено! Игрок объявляется победителем!');
+        const lines: string[] = [];
+
+        // Check horizontal
+        for (let r = 0; r < size; r++) {
+            if (grid[r].every(v => v)) {
+                lines.push(`Горизонталь (ряд ${r + 1})`);
+            }
+        }
+
+        // Check vertical
+        for (let c = 0; c < size; c++) {
+            let win = true;
+            for (let r = 0; r < size; r++) {
+                if (!grid[r][c]) {
+                    win = false;
+                    break;
+                }
+            }
+            if (win) {
+                lines.push(`Вертикаль (колонна ${c + 1})`);
+            }
+        }
+
+        // Check diagonal 1
+        let diag1 = true;
+        for (let i = 0; i < size; i++) {
+            if (!grid[i][i]) {
+                diag1 = false;
+                break;
+            }
+        }
+        if (diag1) {
+            lines.push("Диагональ ↖-↘");
+        }
+
+        // Check diagonal 2
+        let diag2 = true;
+        for (let i = 0; i < size; i++) {
+            if (!grid[i][size - 1 - i]) {
+                diag2 = false;
+                break;
+            }
+        }
+        if (diag2) {
+            lines.push("Диагональ ↗-↙");
+        }
+
+        // Check full card
+        let full = true;
+        for (let r = 0; r < size; r++) {
+            for (let c = 0; c < size; c++) {
+                if (!grid[r][c]) {
+                    full = false;
+                    break;
+                }
+            }
+        }
+        if (full) {
+            lines.push("Вся Карточка!");
+        }
+
+        return lines;
+    };
+
+    const handleCheckBingo = () => {
+        if (claims.length === 0) return;
+        const pendingClaim = claims.find(c => c.status === 'Pending') || claims[0];
+        setActiveCheckingClaim(pendingClaim);
+    };
+
+    const handleConfirmBingo = (claimId: string) => {
+        setClaims(prev => prev.map(c => c.id === claimId ? { ...c, status: 'Confirmed' as const } : c));
+        setActiveCheckingClaim(null);
 
         // Skip to winner slide
         const winnerIdx = slides.findIndex(s => {
@@ -277,6 +432,11 @@ const Gameplay: React.FC = () => {
         if (winnerIdx !== -1) {
             setActiveSlideIndex(winnerIdx);
         }
+    };
+
+    const handleRejectBingo = (claimId: string) => {
+        setClaims(prev => prev.map(c => c.id === claimId ? { ...c, status: 'Rejected' as const } : c));
+        setActiveCheckingClaim(null);
     };
 
     const getSlideTypeName = (type: string | number) => {
@@ -402,6 +562,7 @@ const Gameplay: React.FC = () => {
 
                         {/* Сам визуальный слайд */}
                         <div className="slide-preview-box" style={activeBackgroundStyle}>
+                            {activeSlide.backgroundImageUrl && <div className="slide-image-overlay"></div>}
                             <div className="slide-preview-content">
                                 {activeSlideTypeStr === 'Title' && (
                                     <div className="slide-title-view">
@@ -449,13 +610,22 @@ const Gameplay: React.FC = () => {
                                 {activeSlideTypeStr === 'Song' && (
                                     <div className="slide-song-view">
                                         <span className="slide-song-badge">АКТИВНАЯ ПЕСНЯ</span>
-                                        <h2 className="slide-song-title">{activeSlide.title}</h2>
-                                        <p className="slide-song-artist">{activeSlide.content || 'Исполнитель'}</p>
+                                        <h2 className="slide-song-title">{isSongRevealed ? activeSlide.title : '???'}</h2>
+                                        <p className="slide-song-artist">{isSongRevealed ? (activeSlide.content || 'Исполнитель') : 'Исполнитель скрыт'}</p>
+                                        <div style={{ marginBottom: '14px' }}>
+                                            <button
+                                                type="button"
+                                                className="btn-reveal-song"
+                                                onClick={() => setIsSongRevealed(prev => !prev)}
+                                            >
+                                                {isSongRevealed ? '👁️ Скрыть песню' : '👁️ Показать песню'}
+                                            </button>
+                                        </div>
 
                                         <button
                                             type="button"
                                             className={`btn-run-loto ${isPlaying ? 'playing' : ''}`}
-                                            onClick={handleRunLoto}
+                                            onClick={handleLotoButtonClick}
                                             disabled={isLotoRunning}
                                         >
                                             {isLotoRunning ? (
@@ -548,35 +718,39 @@ const Gameplay: React.FC = () => {
                 {/* 3. Правая колонка: Проверка победителей */}
                 <aside className="gameplay-sidebar winners-sidebar">
                     <h2 className="sidebar-heading">Проверка победителей</h2>
-
+ 
                     <div className="winner-actions-buttons">
                         <button
                             type="button"
                             className="btn-winner-action check-bingo"
                             onClick={handleCheckBingo}
-                            disabled={claims.length === 0}
+                            disabled={claims.filter(c => c.status === 'Pending').length === 0}
                         >
-                            Проверка бинго
+                            Проверить заявку
                         </button>
                         <button
                             type="button"
-                            className="btn-winner-action confirm-bingo"
-                            onClick={handleConfirmBingo}
-                            disabled={claims.length === 0 || !checkedWinners.includes(claims[0].id)}
+                            className="btn-simulate-claim"
+                            onClick={handleSimulateClaim}
                         >
-                            Подтвердить бинго
+                            ➕ Симулировать звонок "Бинго!"
                         </button>
                     </div>
-
+ 
                     <div className="claims-list-section">
-                        <div className="claims-header">Заявки на бинго</div>
+                        <div className="claims-header">Заявки на бинго (кликните для проверки)</div>
                         {claims.length === 0 ? (
                             <div className="empty-claims-text">
                                 Ожидание новых заявок...
                             </div>
                         ) : (
                             claims.map(claim => (
-                                <div key={claim.id} className={`claim-card ${claim.status.toLowerCase()}`}>
+                                <div
+                                    key={claim.id}
+                                    className={`claim-card ${claim.status.toLowerCase()}`}
+                                    onClick={() => setActiveCheckingClaim(claim)}
+                                    style={{ cursor: 'pointer' }}
+                                >
                                     <div className="claim-header-row">
                                         <span className="claim-number">#{claim.id}</span>
                                         <span className="claim-user-name">{claim.name}</span>
@@ -595,6 +769,112 @@ const Gameplay: React.FC = () => {
                     </div>
                 </aside>
             </main>
+
+            {activeCheckingClaim && activeCheckingClaim.card && (
+                <div className="verification-modal-overlay" onClick={() => setActiveCheckingClaim(null)}>
+                    <div className="verification-modal-card" onClick={e => e.stopPropagation()}>
+                        <button
+                            onClick={() => setActiveCheckingClaim(null)}
+                            style={{
+                                position: 'absolute',
+                                top: '16px',
+                                right: '16px',
+                                background: 'none',
+                                border: 'none',
+                                color: '#94A3B8',
+                                fontSize: '24px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            &times;
+                        </button>
+                        <div className="verification-modal-header">
+                            <h3 className="verification-modal-title">Проверка билета</h3>
+                            <p className="verification-modal-subtitle">Игрок: {activeCheckingClaim.name} | ID: {activeCheckingClaim.card.id}</p>
+                        </div>
+
+                        {/* 5x5 card representation */}
+                        <div className="verification-card-grid">
+                            {activeCheckingClaim.card.cells.map((cell, idx) => {
+                                const playedSongIds = slides
+                                    .slice(0, activeSlideIndex + 1)
+                                    .filter(s => {
+                                        const t = typeof s.type === 'number' ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type] : String(s.type);
+                                        return t === 'Song';
+                                    })
+                                    .map(s => s.songId || s.id);
+                                const isPlayed = playedSongIds.includes(cell.songId);
+                                return (
+                                    <div
+                                        key={idx}
+                                        className={`verification-cell ${isPlayed ? 'played' : ''}`}
+                                    >
+                                        <div style={{ fontWeight: 'bold', fontSize: '10px', marginBottom: '2px' }}>
+                                            {cell.row + 1}-{cell.col + 1}
+                                        </div>
+                                        <div style={{ lineHeight: '1.2' }}>{cell.title}</div>
+                                        <div style={{ fontSize: '9px', opacity: 0.7, marginTop: '2px' }}>{cell.artist}</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Verification details */}
+                        <div className="verification-status-panel">
+                            <div className="verification-status-title">Результат анализа комбинаций:</div>
+                            {(() => {
+                                const playedSongIds = slides
+                                    .slice(0, activeSlideIndex + 1)
+                                    .filter(s => {
+                                        const t = typeof s.type === 'number' ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type] : String(s.type);
+                                        return t === 'Song';
+                                    })
+                                    .map(s => s.songId || s.id);
+                                const winningLines = checkWinStatus(activeCheckingClaim.card!, playedSongIds);
+                                if (winningLines.length > 0) {
+                                    return (
+                                        <div className="verification-status-result">
+                                            🎉 Бинго! Найдены выигрышные линии:
+                                            <ul style={{ margin: '8px 0 0 16px', padding: 0 }}>
+                                                {winningLines.map((line, lIdx) => (
+                                                    <li key={lIdx}>{line}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    );
+                                } else {
+                                    return (
+                                        <div className="verification-status-result invalid">
+                                            ❌ Совпадений недостаточно для выигрышной комбинации.
+                                        </div>
+                                    );
+                                }
+                            })()}
+                        </div>
+
+                        <div className="verification-modal-footer">
+                            <button
+                                className="btn-verification-reject"
+                                onClick={() => handleRejectBingo(activeCheckingClaim.id)}
+                            >
+                                Отклонить
+                            </button>
+                            <button
+                                className="btn-verification-confirm"
+                                onClick={() => handleConfirmBingo(activeCheckingClaim.id)}
+                            >
+                                Подтвердить победу
+                            </button>
+                            <button
+                                className="btn-verification-close"
+                                onClick={() => setActiveCheckingClaim(null)}
+                            >
+                                Закрыть
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

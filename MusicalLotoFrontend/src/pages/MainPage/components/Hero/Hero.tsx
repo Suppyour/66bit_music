@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Hero.css';
 
 interface HeroProps {
@@ -6,6 +7,17 @@ interface HeroProps {
 }
 
 const Hero: React.FC<HeroProps> = ({ onLoginClick }) => {
+  const navigate = useNavigate();
+  const isLoggedIn = !!localStorage.getItem('token');
+
+  const handleActionClick = () => {
+    if (isLoggedIn) {
+      navigate('/cabinet');
+    } else if (onLoginClick) {
+      onLoginClick();
+    }
+  };
+
   return (
     <section className="heroSection">
       <div className="heroContent">
@@ -18,8 +30,8 @@ const Hero: React.FC<HeroProps> = ({ onLoginClick }) => {
           Создавайте сессии в реальном времени, загружайте треки,<br />
           синхронизируйте участников через QR-код.
         </p>
-        <button className="btnPanel" onClick={onLoginClick}>
-          Войти в панель управления
+        <button className="btnPanel" onClick={handleActionClick}>
+          {isLoggedIn ? 'Перейти в кабинет' : 'Войти в панель управления'}
         </button>
       </div>
       <div className="heroBackground"></div>
