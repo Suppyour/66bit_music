@@ -127,7 +127,6 @@ public class UpdateGamePresentationHandler : IRequestHandler<UpdateGamePresentat
             }
         }
 
-        // Sort in-place by Order using List.Sort to avoid creating a new list instance
         session.Slides.Sort((a, b) => a.Order.CompareTo(b.Order));
 
         await _dbContext.SaveChangesAsync(cancellationToken);
