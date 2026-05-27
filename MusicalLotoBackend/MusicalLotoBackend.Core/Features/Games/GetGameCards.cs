@@ -19,6 +19,7 @@ public class GameCardDto
 {
     public Guid Id { get; init; }
     public required List<CardCellDto> Cells { get; init; }
+    public string? CuteName { get; init; }
 }
 
 public class CardCellDto
@@ -80,6 +81,7 @@ public class GetGameCardsHandler : IRequestHandler<GetGameCardsQuery, List<GameC
             result.Add(new GameCardDto
             {
                 Id = card.Id,
+                CuteName = card.CuteName,
                 Cells = cellDtos
             });
         }

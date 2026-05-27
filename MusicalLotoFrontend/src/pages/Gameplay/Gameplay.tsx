@@ -140,14 +140,15 @@ const Gameplay: React.FC = () => {
         }
         const randomName = NAMES_POOL[Math.floor(Math.random() * NAMES_POOL.length)];
         const randomCard = cards[Math.floor(Math.random() * cards.length)];
+        const dispName = randomCard.cuteName ? `${randomName} (${randomCard.cuteName})` : randomName;
         const newClaim: Claim = {
             id: String(claims.length + 1),
-            name: randomName,
+            name: dispName,
             time: 'Только что',
             status: 'Pending',
             card: {
                 id: randomCard.id,
-                playerName: randomName,
+                playerName: dispName,
                 cells: randomCard.cells.map((c: any) => ({
                     row: c.row,
                     col: c.column !== undefined ? c.column : c.col,
@@ -176,24 +177,29 @@ const Gameplay: React.FC = () => {
         if (!isNaN(index) && index >= 1 && index <= cards.length) {
             foundCard = cards[index - 1];
         } else {
-            // Search by full or short UUID
-            foundCard = cards.find(c => c.id.toLowerCase() === query || c.id.toLowerCase().includes(query));
+            // Search by full/short UUID or CuteName (case-insensitive)
+            foundCard = cards.find(c => 
+                c.id.toLowerCase() === query || 
+                c.id.toLowerCase().includes(query) ||
+                (c.cuteName && c.cuteName.toLowerCase() === query) ||
+                (c.cuteName && c.cuteName.toLowerCase().includes(query))
+            );
         }
 
         if (!foundCard) {
-            alert('Билет с таким ID или номером не найден!');
+            alert('Билет с таким ID, номером или именем не найден!');
             return;
         }
 
         // Map to Claim and open the check modal
         const checkClaim: Claim = {
             id: `manual-${foundCard.id.substring(0, 8)}`,
-            name: `Билет №${cards.indexOf(foundCard) + 1}`,
+            name: foundCard.cuteName ? `Билет: ${foundCard.cuteName}` : `Билет №${cards.indexOf(foundCard) + 1}`,
             time: 'Ручной ввод',
             status: 'Pending',
             card: {
                 id: foundCard.id,
-                playerName: `Билет №${cards.indexOf(foundCard) + 1}`,
+                playerName: foundCard.cuteName ? `Билет: ${foundCard.cuteName}` : `Билет №${cards.indexOf(foundCard) + 1}`,
                 cells: foundCard.cells.map((c: any) => ({
                     row: c.row,
                     col: c.column !== undefined ? c.column : c.col,

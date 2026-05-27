@@ -78,9 +78,10 @@ public class CreateGameSessionHandler : IRequestHandler<CreateGameSessionCommand
 
         if (request.PreGeneratedCards != null && request.PreGeneratedCards.Count > 0)
         {
-            session.Cards = request.PreGeneratedCards.Select(c => new GameCard
+            session.Cards = request.PreGeneratedCards.Select((c, idx) => new GameCard
             {
                 Id = c.Id != Guid.Empty ? c.Id : Guid.NewGuid(),
+                CuteName = Cards.CuteNameGenerator.Generate(idx),
                 Cells = c.Cells.Select(cell => new CardCell
                 {
                     Row = cell.Row,
@@ -197,7 +198,10 @@ public class CreateGameSessionHandler : IRequestHandler<CreateGameSessionCommand
                 }
             }
 
-            var card = new GameCard();
+            var card = new GameCard
+            {
+                CuteName = Cards.CuteNameGenerator.Generate(i)
+            };
             int songIndex = 0;
 
             for (int row = 0; row < cardSize; row++)

@@ -67,7 +67,8 @@ public class GenerateRandomCardsHandler : IRequestHandler<GenerateRandomCardsCom
             var card = new CardDto
             {
                 Id = Guid.NewGuid(),
-                Cells = new List<CardCell>()
+                Cells = new List<CardCell>(),
+                CuteName = CuteNameGenerator.Generate(i)
             };
 
             int songIndex = 0;
@@ -91,38 +92,34 @@ public class GenerateRandomCardsHandler : IRequestHandler<GenerateRandomCardsCom
 
         if (request.SessionId.HasValue && request.SessionId.Value != Guid.Empty)
         {
-            var session = await _dbContext.Sessions
-                .Include(s => s.Cards)
-                .FirstOrDefaultAsync(s => s.Id == request.SessionId.Value, cancellationToken);
+            var sessionExists = await _dbContext.Sessions
+                .AnyAsync(s => s.Id == request.SessionId.Value, cancellationToken);
 
-            if (session != null)
+            if (sessionExists)
             {
-                if (session.Cards != null && session.Cards.Any())
-                {
-                    _dbContext.GameCards.RemoveRange(session.Cards);
-                    session.Cards.Clear();
-                }
-                else
-                {
-                    session.Cards = new List<GameCard>();
-                }
+                // 1. Load and delete all existing cards for this session directly from DB
+                var oldCards = await _dbContext.GameCards
+                    .Where(c => c.GameSessionId == request.SessionId.Value)
+                    .ToListAsync(cancellationToken);
 
-                foreach (var c in generatedCards)
+                _dbContext.GameCards.RemoveRange(oldCards);
+
+                // 2. Add the newly generated cards directly to the DB
+                var newCards = generatedCards.Select(c => new GameCard
                 {
-                    session.Cards.Add(new GameCard
+                    Id = c.Id,
+                    CuteName = c.CuteName,
+                    GameSessionId = request.SessionId.Value,
+                    Cells = c.Cells.Select(cell => new CardCell
                     {
-                        Id = c.Id,
-                        GameSessionId = request.SessionId.Value,
-                        Cells = c.Cells.Select(cell => new CardCell
-                        {
-                            Row = cell.Row,
-                            Column = cell.Column,
-                            SongId = cell.SongId,
-                            IsMarked = false
-                        }).ToList()
-                    });
-                }
+                        Row = cell.Row,
+                        Column = cell.Column,
+                        SongId = cell.SongId,
+                        IsMarked = false
+                    }).ToList()
+                }).ToList();
 
+                await _dbContext.GameCards.AddRangeAsync(newCards, cancellationToken);
                 await _dbContext.SaveChangesAsync(cancellationToken);
             }
         }

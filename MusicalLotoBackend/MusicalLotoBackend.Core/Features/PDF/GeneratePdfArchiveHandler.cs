@@ -72,6 +72,11 @@ public class GeneratePdfArchiveHandler : IRequestHandler<GeneratePdfArchiveComma
                                 
                                 col.Item().PaddingVertical(10).AlignCenter().Text(titleText).FontSize(30).Bold().FontColor(Colors.Black);
                                 
+                                if (!string.IsNullOrEmpty(card.CuteName))
+                                {
+                                    col.Item().PaddingBottom(10).AlignCenter().Text($"Уникальный код билета: {card.CuteName}").FontSize(14).Bold().FontColor(redAccent);
+                                }
+                                
                                 col.Item().Table(table => 
                                 {
                                     table.ColumnsDefinition(columns =>
@@ -130,7 +135,8 @@ public class GeneratePdfArchiveHandler : IRequestHandler<GeneratePdfArchiveComma
 
                 var pdfBytes = document.GeneratePdf();
 
-                var entry = archive.CreateEntry($"Card_{index}.pdf", CompressionLevel.Fastest);
+                var fileName = !string.IsNullOrEmpty(card.CuteName) ? $"Card_{card.CuteName}.pdf" : $"Card_{index}.pdf";
+                var entry = archive.CreateEntry(fileName, CompressionLevel.Fastest);
                 using var entryStream = entry.Open();
                 await entryStream.WriteAsync(pdfBytes, 0, pdfBytes.Length, cancellationToken);
                 

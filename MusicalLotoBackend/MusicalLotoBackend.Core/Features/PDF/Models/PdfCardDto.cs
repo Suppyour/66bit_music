@@ -4,4 +4,5 @@ public class PdfCardDto
 {
     public string Id { get; set; } = string.Empty;
     public List<PdfCardCellDto> Cells { get; set; } = new();
+    public string? CuteName { get; set; }
 }

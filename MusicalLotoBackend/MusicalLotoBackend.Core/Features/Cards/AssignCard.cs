@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using MusicalLotoBackend.Database;
 using MusicalLotoBackend.Domain.Models;
@@ -9,6 +9,7 @@ public class CardDto
 {
     public Guid Id { get; init; }
     public List<CardCell> Cells { get; init; } = new();
+    public string? CuteName { get; init; }
 }
 
 public class AssignCardCommand : IRequest<CardDto>
@@ -40,7 +41,8 @@ public class AssignCardHandler : IRequestHandler<AssignCardCommand, CardDto>
         return new CardDto
         {
             Id = freeCard.Id,
-            Cells = freeCard.Cells
+            Cells = freeCard.Cells,
+            CuteName = freeCard.CuteName
         };
     }
 }

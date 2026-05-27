@@ -39,6 +39,7 @@ interface CardCellData {
 interface CardDto {
     id: string;
     cells: CardCellData[];
+    cuteName?: string;
 }
 
 
@@ -393,6 +394,7 @@ const Generator: React.FC = () => {
                             </button>
                             <span className="page-info">
                                 {generatedCards.length > 0 ? currentCardIndex + 1 : 0} / {generatedCards.length}
+                                {currentCard?.cuteName && ` — ${currentCard.cuteName}`}
                             </span>
                             <button
                                 className="btn-page"

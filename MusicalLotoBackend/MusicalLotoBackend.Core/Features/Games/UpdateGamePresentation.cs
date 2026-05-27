@@ -46,12 +46,26 @@ public class UpdateGamePresentationHandler : IRequestHandler<UpdateGamePresentat
 
         if (session == null || session.UserId != request.UserId) return false;
 
-        // 1. Identify which slides to keep/insert
-        var targetSlides = new List<Slide>();
+        // 1. Map everything to completely fresh untracked Slide instances
+        var freshSlides = new List<Slide>();
 
         // Preserve QrCode slides as they are not editable/sent by frontend
-        var qrCodeSlides = session.Slides.Where(s => s.Type == SlideType.QrCode).ToList();
-        targetSlides.AddRange(qrCodeSlides);
+        var qrCodeSlides = session.Slides
+            .Where(s => s.Type == SlideType.QrCode)
+            .Select(s => new Slide
+            {
+                Id = s.Id,
+                Type = s.Type,
+                Title = s.Title,
+                Content = s.Content,
+                BackgroundColor = s.BackgroundColor,
+                BackgroundImageUrl = s.BackgroundImageUrl,
+                Order = s.Order,
+                IsRequired = s.IsRequired,
+                SongId = s.SongId
+            })
+            .ToList();
+        freshSlides.AddRange(qrCodeSlides);
 
         // Process incoming slides
         foreach (var slideDto in request.Slides)
@@ -59,75 +73,33 @@ public class UpdateGamePresentationHandler : IRequestHandler<UpdateGamePresentat
             // Skip incoming QrCode to avoid duplicates if they sent it
             if (slideDto.Type == SlideType.QrCode) continue;
 
-            var existingSlide = session.Slides.FirstOrDefault(s => s.Id == slideDto.Id);
-            if (existingSlide != null)
+            freshSlides.Add(new Slide
             {
-                existingSlide.Title = slideDto.Title;
-                existingSlide.Content = slideDto.Content;
-                existingSlide.BackgroundColor = slideDto.BackgroundColor;
-                existingSlide.BackgroundImageUrl = slideDto.BackgroundImageUrl;
-                existingSlide.Order = slideDto.Order;
-                existingSlide.Type = slideDto.Type;
-                existingSlide.IsRequired = slideDto.IsRequired;
-                existingSlide.SongId = slideDto.SongId;
-                
-                targetSlides.Add(existingSlide);
-            }
-            else
-            {
-                var newSlide = new Slide
-                {
-                    Id = slideDto.Id,
-                    Type = slideDto.Type,
-                    Title = slideDto.Title,
-                    Content = slideDto.Content,
-                    BackgroundColor = slideDto.BackgroundColor,
-                    BackgroundImageUrl = slideDto.BackgroundImageUrl,
-                    Order = slideDto.Order,
-                    IsRequired = slideDto.IsRequired,
-                    SongId = slideDto.SongId
-                };
-                
-                targetSlides.Add(newSlide);
-            }
+                Id = slideDto.Id,
+                Type = slideDto.Type,
+                Title = slideDto.Title,
+                Content = slideDto.Content,
+                BackgroundColor = slideDto.BackgroundColor,
+                BackgroundImageUrl = slideDto.BackgroundImageUrl,
+                Order = slideDto.Order,
+                IsRequired = slideDto.IsRequired,
+                SongId = slideDto.SongId
+            });
         }
 
-        // 2. Synchronize session.Slides collection in-place
-        var targetIds = targetSlides.Select(t => t.Id).ToHashSet();
-
-        // Remove slides that are no longer in the target set
-        for (int i = session.Slides.Count - 1; i >= 0; i--)
+        // 2. Detach all tracked Slide entries from the EF Core change tracker to prevent synthesized ordinal conflicts
+        var slideEntries = _dbContext.ChangeTracker.Entries<Slide>().ToList();
+        foreach (var entry in slideEntries)
         {
-            if (!targetIds.Contains(session.Slides[i].Id))
-            {
-                session.Slides.RemoveAt(i);
-            }
+            entry.State = EntityState.Detached;
         }
 
-        // Add or Update slides
-        foreach (var target in targetSlides)
+        // 3. Rebuild the collection in-place using the fresh, untracked Slide instances
+        session.Slides.Clear();
+        foreach (var slide in freshSlides.OrderBy(s => s.Order))
         {
-            var tracked = session.Slides.FirstOrDefault(s => s.Id == target.Id);
-            if (tracked != null)
-            {
-                // Update in-place
-                tracked.Title = target.Title;
-                tracked.Content = target.Content;
-                tracked.BackgroundColor = target.BackgroundColor;
-                tracked.BackgroundImageUrl = target.BackgroundImageUrl;
-                tracked.Order = target.Order;
-                tracked.Type = target.Type;
-                tracked.IsRequired = target.IsRequired;
-                tracked.SongId = target.SongId;
-            }
-            else
-            {
-                // Add new slide
-                session.Slides.Add(target);
-            }
+            session.Slides.Add(slide);
         }
-
-        session.Slides.Sort((a, b) => a.Order.CompareTo(b.Order));
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;

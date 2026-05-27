@@ -1,4 +1,4 @@
-﻿namespace MusicalLotoBackend.Domain.Models;
+namespace MusicalLotoBackend.Domain.Models;
 
 public class GameCard : BaseEntity
 {
@@ -6,4 +6,5 @@ public class GameCard : BaseEntity
     public GameSession GameSession { get; set; }
     public List<CardCell> Cells { get; set; } = new();
     public bool IsAssigned { get; set; } = false;
+    public string? CuteName { get; set; }
 }
