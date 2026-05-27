@@ -46,15 +46,19 @@ public class UpdateGamePresentationHandler : IRequestHandler<UpdateGamePresentat
 
         if (session == null || session.UserId != request.UserId) return false;
 
-        var updatedSlides = new List<Slide>();
+        // 1. Identify which slides to keep/insert
+        var targetSlides = new List<Slide>();
 
-        // 1. Preserve QrCode slides as they are not editable/sent by frontend
+        // Preserve QrCode slides as they are not editable/sent by frontend
         var qrCodeSlides = session.Slides.Where(s => s.Type == SlideType.QrCode).ToList();
-        updatedSlides.AddRange(qrCodeSlides);
+        targetSlides.AddRange(qrCodeSlides);
 
-        // 2. Process all incoming slides
+        // Process incoming slides
         foreach (var slideDto in request.Slides)
         {
+            // Skip incoming QrCode to avoid duplicates if they sent it
+            if (slideDto.Type == SlideType.QrCode) continue;
+
             var existingSlide = session.Slides.FirstOrDefault(s => s.Id == slideDto.Id);
             if (existingSlide != null)
             {
@@ -67,7 +71,7 @@ public class UpdateGamePresentationHandler : IRequestHandler<UpdateGamePresentat
                 existingSlide.IsRequired = slideDto.IsRequired;
                 existingSlide.SongId = slideDto.SongId;
                 
-                updatedSlides.Add(existingSlide);
+                targetSlides.Add(existingSlide);
             }
             else
             {
@@ -84,13 +88,48 @@ public class UpdateGamePresentationHandler : IRequestHandler<UpdateGamePresentat
                     SongId = slideDto.SongId
                 };
                 
-                updatedSlides.Add(newSlide);
+                targetSlides.Add(newSlide);
             }
         }
 
-        session.Slides = updatedSlides.OrderBy(s => s.Order).ToList();
+        // 2. Synchronize session.Slides collection in-place
+        var targetIds = targetSlides.Select(t => t.Id).ToHashSet();
 
-        // Make sure order indices are applied and save
+        // Remove slides that are no longer in the target set
+        for (int i = session.Slides.Count - 1; i >= 0; i--)
+        {
+            if (!targetIds.Contains(session.Slides[i].Id))
+            {
+                session.Slides.RemoveAt(i);
+            }
+        }
+
+        // Add or Update slides
+        foreach (var target in targetSlides)
+        {
+            var tracked = session.Slides.FirstOrDefault(s => s.Id == target.Id);
+            if (tracked != null)
+            {
+                // Update in-place
+                tracked.Title = target.Title;
+                tracked.Content = target.Content;
+                tracked.BackgroundColor = target.BackgroundColor;
+                tracked.BackgroundImageUrl = target.BackgroundImageUrl;
+                tracked.Order = target.Order;
+                tracked.Type = target.Type;
+                tracked.IsRequired = target.IsRequired;
+                tracked.SongId = target.SongId;
+            }
+            else
+            {
+                // Add new slide
+                session.Slides.Add(target);
+            }
+        }
+
+        // Sort in-place by Order using List.Sort to avoid creating a new list instance
+        session.Slides.Sort((a, b) => a.Order.CompareTo(b.Order));
+
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
     }

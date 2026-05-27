@@ -97,20 +97,31 @@ public class GenerateRandomCardsHandler : IRequestHandler<GenerateRandomCardsCom
 
             if (session != null)
             {
-                _dbContext.GameCards.RemoveRange(session.Cards);
-
-                session.Cards = generatedCards.Select(c => new GameCard
+                if (session.Cards != null && session.Cards.Any())
                 {
-                    Id = c.Id,
-                    GameSessionId = request.SessionId.Value,
-                    Cells = c.Cells.Select(cell => new CardCell
+                    _dbContext.GameCards.RemoveRange(session.Cards);
+                    session.Cards.Clear();
+                }
+                else
+                {
+                    session.Cards = new List<GameCard>();
+                }
+
+                foreach (var c in generatedCards)
+                {
+                    session.Cards.Add(new GameCard
                     {
-                        Row = cell.Row,
-                        Column = cell.Column,
-                        SongId = cell.SongId,
-                        IsMarked = false
-                    }).ToList()
-                }).ToList();
+                        Id = c.Id,
+                        GameSessionId = request.SessionId.Value,
+                        Cells = c.Cells.Select(cell => new CardCell
+                        {
+                            Row = cell.Row,
+                            Column = cell.Column,
+                            SongId = cell.SongId,
+                            IsMarked = false
+                        }).ToList()
+                    });
+                }
 
                 await _dbContext.SaveChangesAsync(cancellationToken);
             }
