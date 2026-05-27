@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HeaderLibrary from '../../components/HeaderLibrary/HeaderLibrary';
 import CreateGameModal from '../../components/CreateGameModal/CreateGameModal';
+import DialogModal from '../../components/DialogModal/DialogModal';
 import './Cabinet.css';
 import { apiFetch } from '../../utils/api';
 
@@ -35,7 +36,8 @@ const Cabinet: React.FC = () => {
     const [songs, setSongs] = useState<Song[]>([]);
     const [totalSongs, setTotalSongs] = useState<number>(0);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
-
+    const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
+    const [gameToDelete, setGameToDelete] = useState<string | null>(null);
 
     const totalGames = games.length;
     const activeGamesCount = games.filter(g => g.status === 'Active').length;
@@ -48,9 +50,9 @@ const Cabinet: React.FC = () => {
                 const mappedGames = data.map((g: any) => ({
                     id: g.id,
                     title: g.name,
-                    status: 'Active',
+                    status: g.isFullCardClaimed ? 'Completed' : 'Active',
                     participants: g.participantCount,
-                    date: new Date().toLocaleDateString()
+                    date: g.createdAt ? new Date(g.createdAt).toLocaleDateString() : new Date().toLocaleDateString()
                 }));
                 setGames(mappedGames);
             }
@@ -80,9 +82,27 @@ const Cabinet: React.FC = () => {
     }, []);
 
     const handleDeleteGame = (id: string) => {
-        if (window.confirm('Вы уверены, что хотите удалить эту игру?')) {
-            setGames(games.filter(g => g.id !== id));
+        setGameToDelete(id);
+        setIsConfirmOpen(true);
+    };
+
+    const confirmDeleteGame = async () => {
+        if (gameToDelete) {
+            try {
+                const response = await apiFetch(`/api/Games/${gameToDelete}`, {
+                    method: 'DELETE'
+                });
+                if (response.ok) {
+                    setGames(games.filter(g => g.id !== gameToDelete));
+                } else {
+                    console.error('Ошибка сервера при удалении игры');
+                }
+            } catch (error) {
+                console.error('Ошибка при удалении игры:', error);
+            }
+            setGameToDelete(null);
         }
+        setIsConfirmOpen(false);
     };
 
     return (
@@ -192,6 +212,19 @@ const Cabinet: React.FC = () => {
                     }}
                 />
             )}
+
+            <DialogModal
+                isOpen={isConfirmOpen}
+                title="Удаление игры"
+                message="Вы уверены, что хотите удалить эту игру?"
+                isDanger={true}
+                confirmText="Удалить"
+                onConfirm={confirmDeleteGame}
+                onCancel={() => {
+                    setIsConfirmOpen(false);
+                    setGameToDelete(null);
+                }}
+            />
         </div>
     );
 };

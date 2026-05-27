@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import CreateGameModal from '../../components/CreateGameModal/CreateGameModal';
+import DialogModal from '../../components/DialogModal/DialogModal';
 import {
     DndContext,
     closestCenter,
@@ -85,6 +86,8 @@ const Generator: React.FC = () => {
     const [selectedSongs, setSelectedSongs] = useState<Song[]>([]);
     const [isSelectModalOpen, setIsSelectModalOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isAlertOpen, setIsAlertOpen] = useState(false);
+    const [alertMessage, setAlertMessage] = useState('');
 
     useEffect(() => {
         const initializeGenerator = async () => {
@@ -155,7 +158,8 @@ const Generator: React.FC = () => {
 
     const handleGoToPresentation = () => {
         if (selectedSongs.length < 25) {
-            alert('Пожалуйста, сначала выберите минимум 25 песен из библиотеки!');
+            setAlertMessage('Пожалуйста, сначала выберите минимум 25 песен из библиотеки!');
+            setIsAlertOpen(true);
             return;
         }
         if (sessionId) {
@@ -237,7 +241,8 @@ const Generator: React.FC = () => {
 
     const handleGenerate = async () => {
         if (selectedSongs.length < 25) {
-            alert('Для карточки 5x5 нужно выбрать минимум 25 песен!');
+            setAlertMessage('Для карточки 5x5 нужно выбрать минимум 25 песен!');
+            setIsAlertOpen(true);
             return;
         }
 
@@ -488,6 +493,15 @@ const Generator: React.FC = () => {
                     }}
                 />
             )}
+
+            <DialogModal
+                isOpen={isAlertOpen}
+                title="Уведомление"
+                message={alertMessage}
+                isAlert={true}
+                onConfirm={() => setIsAlertOpen(false)}
+                onCancel={() => setIsAlertOpen(false)}
+            />
         </div>
     );
 };

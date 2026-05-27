@@ -137,7 +137,7 @@ const EditSlideModal: React.FC<EditSlideModalProps> = ({
     };
 
     return (
-        <div className="edit-slide-modal-overlay" onClick={onClose}>
+        <div className="edit-slide-modal-overlay">
             <div className="edit-slide-modal-card" onClick={(e) => e.stopPropagation()}>
                 <button className="edit-slide-modal-close" onClick={onClose}>
                     &times;

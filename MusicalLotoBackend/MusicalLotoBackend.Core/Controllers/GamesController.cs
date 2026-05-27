@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MusicalLotoBackend.Core.Features.Games;
+using MusicalLotoBackend.Database;
 
 namespace MusicalLotoBackend.Core.Controllers;
 
@@ -11,10 +12,12 @@ namespace MusicalLotoBackend.Core.Controllers;
 public class GamesController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly AppDbContext _dbContext;
 
-    public GamesController(IMediator mediator)
+    public GamesController(IMediator mediator, AppDbContext dbContext)
     {
         _mediator = mediator;
+        _dbContext = dbContext;
     }
 
     private Guid GetUserId()
@@ -184,5 +187,27 @@ public class GamesController : ControllerBase
         {
             return NotFound(new { Message = ex.Message });
         }
+    }
+
+    [HttpPost("{sessionId}/complete")]
+    public async Task<IActionResult> CompleteGame(Guid sessionId)
+    {
+        Guid userId;
+        try
+        {
+            userId = GetUserId();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+
+        var session = await _dbContext.Sessions.FindAsync(sessionId);
+        if (session == null) return NotFound(new { Message = "Сессия не найдена" });
+        if (session.UserId != userId) return Forbid();
+
+        session.IsFullCardClaimed = true;
+        await _dbContext.SaveChangesAsync();
+        return Ok(new { Message = "Игра завершена" });
     }
 }

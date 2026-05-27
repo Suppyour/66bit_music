@@ -1,0 +1,109 @@
+.dialog-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.dialog-modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    animation: dialogModalSlideDown 0.3s ease-out;
+}
+
+@keyframes dialogModalSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dialog-modal-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #999;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.dialog-modal-close-btn:hover {
+    color: #333;
+}
+
+.dialog-modal-title {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 20px;
+    color: #333;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+}
+
+.dialog-modal-message {
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+.dialog-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.dialog-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.dialog-btn-cancel {
+    background-color: #f0f0f0;
+    color: #555;
+}
+
+.dialog-btn-cancel:hover {
+    background-color: #e4e4e4;
+}
+
+.dialog-btn-primary {
+    background-color: #2655e8;
+    color: white;
+}
+
+.dialog-btn-primary:hover {
+    background-color: #1a42c2;
+}
+
+.dialog-btn-danger {
+    background-color: #e53e3e;
+    color: white;
+}
+
+.dialog-btn-danger:hover {
+    background-color: #c53030;
+}

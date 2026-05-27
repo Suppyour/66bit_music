@@ -42,4 +42,18 @@ public class AuthController : ControllerBase
             return BadRequest(new { Error = ex.Message });
         }
     }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command)
+    {
+        try
+        {
+            await _mediator.Send(command);
+            return Ok(new { Message = "Пароль успешно обновлен" });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Error = ex.Message });
+        }
+    }
 }

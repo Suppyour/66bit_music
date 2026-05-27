@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import HeaderLibrary from '../../components/HeaderLibrary/HeaderLibrary';
+import DialogModal from '../../components/DialogModal/DialogModal';
 import { useMusic, type MusicSong } from '../../context/MusicContext';
 import { apiFetch } from '../../utils/api';
 import './Gameplay.css';
@@ -41,11 +42,6 @@ interface Claim {
     card?: SimulatedCard;
 }
 
-const NAMES_POOL = [
-    'Алексей С.', 'Евгений М.', 'Ольга К.', 'Дмитрий В.', 'Мария П.',
-    'Анна Б.', 'Николай Т.', 'Сергей П.', 'Ирина Г.', 'Елена Д.'
-];
-
 const Gameplay: React.FC = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
@@ -55,17 +51,36 @@ const Gameplay: React.FC = () => {
 
     const [gameName, setGameName] = useState('Проведение игры');
     const [slides, setSlides] = useState<Slide[]>([]);
-    const [activeSlideIndex, setActiveSlideIndex] = useState(0);
+    const [activeSlideIndex, setActiveSlideIndex] = useState<number>(() => {
+        if (!sessionId) return 0;
+        try {
+            const saved = localStorage.getItem(`loto_active_slide_${sessionId}`);
+            return saved ? parseInt(saved, 10) : 0;
+        } catch (e) {
+            console.error(e);
+            return 0;
+        }
+    });
     const [isLoading, setIsLoading] = useState(true);
 
     const [participantCount, setParticipantCount] = useState(23);
-    const [claims, setClaims] = useState<Claim[]>([]);
+    const [claims, setClaims] = useState<Claim[]>(() => {
+        if (!sessionId) return [];
+        try {
+            const saved = localStorage.getItem(`loto_claims_${sessionId}`);
+            return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+            console.error(e);
+            return [];
+        }
+    });
     const [currentLotoSong, setCurrentLotoSong] = useState<MusicSong | null>(null);
     const [isLotoRunning, setIsLotoRunning] = useState(false);
     const [isSongRevealed, setIsSongRevealed] = useState(false);
     const [activeCheckingClaim, setActiveCheckingClaim] = useState<Claim | null>(null);
     const [cards, setCards] = useState<any[]>([]);
     const [manualCardQuery, setManualCardQuery] = useState('');
+    const [isEndGameConfirmOpen, setIsEndGameConfirmOpen] = useState(false);
 
     useEffect(() => {
         if (!sessionId) {
@@ -131,6 +146,18 @@ const Gameplay: React.FC = () => {
         setIsSongRevealed(false);
     }, [activeSlideIndex]);
 
+    useEffect(() => {
+        if (sessionId) {
+            localStorage.setItem(`loto_active_slide_${sessionId}`, String(activeSlideIndex));
+        }
+    }, [activeSlideIndex, sessionId]);
+
+    useEffect(() => {
+        if (sessionId) {
+            localStorage.setItem(`loto_claims_${sessionId}`, JSON.stringify(claims));
+        }
+    }, [claims, sessionId]);
+
 
 
     const handleSimulateClaim = () => {
@@ -138,9 +165,8 @@ const Gameplay: React.FC = () => {
             alert('В этой игре нет сохраненных карточек!');
             return;
         }
-        const randomName = NAMES_POOL[Math.floor(Math.random() * NAMES_POOL.length)];
         const randomCard = cards[Math.floor(Math.random() * cards.length)];
-        const dispName = randomCard.cuteName ? `${randomName} (${randomCard.cuteName})` : randomName;
+        const dispName = randomCard.cuteName || `Билет №${cards.indexOf(randomCard) + 1}`;
         const newClaim: Claim = {
             id: String(claims.length + 1),
             name: dispName,
@@ -330,9 +356,21 @@ const Gameplay: React.FC = () => {
     };
 
     const handleEndGame = () => {
-        if (window.confirm('Вы уверены, что хотите завершить игру?')) {
-            navigate('/cabinet');
+        setIsEndGameConfirmOpen(true);
+    };
+
+    const confirmEndGame = async () => {
+        setIsEndGameConfirmOpen(false);
+        if (sessionId) {
+            try {
+                await apiFetch(`/api/Games/${sessionId}/complete`, {
+                    method: 'POST'
+                });
+            } catch (error) {
+                console.error('Ошибка при завершении игры:', error);
+            }
         }
+        navigate('/cabinet');
     };
 
     const handleRunLoto = async () => {
@@ -762,6 +800,16 @@ const Gameplay: React.FC = () => {
                         </div>
                     </div>
                 </section>
+
+                <DialogModal
+                    isOpen={isEndGameConfirmOpen}
+                    title="Завершение игры"
+                    message="Вы уверены, что хотите завершить игру?"
+                    isDanger={true}
+                    confirmText="Завершить"
+                    onConfirm={confirmEndGame}
+                    onCancel={() => setIsEndGameConfirmOpen(false)}
+                />
 
                 {/* 3. Правая колонка: Проверка победителей */}
                 <aside className="gameplay-sidebar winners-sidebar">

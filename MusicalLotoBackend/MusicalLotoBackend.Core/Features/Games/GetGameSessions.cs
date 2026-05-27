@@ -14,6 +14,8 @@ public class GetGameSessions
         public int ParticipantCount { get; init; }
         public int CardSize { get; init; }
         public WinningRules Rules { get; init; }
+        public DateTime CreatedAt { get; init; }
+        public bool IsFullCardClaimed { get; init; }
     }
 
     
@@ -34,17 +36,19 @@ public class GetGameSessions
         public async Task<List<GameSessionDto>> Handle(GetGameSessionQuery request, CancellationToken cancellationToken)
         {
             var songs = await _dbContext.Sessions
-                .AsNoTracking()
-                .Where(s => s.UserId == request.UserId)
-                .Select(s => new GameSessionDto()
-                {
-                    Id = s.Id,
-                    Name = s.Name,
-                    ParticipantCount = s.ParticipantCount,
-                    CardSize = s.CardSize,
-                    Rules = s.Rules
-                })
-                .ToListAsync(cancellationToken);
+                 .AsNoTracking()
+                 .Where(s => s.UserId == request.UserId)
+                 .Select(s => new GameSessionDto()
+                 {
+                     Id = s.Id,
+                     Name = s.Name,
+                     ParticipantCount = s.ParticipantCount,
+                     CardSize = s.CardSize,
+                     Rules = s.Rules,
+                     CreatedAt = s.CreatedAt,
+                     IsFullCardClaimed = s.IsFullCardClaimed
+                 })
+                 .ToListAsync(cancellationToken);
 
             return songs;
         }

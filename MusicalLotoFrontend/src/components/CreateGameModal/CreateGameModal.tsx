@@ -109,7 +109,7 @@ const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, song
     };
 
     return (
-        <div className="cgm-overlay" onClick={onClose}>
+        <div className="cgm-overlay">
             <div className="cgm-content" onClick={e => e.stopPropagation()}>
                 <button className="cgm-close-btn" onClick={onClose}>
                     <img src={closeIcon} alt="Закрыть" />

@@ -69,7 +69,7 @@ const SelectSongsModal: React.FC<SelectSongsModalProps> = ({ isOpen, onClose, on
     };
 
     return (
-        <div className="ssm-overlay" onClick={onClose}>
+        <div className="ssm-overlay">
             <div className="ssm-content" onClick={e => e.stopPropagation()}>
                 <button className="ssm-close-btn" onClick={onClose}>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

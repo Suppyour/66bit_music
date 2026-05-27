@@ -45,59 +45,85 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, initialRegiste
     e.preventDefault();
 
     if (isForgotPasswordMode) {
-        if (!email) {
-            setErrorStr('Введите email');
-            return;
-        }
-        setErrorStr('');
-        setIsLoading(true);
-        setTimeout(() => {
-            setIsLoading(false);
-            setIsResetSuccess(true);
-        }, 800);
+      if (!email) {
+        setErrorStr('Введите email');
         return;
-    }
-    
-    if (isRegisterMode && password !== confirmPassword) {
+      }
+      if (password !== confirmPassword) {
         setErrorStr('Пароли не совпадают');
         return;
+      }
+      if (password.length < 6) {
+        setErrorStr('Пароль должен содержать минимум 6 символов');
+        return;
+      }
+      setErrorStr('');
+      setIsLoading(true);
+
+      try {
+        const response = await fetch('/api/Auth/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, newPassword: password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setIsResetSuccess(true);
+        } else {
+          setErrorStr(data.error || data.title || 'Ошибка сброса пароля');
+        }
+      } catch (err) {
+        console.error(err);
+        setErrorStr('Ошибка сети');
+      } finally {
+        setIsLoading(false);
+      }
+      
+      return;
     }
-    
+
+    if (isRegisterMode && password !== confirmPassword) {
+      setErrorStr('Пароли не совпадают');
+      return;
+    }
+
     setErrorStr('');
     setIsLoading(true);
 
     const url = isRegisterMode ? '/api/Auth/register' : '/api/Auth/login';
-    
+
     try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            localStorage.setItem('token', data.token);
-            window.dispatchEvent(new Event('auth-change'));
-            setEmail('');
-            setPassword('');
-            setConfirmPassword('');
-            setIsRegisterMode(false);
-            onClose();
-        } else {
-            setErrorStr(data.error || data.title || 'Ошибка сервера');
-        }
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem('token', data.token);
+        window.dispatchEvent(new Event('auth-change'));
+        setEmail('');
+        setPassword('');
+        setConfirmPassword('');
+        setIsRegisterMode(false);
+        onClose();
+      } else {
+        setErrorStr(data.error || data.title || 'Ошибка сервера');
+      }
     } catch (err) {
-        console.error(err);
-        setErrorStr('Ошибка сети');
+      console.error(err);
+      setErrorStr('Ошибка сети');
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="modalOverlay" onClick={onClose}>
+    <div className="modalOverlay">
       <div className="modalContent" onClick={(e) => e.stopPropagation()}>
         <button className="modalCloseBtn" onClick={onClose} disabled={isLoading}>
           <img src={closeIcon} alt="Закрыть" />
@@ -106,15 +132,15 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, initialRegiste
         <div className="modalHeader">
           <img src={loginIcon} alt="Вход" className="modalLoginIcon" />
           <h2 className="modalTitle">
-            {isForgotPasswordMode 
-              ? 'Восстановление пароля' 
+            {isForgotPasswordMode
+              ? 'Восстановление пароля'
               : (isRegisterMode ? 'Регистрация' : 'Вход в панель управления')}
           </h2>
           <p className="modalSubtitle">
-            {isForgotPasswordMode 
-              ? 'Введите ваш Email, чтобы получить инструкции по сбросу пароля' 
-              : (isRegisterMode 
-                ? 'Создайте учетную запись для организации игровых сессий' 
+            {isForgotPasswordMode
+              ? 'Введите ваш Email и новый пароль для восстановления доступа'
+              : (isRegisterMode
+                ? 'Создайте учетную запись для организации игровых сессий'
                 : 'Введите ваши данные для доступа к играм')}
           </p>
         </div>
@@ -122,9 +148,9 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, initialRegiste
         <form className="modalForm" onSubmit={handleSubmit}>
           <div className="formGroup">
             <label className="formLabel">{isForgotPasswordMode ? 'Email' : 'Email / Логин'}</label>
-            <input 
-              type="text" 
-              className="formInput" 
+            <input
+              type="text"
+              className="formInput"
               placeholder="admin@bingo.ru"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -132,104 +158,106 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, initialRegiste
             />
           </div>
 
-          {!isForgotPasswordMode && (
-            <>
-              <div className="formGroup" style={{ marginTop: '27.5px' }}>
-                <label className="formLabel">Пароль</label>
-                <div className="passwordInputContainer">
-                   <input 
-                     type={showPassword ? "text" : "password"} 
-                     className="formInput passwordInput" 
-                     placeholder="•••••••••"
-                     value={password}
-                     onChange={(e) => setPassword(e.target.value)}
-                     required
-                   />
-                   <button 
-                     type="button" 
-                     className="passwordToggleBtn"
-                     onClick={() => setShowPassword(!showPassword)}
-                   >
-                     <img src={passwordIcon} alt="Показать/скрыть пароль" />
-                   </button>
-                </div>
+          <div className="formGroup" style={{ marginTop: '27.5px' }}>
+            <label className="formLabel">{isForgotPasswordMode ? 'Новый пароль' : 'Пароль'}</label>
+            <div className="passwordInputContainer">
+              <input
+                type={showPassword ? "text" : "password"}
+                className="formInput passwordInput"
+                placeholder="•••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                className="passwordToggleBtn"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                <img src={passwordIcon} alt="Показать/скрыть пароль" />
+              </button>
+            </div>
+          </div>
+
+          {(isRegisterMode || isForgotPasswordMode) && (
+            <div className="formGroup" style={{ marginTop: '27.5px' }}>
+              <label className="formLabel">{isForgotPasswordMode ? 'Подтвердите новый пароль' : 'Подтверждение пароля'}</label>
+              <div className="passwordInputContainer">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  className="formInput passwordInput"
+                  placeholder="•••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="passwordToggleBtn"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  <img src={passwordIcon} alt="Показать/скрыть пароль" />
+                </button>
               </div>
-
-              {isRegisterMode && (
-                <div className="formGroup" style={{ marginTop: '27.5px' }}>
-                  <label className="formLabel">Подтверждение пароля</label>
-                  <div className="passwordInputContainer">
-                     <input 
-                       type={showConfirmPassword ? "text" : "password"} 
-                       className="formInput passwordInput" 
-                       placeholder="•••••••••"
-                       value={confirmPassword}
-                       onChange={(e) => setConfirmPassword(e.target.value)}
-                       required
-                     />
-                     <button 
-                       type="button" 
-                       className="passwordToggleBtn"
-                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                     >
-                       <img src={passwordIcon} alt="Показать/скрыть пароль" />
-                     </button>
-                  </div>
-                </div>
-              )}
-
-              {!isRegisterMode && (
-                <div className="formOptions">
-                  <label className="checkboxLabel">
-                    <input type="checkbox" className="customCheckbox" />
-                    Запомнить меня
-                  </label>
-                  <a href="#" className="forgotPassword" onClick={(e) => {
-                      e.preventDefault();
-                      setIsForgotPasswordMode(true);
-                      setErrorStr('');
-                  }}>Забыли пароль?</a>
-                </div>
-              )}
-            </>
+            </div>
           )}
 
-          {errorStr && <div style={{color: 'red', marginTop: 10, fontSize: 14, textAlign: 'center'}}>{errorStr}</div>}
+          {(!isRegisterMode && !isForgotPasswordMode) && (
+            <div className="formOptions">
+              <label className="checkboxLabel">
+                <input type="checkbox" className="customCheckbox" />
+                Запомнить меня
+              </label>
+              <a href="#" className="forgotPassword" onClick={(e) => {
+                e.preventDefault();
+                setIsForgotPasswordMode(true);
+                setErrorStr('');
+                setPassword('');
+                setConfirmPassword('');
+              }}>Забыли пароль?</a>
+            </div>
+          )}
 
-          <button type="submit" className="loginSubmitBtn" disabled={isLoading} style={{marginTop: 40}}>
-             {isLoading ? 'Загрузка...' : (isForgotPasswordMode ? 'Сбросить пароль' : (isRegisterMode ? 'Зарегистрироваться' : 'Войти'))}
+          {errorStr && <div style={{ color: 'red', marginTop: 10, fontSize: 14, textAlign: 'center' }}>{errorStr}</div>}
+
+          <button type="submit" className="loginSubmitBtn" disabled={isLoading} style={{ marginTop: 40 }}>
+            {isLoading ? 'Загрузка...' : (isForgotPasswordMode ? 'Сбросить пароль' : (isRegisterMode ? 'Зарегистрироваться' : 'Войти'))}
           </button>
-          
+
           {isForgotPasswordMode && isResetSuccess && (
-              <div className="resetSuccessMessage">
-                  Если указанный email зарегистрирован в системе, инструкции отправлены на него
-              </div>
+            <div className="resetSuccessMessage" style={{ color: 'green', marginTop: 10, fontSize: 14, textAlign: 'center' }}>
+              Пароль успешно обновлен! Теперь вы можете войти.
+            </div>
           )}
 
           {isForgotPasswordMode ? (
-              <div className="modalFooter">
-                  <a href="#" className="backToLoginLink" onClick={(e) => {
-                      e.preventDefault();
-                      setIsForgotPasswordMode(false);
-                      setIsResetSuccess(false);
-                      setErrorStr('');
-                  }}>
-                      Вернуться ко входу
-                  </a>
-              </div>
+            <div className="modalFooter">
+              <a href="#" className="backToLoginLink" onClick={(e) => {
+                e.preventDefault();
+                setIsForgotPasswordMode(false);
+                setIsResetSuccess(false);
+                setErrorStr('');
+                setPassword('');
+                setConfirmPassword('');
+              }}>
+                Вернуться ко входу
+              </a>
+            </div>
           ) : (
-              <div className="modalFooter">
-                <span className="noAccountText">
-                    {isRegisterMode ? 'Уже есть аккаунт? ' : 'Нет аккаунта? '}
-                </span>
-                <a href="#" className="createAccountLink" onClick={(e) => {
-                    e.preventDefault();
-                    setIsRegisterMode(!isRegisterMode);
-                    setErrorStr('');
-                }}>
-                    {isRegisterMode ? 'Войти' : 'Создать аккаунт'}
-                </a>
-              </div>
+            <div className="modalFooter">
+              <span className="noAccountText">
+                {isRegisterMode ? 'Уже есть аккаунт? ' : 'Нет аккаунта? '}
+              </span>
+              <a href="#" className="createAccountLink" onClick={(e) => {
+                e.preventDefault();
+                setIsRegisterMode(!isRegisterMode);
+                setErrorStr('');
+                setPassword('');
+                setConfirmPassword('');
+              }}>
+                {isRegisterMode ? 'Войти' : 'Создать аккаунт'}
+              </a>
+            </div>
           )}
         </form>
       </div>
