@@ -29,6 +29,20 @@ public class CreateGameSessionCommand : IRequest<Guid>
     public required List<Guid> SelectedSongIds { get; init; }
     
     public Guid UserId { get; set; }
+    public List<PreGeneratedCardDto>? PreGeneratedCards { get; init; }
+}
+
+public class PreGeneratedCardDto
+{
+    public Guid Id { get; init; }
+    public required List<PreGeneratedCellDto> Cells { get; init; }
+}
+
+public class PreGeneratedCellDto
+{
+    public int Row { get; init; }
+    public int Column { get; init; }
+    public Guid SongId { get; init; }
 }
 
 public class CreateGameSessionHandler : IRequestHandler<CreateGameSessionCommand, Guid>
@@ -62,7 +76,24 @@ public class CreateGameSessionHandler : IRequestHandler<CreateGameSessionCommand
             UserId = request.UserId
         };
 
-        session.Cards = GenerateUniqueCards(request.ParticipantsCount, request.CardSize, request.SelectedSongIds);
+        if (request.PreGeneratedCards != null && request.PreGeneratedCards.Count > 0)
+        {
+            session.Cards = request.PreGeneratedCards.Select(c => new GameCard
+            {
+                Id = c.Id != Guid.Empty ? c.Id : Guid.NewGuid(),
+                Cells = c.Cells.Select(cell => new CardCell
+                {
+                    Row = cell.Row,
+                    Column = cell.Column,
+                    SongId = cell.SongId,
+                    IsMarked = false
+                }).ToList()
+            }).ToList();
+        }
+        else
+        {
+            session.Cards = GenerateUniqueCards(request.ParticipantsCount, request.CardSize, request.SelectedSongIds);
+        }
 
         // Fetch song details to construct presentation slides
         var songsDict = await _dbContext.Songs

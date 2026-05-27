@@ -24,6 +24,7 @@ interface MusicContextType {
     handleSeek: (time: number) => void;
     handleVolumeChange: (volume: number) => void;
     closePlayer: () => void;
+    refreshSongs: () => Promise<void>;
 }
 
 const MusicContext = createContext<MusicContextType | undefined>(undefined);
@@ -38,19 +39,37 @@ export const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     
     const audioRef = useRef<HTMLAudioElement>(new Audio());
 
-    useEffect(() => {
-        const fetchSongs = async () => {
-            try {
-                const response = await apiFetch('/api/Songs');
-                if (response.ok) {
-                    const data = await response.json();
-                    setSongs(data);
-                }
-            } catch (error) {
-                console.error('Failed to fetch songs for global context:', error);
+    const fetchSongs = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            setSongs([]);
+            return;
+        }
+        try {
+            const response = await apiFetch('/api/Songs');
+            if (response.ok) {
+                const data = await response.json();
+                setSongs(data || []);
+            } else {
+                setSongs([]);
             }
-        };
+        } catch (error) {
+            console.error('Failed to fetch songs for global context:', error);
+            setSongs([]);
+        }
+    };
+
+    useEffect(() => {
         fetchSongs();
+
+        const handleAuthChange = () => {
+            fetchSongs();
+        };
+
+        window.addEventListener('auth-change', handleAuthChange);
+        return () => {
+            window.removeEventListener('auth-change', handleAuthChange);
+        };
     }, []);
 
     useEffect(() => {
@@ -141,7 +160,8 @@ export const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             handlePrev,
             handleSeek,
             handleVolumeChange,
-            closePlayer
+            closePlayer,
+            refreshSongs: fetchSongs
         }}>
             {children}
         </MusicContext.Provider>

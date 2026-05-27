@@ -14,9 +14,10 @@ interface CreateGameModalProps {
     onClose: () => void;
     songs: Song[];
     onGameCreated: (gameId: string) => void;
+    preGeneratedCards?: any[];
 }
 
-const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, songs, onGameCreated }) => {
+const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, songs, onGameCreated, preGeneratedCards }) => {
     const [name, setName] = useState('');
     const [participantsCount, setParticipantsCount] = useState<string>('');
     const [cardSize, setCardSize] = useState<string>('');
@@ -88,7 +89,8 @@ const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, song
                     participantsCount: pCount,
                     cardSize: cSize,
                     rules,
-                    selectedSongIds: selectedSongsPool.map(s => s.id)
+                    selectedSongIds: selectedSongsPool.map(s => s.id),
+                    preGeneratedCards: preGeneratedCards || null
                 })
             });
 

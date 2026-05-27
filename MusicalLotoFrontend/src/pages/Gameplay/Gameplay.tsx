@@ -64,6 +64,8 @@ const Gameplay: React.FC = () => {
     const [isLotoRunning, setIsLotoRunning] = useState(false);
     const [isSongRevealed, setIsSongRevealed] = useState(false);
     const [activeCheckingClaim, setActiveCheckingClaim] = useState<Claim | null>(null);
+    const [cards, setCards] = useState<any[]>([]);
+    const [manualCardQuery, setManualCardQuery] = useState('');
 
     useEffect(() => {
         if (!sessionId) {
@@ -108,6 +110,13 @@ const Gameplay: React.FC = () => {
                         setParticipantCount(currentSession.participantCount || 23);
                     }
                 }
+
+                // Fetch actual session cards
+                const cardsResponse = await apiFetch(`/api/Games/${sessionId}/cards`);
+                if (cardsResponse.ok) {
+                    const cardsData = await cardsResponse.json();
+                    setCards(cardsData || []);
+                }
             } catch (error) {
                 console.error('Ошибка загрузки сценария игры:', error);
             } finally {
@@ -122,48 +131,81 @@ const Gameplay: React.FC = () => {
         setIsSongRevealed(false);
     }, [activeSlideIndex]);
 
-    const generateSimulatedCard = (playerName: string): SimulatedCard => {
-        const songs = slides.filter(s => {
-            const t = typeof s.type === 'number' ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type] : String(s.type);
-            return t === 'Song';
-        });
 
-        // Shuffle session songs
-        const shuffled = [...songs].sort(() => Math.random() - 0.5);
-        
-        // Take 25 or pad if not enough
-        const cells: SimulatedCell[] = [];
-        for (let row = 0; row < 5; row++) {
-            for (let col = 0; col < 5; col++) {
-                const songIndex = (row * 5 + col) % Math.max(1, shuffled.length);
-                const song = shuffled[songIndex];
-                cells.push({
-                    row,
-                    col,
-                    songId: song ? (song.songId || song.id) : '',
-                    title: song ? (song.title || 'Песня') : 'Пустая ячейка',
-                    artist: song ? (song.content || 'Исполнитель') : ''
-                });
-            }
-        }
-
-        return {
-            id: 'card-' + Math.random().toString(36).substr(2, 9),
-            playerName,
-            cells
-        };
-    };
 
     const handleSimulateClaim = () => {
+        if (cards.length === 0) {
+            alert('В этой игре нет сохраненных карточек!');
+            return;
+        }
         const randomName = NAMES_POOL[Math.floor(Math.random() * NAMES_POOL.length)];
+        const randomCard = cards[Math.floor(Math.random() * cards.length)];
         const newClaim: Claim = {
             id: String(claims.length + 1),
             name: randomName,
             time: 'Только что',
             status: 'Pending',
-            card: generateSimulatedCard(randomName)
+            card: {
+                id: randomCard.id,
+                playerName: randomName,
+                cells: randomCard.cells.map((c: any) => ({
+                    row: c.row,
+                    col: c.column !== undefined ? c.column : c.col,
+                    songId: c.songId,
+                    title: c.title,
+                    artist: c.artist
+                }))
+            }
         };
         setClaims(prev => [newClaim, ...prev]);
+    };
+
+    const handleManualCardCheck = () => {
+        if (!manualCardQuery.trim()) return;
+        if (cards.length === 0) {
+            alert('Карточки сессии еще не загружены или отсутствуют в базе.');
+            return;
+        }
+
+        const query = manualCardQuery.trim().toLowerCase();
+        
+        // Try searching by index (1-based)
+        const index = parseInt(query);
+        let foundCard = null;
+
+        if (!isNaN(index) && index >= 1 && index <= cards.length) {
+            foundCard = cards[index - 1];
+        } else {
+            // Search by full or short UUID
+            foundCard = cards.find(c => c.id.toLowerCase() === query || c.id.toLowerCase().includes(query));
+        }
+
+        if (!foundCard) {
+            alert('Билет с таким ID или номером не найден!');
+            return;
+        }
+
+        // Map to Claim and open the check modal
+        const checkClaim: Claim = {
+            id: `manual-${foundCard.id.substring(0, 8)}`,
+            name: `Билет №${cards.indexOf(foundCard) + 1}`,
+            time: 'Ручной ввод',
+            status: 'Pending',
+            card: {
+                id: foundCard.id,
+                playerName: `Билет №${cards.indexOf(foundCard) + 1}`,
+                cells: foundCard.cells.map((c: any) => ({
+                    row: c.row,
+                    col: c.column !== undefined ? c.column : c.col,
+                    songId: c.songId,
+                    title: c.title,
+                    artist: c.artist
+                }))
+            }
+        };
+
+        setActiveCheckingClaim(checkClaim);
+        setManualCardQuery('');
     };
 
 
@@ -735,6 +777,26 @@ const Gameplay: React.FC = () => {
                         >
                             ➕ Симулировать звонок "Бинго!"
                         </button>
+                    </div>
+
+                    <div className="card-manual-check" style={{ marginTop: '16px', padding: '16px', backgroundColor: '#F8FAFC', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
+                        <div style={{ fontWeight: 600, fontSize: '14px', color: '#1E293B', marginBottom: '8px' }}>Быстрая проверка билета</div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <input 
+                                type="text" 
+                                placeholder="ID билета (например, 1, 2...)" 
+                                value={manualCardQuery}
+                                onChange={(e) => setManualCardQuery(e.target.value)}
+                                style={{ flex: 1, padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px', fontSize: '13px', outline: 'none' }}
+                            />
+                            <button 
+                                type="button"
+                                onClick={handleManualCardCheck}
+                                style={{ padding: '8px 16px', backgroundColor: '#2563EB', color: '#FFFFFF', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+                            >
+                                Проверить
+                            </button>
+                        </div>
                     </div>
  
                     <div className="claims-list-section">

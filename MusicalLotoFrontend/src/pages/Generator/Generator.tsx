@@ -248,7 +248,8 @@ const Generator: React.FC = () => {
                 body: JSON.stringify({
                     count: cardCount,
                     cardSize: 5,
-                    songIds: selectedSongs.map(s => s.id)
+                    songIds: selectedSongs.map(s => s.id),
+                    sessionId: sessionId || null
                 })
             });
 
@@ -478,6 +479,7 @@ const Generator: React.FC = () => {
                     isOpen={isCreateModalOpen}
                     onClose={() => setIsCreateModalOpen(false)}
                     songs={selectedSongs}
+                    preGeneratedCards={generatedCards}
                     onGameCreated={(gameId) => {
                         setIsCreateModalOpen(false);
                         navigate(`/generator?sessionId=${gameId}`);

@@ -1,4 +1,6 @@
 using MediatR;
+using Microsoft.EntityFrameworkCore;
+using MusicalLotoBackend.Database;
 using MusicalLotoBackend.Domain.Models;
 using System.ComponentModel.DataAnnotations;
 
@@ -17,11 +19,20 @@ public class GenerateRandomCardsCommand : IRequest<List<CardDto>>
     [Required]
     [MinLength(9)]
     public List<Guid> SongIds { get; set; } = new();
+
+    public Guid? SessionId { get; set; }
 }
 
 public class GenerateRandomCardsHandler : IRequestHandler<GenerateRandomCardsCommand, List<CardDto>>
 {
-    public Task<List<CardDto>> Handle(GenerateRandomCardsCommand request, CancellationToken cancellationToken)
+    private readonly AppDbContext _dbContext;
+
+    public GenerateRandomCardsHandler(AppDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public async Task<List<CardDto>> Handle(GenerateRandomCardsCommand request, CancellationToken cancellationToken)
     {
         var minSongsRequired = request.CardSize * request.CardSize;
         if (request.SongIds.Count < minSongsRequired)
@@ -78,6 +89,33 @@ public class GenerateRandomCardsHandler : IRequestHandler<GenerateRandomCardsCom
             generatedCards.Add(card);
         }
 
-        return Task.FromResult(generatedCards);
+        if (request.SessionId.HasValue && request.SessionId.Value != Guid.Empty)
+        {
+            var session = await _dbContext.Sessions
+                .Include(s => s.Cards)
+                .FirstOrDefaultAsync(s => s.Id == request.SessionId.Value, cancellationToken);
+
+            if (session != null)
+            {
+                _dbContext.GameCards.RemoveRange(session.Cards);
+
+                session.Cards = generatedCards.Select(c => new GameCard
+                {
+                    Id = c.Id,
+                    GameSessionId = request.SessionId.Value,
+                    Cells = c.Cells.Select(cell => new CardCell
+                    {
+                        Row = cell.Row,
+                        Column = cell.Column,
+                        SongId = cell.SongId,
+                        IsMarked = false
+                    }).ToList()
+                }).ToList();
+
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+        }
+
+        return generatedCards;
     }
 }

@@ -20,11 +20,14 @@ public class UpdateGamePresentationCommand : IRequest<bool>
 public class SlideUpdateDto
 {
     public Guid Id { get; init; }
+    public SlideType Type { get; init; }
     public string? Title { get; init; }
     public string? Content { get; init; }
     public string? BackgroundColor { get; init; }
     public string? BackgroundImageUrl { get; init; }
     public int Order { get; init; }
+    public bool IsRequired { get; init; }
+    public Guid? SongId { get; init; }
 }
 
 public class UpdateGamePresentationHandler : IRequestHandler<UpdateGamePresentationCommand, bool>
@@ -43,6 +46,13 @@ public class UpdateGamePresentationHandler : IRequestHandler<UpdateGamePresentat
 
         if (session == null || session.UserId != request.UserId) return false;
 
+        var updatedSlides = new List<Slide>();
+
+        // 1. Preserve QrCode slides as they are not editable/sent by frontend
+        var qrCodeSlides = session.Slides.Where(s => s.Type == SlideType.QrCode).ToList();
+        updatedSlides.AddRange(qrCodeSlides);
+
+        // 2. Process all incoming slides
         foreach (var slideDto in request.Slides)
         {
             var existingSlide = session.Slides.FirstOrDefault(s => s.Id == slideDto.Id);
@@ -53,8 +63,32 @@ public class UpdateGamePresentationHandler : IRequestHandler<UpdateGamePresentat
                 existingSlide.BackgroundColor = slideDto.BackgroundColor;
                 existingSlide.BackgroundImageUrl = slideDto.BackgroundImageUrl;
                 existingSlide.Order = slideDto.Order;
+                existingSlide.Type = slideDto.Type;
+                existingSlide.IsRequired = slideDto.IsRequired;
+                existingSlide.SongId = slideDto.SongId;
+                
+                updatedSlides.Add(existingSlide);
+            }
+            else
+            {
+                var newSlide = new Slide
+                {
+                    Id = slideDto.Id,
+                    Type = slideDto.Type,
+                    Title = slideDto.Title,
+                    Content = slideDto.Content,
+                    BackgroundColor = slideDto.BackgroundColor,
+                    BackgroundImageUrl = slideDto.BackgroundImageUrl,
+                    Order = slideDto.Order,
+                    IsRequired = slideDto.IsRequired,
+                    SongId = slideDto.SongId
+                };
+                
+                updatedSlides.Add(newSlide);
             }
         }
+
+        session.Slides = updatedSlides.OrderBy(s => s.Order).ToList();
 
         // Make sure order indices are applied and save
         await _dbContext.SaveChangesAsync(cancellationToken);

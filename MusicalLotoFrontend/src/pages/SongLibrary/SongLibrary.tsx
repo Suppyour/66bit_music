@@ -119,7 +119,8 @@ const SongLibrary: React.FC = () => {
     const { 
         currentSong, 
         isPlaying, 
-        playSong 
+        playSong,
+        refreshSongs
     } = useMusic();
 
     const [notification, setNotification] = useState<{ show: boolean, type: NotificationType, text: string }>({
@@ -148,6 +149,7 @@ const SongLibrary: React.FC = () => {
                 setDeletingSong(null);
                 triggerNotification('delete', name);
                 await fetchSongs();
+                await refreshSongs();
             } else {
                 alert('Ошибка сервера при удалении');
             }
@@ -170,6 +172,7 @@ const SongLibrary: React.FC = () => {
                 const artist = formData.get('Artist') as string;
                 triggerNotification('edit', `${title} - ${artist}`);
                 await fetchSongs();
+                await refreshSongs();
             } else {
                 const errText = await response.text();
                 alert(`Ошибка от сервера при изменении: ${response.status}\n${errText}`);
@@ -221,6 +224,7 @@ const SongLibrary: React.FC = () => {
                 triggerNotification('add', `${title} - ${artist}`);
 
                 await fetchSongs();
+                await refreshSongs();
             } else {
                 const errText = await response.text();
                 console.error("Backend error:", errText);

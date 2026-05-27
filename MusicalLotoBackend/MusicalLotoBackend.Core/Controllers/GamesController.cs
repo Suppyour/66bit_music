@@ -161,4 +161,28 @@ public class GamesController : ControllerBase
 
         return Ok(new { Url = resultUrl });
     }
+
+    [HttpGet("{sessionId}/cards")]
+    public async Task<IActionResult> GetGameCards(Guid sessionId)
+    {
+        Guid userId;
+        try
+        {
+            userId = GetUserId();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var cards = await _mediator.Send(new GetGameCardsQuery { SessionId = sessionId, UserId = userId });
+            return Ok(cards);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { Message = ex.Message });
+        }
+    }
 }

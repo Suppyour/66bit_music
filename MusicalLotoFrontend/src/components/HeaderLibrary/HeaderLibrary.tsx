@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useMusic } from '../../context/MusicContext';
+import EditProfileModal from '../EditProfileModal/EditProfileModal';
 import './HeaderLibrary.css';
 
 import logoIcon from '../../assets/MainPage/Background.svg';
@@ -8,6 +9,7 @@ import avatarImg from '../../assets/SongLibrary/Аватарка.png';
 
 const HeaderLibrary: React.FC = () => {
     const [showDropdown, setShowDropdown] = useState(false);
+    const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
     const navigate = useNavigate();
     const { closePlayer } = useMusic();
 
@@ -45,12 +47,17 @@ const HeaderLibrary: React.FC = () => {
                         <>
                             <div className="dropdown-overlay" onClick={() => setShowDropdown(false)} />
                             <div className="profile-dropdown">
+                                <button className="dropdown-item" onClick={() => { setShowDropdown(false); setIsEditProfileOpen(true); }}>Профиль</button>
                                 <button className="dropdown-item" onClick={handleLogout}>Выйти</button>
                             </div>
                         </>
                     )}
                 </div>
             </div>
+            <EditProfileModal 
+                isOpen={isEditProfileOpen} 
+                onClose={() => setIsEditProfileOpen(false)} 
+            />
         </header>
     );
 };
