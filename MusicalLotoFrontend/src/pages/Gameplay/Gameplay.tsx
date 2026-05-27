@@ -81,6 +81,8 @@ const Gameplay: React.FC = () => {
     const [cards, setCards] = useState<any[]>([]);
     const [manualCardQuery, setManualCardQuery] = useState('');
     const [isEndGameConfirmOpen, setIsEndGameConfirmOpen] = useState(false);
+    const [isPresenterActive, setIsPresenterActive] = useState(false);
+    const [isBrowserFullscreen, setIsBrowserFullscreen] = useState(false);
 
     useEffect(() => {
         if (!sessionId) {
@@ -158,35 +160,52 @@ const Gameplay: React.FC = () => {
         }
     }, [claims, sessionId]);
 
+    // Synchronize browser fullscreen changes (e.g. exit fullscreen via Esc key)
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsBrowserFullscreen(!!document.fullscreenElement);
+        };
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            document.body.classList.remove('presenter-active');
+        };
+    }, []);
 
+    // Keyboard shortcuts for presenter mode
+    useEffect(() => {
+        if (!isPresenterActive) return;
 
-    const handleSimulateClaim = () => {
-        if (cards.length === 0) {
-            alert('В этой игре нет сохраненных карточек!');
-            return;
-        }
-        const randomCard = cards[Math.floor(Math.random() * cards.length)];
-        const dispName = randomCard.cuteName || `Билет №${cards.indexOf(randomCard) + 1}`;
-        const newClaim: Claim = {
-            id: String(claims.length + 1),
-            name: dispName,
-            time: 'Только что',
-            status: 'Pending',
-            card: {
-                id: randomCard.id,
-                playerName: dispName,
-                cells: randomCard.cells.map((c: any) => ({
-                    row: c.row,
-                    col: c.column !== undefined ? c.column : c.col,
-                    songId: c.songId,
-                    title: c.title,
-                    artist: c.artist
-                }))
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                handleNextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                handlePrevSlide();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                setIsPresenterActive(false);
+                document.body.classList.remove('presenter-active');
+            } else if (e.key === ' ') {
+                const targetSlide = slides[activeSlideIndex];
+                if (targetSlide) {
+                    const typeStr = typeof targetSlide.type === 'number'
+                        ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][targetSlide.type] || 'Title'
+                        : String(targetSlide.type);
+                    if (typeStr === 'Song') {
+                        e.preventDefault();
+                        handleLotoButtonClick();
+                    }
+                }
             }
         };
-        setClaims(prev => [newClaim, ...prev]);
-    };
 
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isPresenterActive, activeSlideIndex, slides, isPlaying, currentSong, isLotoRunning]);
     const handleManualCardCheck = () => {
         if (!manualCardQuery.trim()) return;
         if (cards.length === 0) {
@@ -195,7 +214,7 @@ const Gameplay: React.FC = () => {
         }
 
         const query = manualCardQuery.trim().toLowerCase();
-        
+
         // Try searching by index (1-based)
         const index = parseInt(query);
         let foundCard = null;
@@ -204,8 +223,8 @@ const Gameplay: React.FC = () => {
             foundCard = cards[index - 1];
         } else {
             // Search by full/short UUID or CuteName (case-insensitive)
-            foundCard = cards.find(c => 
-                c.id.toLowerCase() === query || 
+            foundCard = cards.find(c =>
+                c.id.toLowerCase() === query ||
                 c.id.toLowerCase().includes(query) ||
                 (c.cuteName && c.cuteName.toLowerCase() === query) ||
                 (c.cuteName && c.cuteName.toLowerCase().includes(query))
@@ -424,10 +443,30 @@ const Gameplay: React.FC = () => {
         }
     };
 
+    const togglePresenterMode = () => {
+        setIsPresenterActive(prev => {
+            const nextVal = !prev;
+            document.body.classList.toggle('presenter-active', nextVal);
+            return nextVal;
+        });
+    };
+
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().then(() => {
+                setIsBrowserFullscreen(true);
+            }).catch(err => console.error(err));
+        } else {
+            document.exitFullscreen().then(() => {
+                setIsBrowserFullscreen(false);
+            }).catch(err => console.error(err));
+        }
+    };
+
     const checkWinStatus = (card: SimulatedCard, playedIds: string[]) => {
         const size = 5;
         const grid: boolean[][] = Array(size).fill(null).map(() => Array(size).fill(false));
-        
+
         card.cells.forEach(cell => {
             if (playedIds.includes(cell.songId)) {
                 grid[cell.row][cell.col] = true;
@@ -496,12 +535,6 @@ const Gameplay: React.FC = () => {
         }
 
         return lines;
-    };
-
-    const handleCheckBingo = () => {
-        if (claims.length === 0) return;
-        const pendingClaim = claims.find(c => c.status === 'Pending') || claims[0];
-        setActiveCheckingClaim(pendingClaim);
     };
 
     const handleConfirmBingo = (claimId: string) => {
@@ -642,8 +675,26 @@ const Gameplay: React.FC = () => {
                 {/* 2. Центральная колонка: Активный слайд */}
                 <section className="gameplay-center">
                     <div className="active-slide-card">
-                        <div className="active-slide-label">
-                            АКТИВНЫЙ СЛАЙД
+                        <div className="active-slide-header">
+                            <div className="active-slide-label">АКТИВНЫЙ СЛАЙД</div>
+                            <div className="slide-mode-actions">
+                                <button
+                                    type="button"
+                                    className="btn-slide-action presenter-btn"
+                                    onClick={togglePresenterMode}
+                                    title="Запустить режим презентации"
+                                >
+                                    🖥️ Презентация
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn-slide-action"
+                                    onClick={toggleFullscreen}
+                                    title="Полноэкранный режим"
+                                >
+                                    {isBrowserFullscreen ? '🔍 Свернуть' : '📺 Во весь экран'}
+                                </button>
+                            </div>
                         </div>
 
                         {/* Сам визуальный слайд */}
@@ -814,45 +865,27 @@ const Gameplay: React.FC = () => {
                 {/* 3. Правая колонка: Проверка победителей */}
                 <aside className="gameplay-sidebar winners-sidebar">
                     <h2 className="sidebar-heading">Проверка победителей</h2>
- 
-                    <div className="winner-actions-buttons">
-                        <button
-                            type="button"
-                            className="btn-winner-action check-bingo"
-                            onClick={handleCheckBingo}
-                            disabled={claims.filter(c => c.status === 'Pending').length === 0}
-                        >
-                            Проверить заявку
-                        </button>
-                        <button
-                            type="button"
-                            className="btn-simulate-claim"
-                            onClick={handleSimulateClaim}
-                        >
-                            ➕ Симулировать звонок "Бинго!"
-                        </button>
-                    </div>
 
-                    <div className="card-manual-check" style={{ marginTop: '16px', padding: '16px', backgroundColor: '#F8FAFC', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
-                        <div style={{ fontWeight: 600, fontSize: '14px', color: '#1E293B', marginBottom: '8px' }}>Быстрая проверка билета</div>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <input 
-                                type="text" 
-                                placeholder="ID билета (например, 1, 2...)" 
+                    <div className="card-manual-check">
+                        <div className="manual-check-title">Быстрая проверка билета</div>
+                        <div className="manual-check-form">
+                            <input
+                                type="text"
+                                placeholder="ID билета (например, 1, 2...)"
                                 value={manualCardQuery}
                                 onChange={(e) => setManualCardQuery(e.target.value)}
-                                style={{ flex: 1, padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px', fontSize: '13px', outline: 'none' }}
+                                className="manual-check-input"
                             />
-                            <button 
+                            <button
                                 type="button"
                                 onClick={handleManualCardCheck}
-                                style={{ padding: '8px 16px', backgroundColor: '#2563EB', color: '#FFFFFF', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+                                className="btn-manual-check-submit"
                             >
-                                Проверить
+                                Проверить билет
                             </button>
                         </div>
                     </div>
- 
+
                     <div className="claims-list-section">
                         <div className="claims-header">Заявки на бинго (кликните для проверки)</div>
                         {claims.length === 0 ? (
@@ -987,6 +1020,157 @@ const Gameplay: React.FC = () => {
                             >
                                 Закрыть
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isPresenterActive && (
+                <div className="presenter-mode-overlay">
+                    <div className="presenter-slide-viewport" style={activeBackgroundStyle}>
+                        {activeSlide.backgroundImageUrl && <div className="slide-image-overlay"></div>}
+                        
+                        <div className="presenter-slide-content">
+                            {activeSlideTypeStr === 'Title' && (
+                                <div className="presenter-slide-view title-view">
+                                    <div className="presenter-logo">🎵</div>
+                                    <h1 className="presenter-heading">{activeSlide.title || gameName}</h1>
+                                    <p className="presenter-subheading">МУЗЫКАЛЬНОЕ ЛОТО</p>
+                                </div>
+                            )}
+
+                            {activeSlideTypeStr === 'Rules' && (
+                                <div className="presenter-slide-view rules-view">
+                                    <h1 className="presenter-heading">📜 ПРАВИЛА ИГРЫ</h1>
+                                    <div className="presenter-rules-box">
+                                        {activeSlide.content ? activeSlide.content.split('\n').map((line, lIdx) => (
+                                            <p key={lIdx}>{line}</p>
+                                        )) : 'Ознакомьтесь с правилами игры на экране.'}
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeSlideTypeStr === 'GameBoard' && (
+                                <div className="presenter-slide-view gameboard-view">
+                                    <div className="presenter-logo">🎮</div>
+                                    <h1 className="presenter-heading">ИГРОВОЕ ПОЛЕ</h1>
+                                    <p className="presenter-body-text">{activeSlide.content || 'ИГРА НАЧАЛАСЬ!'}</p>
+                                </div>
+                            )}
+
+                            {activeSlideTypeStr === 'QrCode' && (
+                                <div className="presenter-slide-view qr-view">
+                                    <h1 className="presenter-heading">📱 ВХОД В ИГРУ</h1>
+                                    <div className="presenter-qr-box">
+                                        <svg width="240" height="240" viewBox="0 0 24 24" fill="none" stroke="#111827" strokeWidth="1.5">
+                                            <rect x="2" y="2" width="6" height="6" rx="1" />
+                                            <rect x="2" y="16" width="6" height="6" rx="1" />
+                                            <rect x="16" y="2" width="6" height="6" rx="1" />
+                                            <path d="M16 16h2v2h-2zm4 4h2v2h-2zm0-4h2v2h-2zm-4 4h2v2h-2zm4-2h2v2h-2zm-2 2h2v2h-2z" />
+                                        </svg>
+                                    </div>
+                                    <p className="presenter-qr-link">Ссылка: {activeSlide.content || 'musloto/join'}</p>
+                                </div>
+                            )}
+
+                            {activeSlideTypeStr === 'Song' && (
+                                <div className="presenter-slide-view song-view">
+                                    <span className="presenter-song-badge">🎵 АКТИВНАЯ ПЕСНЯ</span>
+                                    <h1 className="presenter-song-title">
+                                        {isSongRevealed ? activeSlide.title : '???'}
+                                    </h1>
+                                    <p className="presenter-song-artist">
+                                        {isSongRevealed ? (activeSlide.content || 'Исполнитель') : 'Исполнитель скрыт'}
+                                    </p>
+                                    
+                                    <div className="presenter-song-controls">
+                                        <button
+                                            type="button"
+                                            className="btn-presenter-action reveal"
+                                            onClick={() => setIsSongRevealed(prev => !prev)}
+                                        >
+                                            {isSongRevealed ? '👁️ Скрыть песню' : '👁️ Показать песню'}
+                                        </button>
+                                        
+                                        <button
+                                            type="button"
+                                            className={`btn-presenter-action loto ${isPlaying ? 'playing' : ''}`}
+                                            onClick={handleLotoButtonClick}
+                                            disabled={isLotoRunning}
+                                        >
+                                            {isLotoRunning ? (
+                                                <span className="spinner"></span>
+                                            ) : isPlaying ? (
+                                                '⏸️ Пауза лототрона'
+                                            ) : (
+                                                '▶️ Запустить лототрон'
+                                            )}
+                                        </button>
+                                    </div>
+                                    {currentLotoSong && currentLotoSong.title === activeSlide.title && (
+                                        <p className="presenter-status-playing-text">Сейчас играет в плеере 🔊</p>
+                                    )}
+                                </div>
+                            )}
+
+                            {activeSlideTypeStr === 'Winner' && (
+                                <div className="presenter-slide-view winner-view">
+                                    <div className="presenter-logo-winner">🏆</div>
+                                    <h1 className="presenter-heading text-winner">ФИНАЛ ИГРЫ</h1>
+                                    <p className="presenter-winner-text">{activeSlide.content || 'Финал и поздравление победителей!'}</p>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="presenter-toolbar">
+                            <div className="presenter-toolbar-section left">
+                                <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#94A3B8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '160px' }}>
+                                    🎵 {gameName}
+                                </span>
+                            </div>
+                            
+                            <div className="presenter-toolbar-section center">
+                                <button 
+                                    type="button" 
+                                    className="btn-toolbar-nav"
+                                    onClick={handlePrevSlide}
+                                    disabled={activeSlideIndex === 0}
+                                    title="Предыдущий слайд"
+                                >
+                                    ◀
+                                </button>
+                                <span className="presenter-toolbar-counter">
+                                    Слайд {activeSlideIndex + 1} из {slides.length}
+                                </span>
+                                <button 
+                                    type="button" 
+                                    className="btn-toolbar-nav"
+                                    onClick={handleNextSlide}
+                                    disabled={activeSlideIndex === slides.length - 1}
+                                    title="Следующий слайд"
+                                >
+                                    ▶
+                                </button>
+                            </div>
+
+                            <div className="presenter-toolbar-section right">
+                                <button 
+                                    type="button" 
+                                    className="btn-toolbar-action fullscreen"
+                                    onClick={toggleFullscreen}
+                                    title="Полноэкранный режим браузера"
+                                >
+                                    {isBrowserFullscreen ? '🗗' : '🗖'}
+                                </button>
+                                <button 
+                                    type="button" 
+                                    className="btn-toolbar-action close"
+                                    onClick={togglePresenterMode}
+                                    title="Выйти из презентации"
+                                >
+                                    ❌ Выйти
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
