@@ -284,22 +284,22 @@
         gap: 20px;
         align-items: stretch;
     }
-    
+
     .cabinet-stats-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .game-row {
         flex-direction: column;
         align-items: flex-start;
         gap: 20px;
     }
-    
+
     .game-actions-col {
         width: 100%;
         justify-content: space-between;
     }
-    
+
     .play-game-btn {
         flex: 1;
         justify-content: center;
@@ -550,7 +550,7 @@
     flex: 1;
     min-width: 180px;
     position: relative;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.01);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.01);
 }
 
 .song-thumb-icon {
@@ -672,8 +672,13 @@
 }
 
 @keyframes rotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .preview-subsection {
@@ -736,7 +741,7 @@
     padding: 6px 14px;
     border-radius: 8px;
     border: 1px solid #E2E8F0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
 
@@ -916,7 +921,8 @@
 .print-card-container {
     width: 100%;
     max-width: 820px;
-    aspect-ratio: 1.414; /* A4 Landscape proportions */
+    aspect-ratio: 1.414;
+    /* A4 Landscape proportions */
     background-color: var(--accent-color, #B21016);
     padding: 12px;
     box-sizing: border-box;
@@ -964,11 +970,11 @@
 .print-card-container .card-right-panel {
     flex: 1;
     background-color: rgba(255, 255, 255, 0.95);
-    padding: 24px 14px 20px 14px;
+    padding: 70px 14px 20px 14px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     border-left: 1.5px dashed var(--accent-color, #B21016);
     height: 100%;
     position: relative;
@@ -979,8 +985,10 @@
 .print-card-container .card-right-panel::before {
     content: '';
     position: absolute;
-    top: -15px; /* Offset by half the circle diameter */
-    left: -16px; /* Offset by half the circle diameter */
+    top: -15px;
+    /* Offset by half the circle diameter */
+    left: -16px;
+    /* Offset by half the circle diameter */
     width: 30px;
     height: 30px;
     background-color: var(--accent-color, #B21016);
@@ -992,8 +1000,10 @@
 .print-card-container .card-right-panel::after {
     content: '';
     position: absolute;
-    bottom: -15px; /* Offset by half the circle diameter */
-    left: -16px; /* Offset by half the circle diameter */
+    bottom: -15px;
+    /* Offset by half the circle diameter */
+    left: -16px;
+    /* Offset by half the circle diameter */
     width: 30px;
     height: 30px;
     background-color: var(--accent-color, #B21016);
@@ -1005,7 +1015,7 @@
 /* Scissors label on the perforated edge top border */
 .print-card-container .scissors-label {
     position: absolute;
-    top: -9px;
+    top: 40px;
     right: 20px;
     background-color: #ffffff;
     padding: 0 8px;
@@ -1025,7 +1035,8 @@
 /* Ножницы в правом верхнем углу рамки */
 .print-card-container .scissors-label .scissors-icon {
     font-size: 13px;
-    color: var(--accent-color, #B21016); /* Красный акцентный цвет для ножниц */
+    color: var(--accent-color, #B21016);
+    /* Красный акцентный цвет для ножниц */
 }
 
 /* Название компании в левом верхнем углу рамки */
@@ -1097,14 +1108,16 @@
 .print-card-container .title-line {
     flex-grow: 1;
     height: 1.5px;
-    background-color: #000000; /* Черные линии заголовка для стильного контраста как на макете */
+    background-color: #000000;
+    /* Черные линии заголовка для стильного контраста как на макете */
     max-width: 60px;
     transition: background-color 0.3s ease;
 }
 
 .print-card-container .card-title-text {
     padding: 0 16px;
-    font-size: 26px; /* РАЗМЕР ШРИФТА ГЛАВНОГО ЗАГОЛОВКА "МУЗЫКАЛЬНОЕ ЛОТО" */
+    font-size: 26px;
+    /* РАЗМЕР ШРИФТА ГЛАВНОГО ЗАГОЛОВКА "МУЗЫКАЛЬНОЕ ЛОТО" */
     font-weight: 700;
     color: #000000;
     text-transform: uppercase;
@@ -1129,7 +1142,8 @@
 /* The actual Bingo board grid (Border removed for Screenshot 2 elegance) */
 .print-card-container .bingo-card {
     display: grid;
-    gap: 8px !important; /* МЕЖЪЯЧЕЕЧНЫЙ ЗАЗОР СЕТКИ (можно менять, например 6px или 10px) */
+    gap: 8px !important;
+    /* МЕЖЪЯЧЕЕЧНЫЙ ЗАЗОР СЕТКИ (можно менять, например 6px или 10px) */
     background-color: transparent !important;
     border: none !important;
     border-radius: 0 !important;
@@ -1144,12 +1158,14 @@
 .print-card-container .bingo-cell {
     border: 1.5px solid var(--accent-color, #B21016) !important;
     background-color: #ffffff !important;
-    border-radius: 14px !important; /* СКРУГЛЕНИЕ ЯЧЕЕК (увеличьте/уменьшите для идеального скругления) */
+    border-radius: 14px !important;
+    /* СКРУГЛЕНИЕ ЯЧЕЕК (увеличьте/уменьшите для идеального скругления) */
     padding: 6px !important;
-    
+
     /* ВЫСОТА ЯЧЕЙКИ: Увеличение до 80px делает карточку более квадратной и заполняет высоту, как на втором макете! */
-    height: 80px !important; /* ПОИГРАЙТЕСЬ С ЭТОЙ ВЫСОТОЙ (например: 78px, 80px, 82px) ДЛЯ ИДЕАЛЬНОГО РАЗМЕРА */
-    
+    height: 80px !important;
+    /* ПОИГРАЙТЕСЬ С ЭТОЙ ВЫСОТОЙ (например: 78px, 80px, 82px) ДЛЯ ИДЕАЛЬНОГО РАЗМЕРА */
+
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
@@ -1174,14 +1190,16 @@
 }
 
 .print-card-container .cell-icon {
-    display: none !important; /* Hide icon in premium ticket view */
+    display: none !important;
+    /* Hide icon in premium ticket view */
 }
 
 /* Форматирование текста песни и исполнителя внутри ячейки */
 .print-card-container .cell-title {
     /* РАЗМЕР ШРИФТА ДЛЯ НАЗВАНИЙ ПЕСЕН И ИСПОЛНИТЕЛЕЙ В ЯЧЕЙКАХ */
-    font-size: 10px !important; /* ПОИГРАЙТЕСЬ С РАЗМЕРОМ ШРИФТА (например: 9.5px, 10px, 11px) ДЛЯ ЛУЧШЕГО ВИДА */
-    
+    font-size: 10px !important;
+    /* ПОИГРАЙТЕСЬ С РАЗМЕРОМ ШРИФТА (например: 9.5px, 10px, 11px) ДЛЯ ЛУЧШЕГО ВИДА */
+
     font-weight: 500 !important;
     color: #1e293b !important;
     line-height: 1.25 !important;
@@ -1231,10 +1249,12 @@
 .print-card-container .mini-grids-container {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 20px;
     width: 100%;
     align-items: center;
     justify-content: center;
+    transform: scale(1.6);
+    transform-origin: center top;
 }
 
 .print-card-container .mini-grid-wrapper {
@@ -1288,7 +1308,8 @@
     background-color: #FFFFFF;
     border: 1px solid #cbd5e1;
     box-sizing: border-box;
-    border-radius: 50%; /* Rounded circles like in screenshot */
+    border-radius: 50%;
+    /* Rounded circles like in screenshot */
     width: 10px;
     height: 10px;
     display: flex;
@@ -1311,5 +1332,3 @@
     margin-top: 4px;
     font-weight: 500;
 }
-
-

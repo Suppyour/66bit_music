@@ -84,10 +84,10 @@ const SortableCell = ({ cell, song, isCenter, accentColor }: { cell: CardCellDat
             {isCenter && (
                 <>
                     {/* SVG Bows for the center gift cell */}
-                    <svg className="corner-bow top-left" viewBox="0 0 100 100" style={{ stroke: accentColor }}><path d="M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90" fill="none" strokeWidth="8" strokeLinecap="round"/></svg>
-                    <svg className="corner-bow top-right" viewBox="0 0 100 100" style={{ stroke: accentColor }}><path d="M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90" fill="none" strokeWidth="8" strokeLinecap="round"/></svg>
-                    <svg className="corner-bow bottom-left" viewBox="0 0 100 100" style={{ stroke: accentColor }}><path d="M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90" fill="none" strokeWidth="8" strokeLinecap="round"/></svg>
-                    <svg className="corner-bow bottom-right" viewBox="0 0 100 100" style={{ stroke: accentColor }}><path d="M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90" fill="none" strokeWidth="8" strokeLinecap="round"/></svg>
+                    <svg className="corner-bow top-left" viewBox="0 0 100 100" style={{ stroke: accentColor }}><path d="M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90" fill="none" strokeWidth="8" strokeLinecap="round" /></svg>
+                    <svg className="corner-bow top-right" viewBox="0 0 100 100" style={{ stroke: accentColor }}><path d="M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90" fill="none" strokeWidth="8" strokeLinecap="round" /></svg>
+                    <svg className="corner-bow bottom-left" viewBox="0 0 100 100" style={{ stroke: accentColor }}><path d="M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90" fill="none" strokeWidth="8" strokeLinecap="round" /></svg>
+                    <svg className="corner-bow bottom-right" viewBox="0 0 100 100" style={{ stroke: accentColor }}><path d="M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90" fill="none" strokeWidth="8" strokeLinecap="round" /></svg>
                 </>
             )}
             <div className="cell-title" title={song ? `${song.artist} – ${song.title}` : 'Пустая ячейка'}>
@@ -656,9 +656,9 @@ const Cabinet: React.FC = () => {
                                     </div>
 
                                     {currentCard ? (
-                                        <div 
-                                            className="print-card-container" 
-                                            style={{ 
+                                        <div
+                                            className="print-card-container"
+                                            style={{
                                                 '--accent-color': accentColor,
                                                 fontFamily: fontFamily === 'Playfair Display' ? "'Playfair Display', serif" : fontFamily === 'Montserrat' ? "'Montserrat', sans-serif" : "'Inter', sans-serif"
                                             } as React.CSSProperties}
@@ -705,10 +705,10 @@ const Cabinet: React.FC = () => {
                                                                     const song = selectedSongs.find(s => s.id === cell.songId);
                                                                     const isCenter = cell.row === 2 && cell.column === 2;
                                                                     return (
-                                                                        <SortableCell 
-                                                                            key={`${cell.row}-${cell.column}`} 
-                                                                            cell={cell} 
-                                                                            song={song} 
+                                                                        <SortableCell
+                                                                            key={`${cell.row}-${cell.column}`}
+                                                                            cell={cell}
+                                                                            song={song}
                                                                             isCenter={isCenter}
                                                                             accentColor={accentColor}
                                                                         />
@@ -728,12 +728,12 @@ const Cabinet: React.FC = () => {
                                                         <span className="scissors-icon">✂</span> — твоя уникальная песня
                                                     </div>
                                                     <div className="rules-panel-title">Победные комбинации</div>
-                                                    
+
                                                     <div className="mini-grids-container">
                                                         {/* Horizontal rule (1) */}
                                                         {(rules & 1) ? (
                                                             <div className="mini-grid-wrapper">
-                                                                <div 
+                                                                <div
                                                                     className="mini-grid-layout horizontal-rule"
                                                                     style={{ '--accent-color-rule': accentColor } as React.CSSProperties}
                                                                 >
@@ -748,7 +748,7 @@ const Cabinet: React.FC = () => {
                                                         {/* Vertical rule (2) */}
                                                         {(rules & 2) ? (
                                                             <div className="mini-grid-wrapper">
-                                                                <div 
+                                                                <div
                                                                     className="mini-grid-layout vertical-rule"
                                                                     style={{ '--accent-color-rule': accentColor } as React.CSSProperties}
                                                                 >
@@ -763,7 +763,7 @@ const Cabinet: React.FC = () => {
                                                         {/* Diagonal rule (8) */}
                                                         {(rules & 8) ? (
                                                             <div className="mini-grid-wrapper">
-                                                                <div 
+                                                                <div
                                                                     className="mini-grid-layout diagonal-rule"
                                                                     style={{ '--accent-color-rule': accentColor } as React.CSSProperties}
                                                                 >
@@ -772,8 +772,8 @@ const Cabinet: React.FC = () => {
                                                                         const col = idx % 5;
                                                                         const isAccent = row === col || row + col === 4;
                                                                         return (
-                                                                            <div 
-                                                                                key={idx} 
+                                                                            <div
+                                                                                key={idx}
                                                                                 className={isAccent ? "mini-grid-cell active-cross" : "mini-grid-cell"}
                                                                                 style={isAccent ? { borderColor: accentColor, color: accentColor } : {}}
                                                                             >
@@ -785,22 +785,6 @@ const Cabinet: React.FC = () => {
                                                                 <span className="mini-grid-label">5 песен подряд по диагонали</span>
                                                             </div>
                                                         ) : null}
-
-                                                        {/* Full Card / Default combo */}
-                                                        <div className="mini-grid-wrapper">
-                                                            <div className="mini-grid-layout">
-                                                                {Array.from({ length: 25 }).map((_, idx) => (
-                                                                    <div 
-                                                                        key={idx} 
-                                                                        className="mini-grid-cell active-cross"
-                                                                        style={{ borderColor: accentColor, color: accentColor }}
-                                                                    >
-                                                                        ✕
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                            <span className="mini-grid-label">комбинация из всех песен</span>
-                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

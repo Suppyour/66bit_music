@@ -31,44 +31,36 @@ public class GeneratePdfArchiveHandler : IRequestHandler<GeneratePdfArchiveComma
         background-color: #ffffff;
     }
     
-    .page-container {
-        width: 297mm;
-        height: 210mm;
-        box-sizing: border-box;
-        padding: 12px;
+    .print-card-container {
+        width: 793px;
+        height: 560px;
         background-color: {ACCENT_COLOR};
-        overflow: hidden;
-    }
-    
-    .card-wrapper {
-        width: 100%;
-        height: 100%;
-        box-sizing: border-box;
-        background-color: #ffffff;
-        border: none;
-        border-radius: 16px;
         padding: 12px;
+        box-sizing: border-box;
+        display: flex;
+        overflow: hidden;
         position: relative;
     }
     
-    .inner-border-box {
+    .print-card-container * {
+        box-sizing: border-box;
+    }
+    
+    .print-card-container .inner-border-box {
         border: 1.5px solid {ACCENT_COLOR};
         border-radius: 12px;
+        background-color: #ffffff;
         width: 100%;
         height: 100%;
         display: flex;
-        flex-direction: row;
         position: relative;
-        box-sizing: border-box;
-        /* УБРАН overflow: hidden, чтобы тексты на рамке не срезались */
-        overflow: visible; 
+        overflow: visible; /* to avoid cutting text on borders */
     }
     
-    /* Left Panel: Уменьшен флекс для сужения рабочего поля */
-    .left-panel {
-        flex: 2.2; 
-        box-sizing: border-box;
-        padding: 40px 36px 30px 36px;
+    .print-card-container .card-left-panel {
+        flex: 3.1;
+        background-color: rgba(255, 255, 255, 0.95);
+        padding: 24px 28px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -76,232 +68,266 @@ public class GeneratePdfArchiveHandler : IRequestHandler<GeneratePdfArchiveComma
         position: relative;
     }
     
-    /* Right Panel: Увеличен визуальный вес за счет сужения левой панели */
-    .right-panel {
+    .print-card-container .card-right-panel {
         flex: 1;
-        box-sizing: border-box;
-        border-left: 1.5px dashed {ACCENT_COLOR};
-        padding: 30px 20px 20px 20px;
+        background-color: rgba(255, 255, 255, 0.95);
+        padding: 70px 14px 20px 14px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: flex-start;
-        gap: 24px;
+        border-left: 1.5px dashed {ACCENT_COLOR};
         height: 100%;
         position: relative;
     }
     
-    /* =========================================================
-       МЕТКИ НА РАМКАХ (Идеальная центровка на линии)
-       ========================================================= */
-    .card-header-left {
+    .print-card-container .card-right-panel::before {
+        content: '';
         position: absolute;
-        top: 0;
-        left: 30px;
-        transform: translateY(-50%);
-        background-color: #ffffff;
-        padding: 0 10px;
-        font-family: 'Montserrat', sans-serif;
-        font-size: 11px;
-        color: #475569;
-        font-weight: 500;
+        top: -15px;
+        left: -16px;
+        width: 30px;
+        height: 30px;
+        background-color: {ACCENT_COLOR};
+        border-radius: 50%;
         z-index: 10;
-        letter-spacing: 0.5px;
     }
     
-    .card-header-center {
+    .print-card-container .card-right-panel::after {
+        content: '';
         position: absolute;
-        top: 0;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background-color: #ffffff;
-        padding: 0 10px;
-        font-family: 'Montserrat', sans-serif;
-        font-size: 11px;
-        color: #475569;
-        font-weight: 500;
+        bottom: -15px;
+        left: -16px;
+        width: 30px;
+        height: 30px;
+        background-color: {ACCENT_COLOR};
+        border-radius: 50%;
         z-index: 10;
-        white-space: nowrap;
-        letter-spacing: 0.5px;
     }
     
-    .scissors-label {
+    .print-card-container .scissors-label {
         position: absolute;
-        top: 0;
-        right: 30px;
-        transform: translateY(-50%);
+        top: 40px;
+        right: 20px;
         background-color: #ffffff;
-        padding: 0 10px;
-        font-family: 'Montserrat', sans-serif;
-        font-size: 11px;
+        padding: 0 8px;
+        font-size: 10.5px;
         font-weight: 500;
         color: #475569;
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 4px;
         z-index: 10;
+        font-family: 'Montserrat', sans-serif;
     }
     
-    .scissors-label .scissors-icon {
-        font-size: 14px;
+    .print-card-container .scissors-label .scissors-icon {
+        font-size: 13px;
         color: {ACCENT_COLOR};
     }
-
-    .card-footer-row {
+    
+    .print-card-container .card-header-left {
         position: absolute;
-        bottom: 0;
-        left: 50%;
-        transform: translate(-50%, 50%);
+        top: -9px;
+        left: 24px;
         background-color: #ffffff;
-        padding: 0 10px;
+        padding: 0 8px;
+        font-size: 10.5px;
+        color: #475569;
+        font-weight: 700;
+        z-index: 10;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
         font-family: 'Montserrat', sans-serif;
-        font-size: 11px;
+    }
+    
+    .print-card-container .card-header-center {
+        position: absolute;
+        top: -9px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #ffffff;
+        padding: 0 8px;
+        font-size: 10.5px;
+        color: #475569;
+        font-weight: 500;
+        z-index: 10;
+        text-transform: uppercase;
+        white-space: nowrap;
+        letter-spacing: 0.5px;
+        font-family: 'Montserrat', sans-serif;
+    }
+    
+    .print-card-container .card-footer-row {
+        position: absolute;
+        bottom: -9px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #ffffff;
+        padding: 0 8px;
+        font-size: 10.5px;
         color: #475569;
         font-weight: 500;
         z-index: 10;
         white-space: nowrap;
+        font-family: 'Montserrat', sans-serif;
     }
     
-    /* =========================================================
-       ЗАГОЛОВОК
-       ========================================================= */
-    .title-row {
+    .print-card-container .rules-panel-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-align: center;
+        color: #1E293B;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-family: 'Montserrat', sans-serif;
+    }
+    
+    .print-card-container .title-row {
         display: flex;
         align-items: center;
         justify-content: center;
         width: 100%;
-        margin: 0 0 16px 0;
+        margin: 12px 0 6px 0;
     }
     
-    .title-line {
+    .print-card-container .title-line {
         flex-grow: 1;
-        height: 1px;
+        height: 1.5px;
         background-color: #000000;
         max-width: 60px;
     }
     
-    .title-text {
-        padding: 0 20px;
-        font-family: ""Playfair Display"", serif; /* Элегантный шрифт с засечками */
-        font-size: 34px;
+    .print-card-container .card-title-text {
+        padding: 0 16px;
+        font-size: 26px;
         font-weight: 700;
         color: #000000;
         text-transform: uppercase;
-        letter-spacing: 2px;
+        letter-spacing: 1.5px;
         margin: 0;
         white-space: nowrap;
     }
     
-    .card-subtitle-code {
-        font-size: 11px;
+    .print-card-container .card-subtitle-code {
+        font-size: 10px;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 0.5px;
         color: {ACCENT_COLOR};
         text-align: center;
-        margin-top: -10px;
-        margin-bottom: 14px;
+        margin-top: -4px;
+        margin-bottom: 10px;
+        font-family: 'Montserrat', sans-serif;
     }
     
-    /* =========================================================
-       СЕТКА БИНГО (Рабочее поле)
-       ========================================================= */
-    .bingo-grid {
+    .print-card-container .bingo-card {
         display: grid;
         grid-template-columns: repeat({GRID_SIZE}, 1fr);
-        gap: 12px; /* Чуть больше воздуха между карточками */
-        width: 100%;
-        margin: 0 auto;
-        padding: 0;
-        border: none;
-        background-color: transparent;
+        gap: 8px !important;
+        background-color: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        margin: 0 auto !important;
         {BACKGROUND_IMAGE_CSS}
         background-size: cover;
         background-position: center;
-        box-sizing: border-box;
     }
     
-    .bingo-cell {
-        border: 1.5px solid {ACCENT_COLOR};
-        background-color: #ffffff;
-        border-radius: 12px;
-        padding: 8px;
-        height: 95px; /* Увеличил высоту для более квадратного/премиального вида */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        box-sizing: border-box;
-        text-align: center;
-        overflow: hidden;
-        position: relative;
+    .print-card-container .bingo-cell {
+        border: 1.5px solid {ACCENT_COLOR} !important;
+        background-color: #ffffff !important;
+        border-radius: 14px !important;
+        padding: 6px !important;
+        height: 80px !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        text-align: center !important;
+        aspect-ratio: auto !important;
+        position: relative !important;
     }
     
-    .cell-title {
+    .print-card-container .cell-title {
+        font-size: 10px !important;
+        font-weight: 500 !important;
+        color: #1e293b !important;
+        line-height: 1.25 !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 3 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        width: 100% !important;
+        text-align: center !important;
         font-family: 'Montserrat', sans-serif;
-        font-size: 10.5px;
-        font-weight: 500;
-        color: #1e293b;
-        line-height: 1.3;
-        width: 100%;
-        display: -webkit-box;
-        -webkit-line-clamp: 4;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
     
-    .corner-bow {
+    .print-card-container .corner-bow {
         position: absolute;
         width: 16px;
         height: 16px;
         z-index: 15;
-    }
-    .corner-bow.top-left { top: -8px; left: -8px; transform: rotate(45deg); }
-    .corner-bow.top-right { top: -8px; right: -8px; transform: rotate(-45deg); }
-    .corner-bow.bottom-left { bottom: -8px; left: -8px; transform: rotate(135deg); }
-    .corner-bow.bottom-right { bottom: -8px; right: -8px; transform: rotate(-135deg); }
-    
-    /* =========================================================
-       ПРАВАЯ ПАНЕЛЬ (Правила и мини-сетки)
-       ========================================================= */
-    .rules-panel-title {
-        font-family: 'Montserrat', sans-serif;
-        font-size: 13px;
-        font-weight: 700;
-        text-align: center;
-        color: #1e293b;
-        margin-bottom: 4px;
-        margin-top: 10px;
+        pointer-events: none;
     }
     
-    .mini-grids-container {
+    .print-card-container .corner-bow.top-left {
+        top: -8px;
+        left: -8px;
+        transform: rotate(45deg);
+    }
+    
+    .print-card-container .corner-bow.top-right {
+        top: -8px;
+        right: -8px;
+        transform: rotate(-45deg);
+    }
+    
+    .print-card-container .corner-bow.bottom-left {
+        bottom: -8px;
+        left: -8px;
+        transform: rotate(135deg);
+    }
+    
+    .print-card-container .corner-bow.bottom-right {
+        bottom: -8px;
+        right: -8px;
+        transform: rotate(-135deg);
+    }
+    
+    .print-card-container .mini-grids-container {
         display: flex;
         flex-direction: column;
-        gap: 20px; /* Больше пространства между комбинациями */
+        gap: 20px;
         width: 100%;
         align-items: center;
+        justify-content: center;
+        transform: scale(1.6);
+        transform-origin: center top;
     }
     
-    .mini-grid-wrapper {
+    .print-card-container .mini-grid-wrapper {
         display: flex;
         flex-direction: column;
         align-items: center;
         width: 100%;
     }
     
-    .mini-grid-layout {
+    .print-card-container .mini-grid-layout {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
-        gap: 3px;
-        width: 100px; /* УВЕЛИЧЕНО с 58px */
-        height: 100px; /* УВЕЛИЧЕНО с 58px */
+        gap: 2px;
+        width: 58px;
+        height: 58px;
         background: transparent;
         padding: 0;
-        box-sizing: border-box;
         position: relative;
     }
     
-    .mini-grid-layout.horizontal-rule::after {
+    .print-card-container .mini-grid-layout.horizontal-rule::after {
         content: '';
         position: absolute;
         left: -2px;
@@ -314,7 +340,7 @@ public class GeneratePdfArchiveHandler : IRequestHandler<GeneratePdfArchiveComma
         border-radius: 1px;
     }
     
-    .mini-grid-layout.vertical-rule::after {
+    .print-card-container .mini-grid-layout.vertical-rule::after {
         content: '';
         position: absolute;
         top: -2px;
@@ -327,104 +353,72 @@ public class GeneratePdfArchiveHandler : IRequestHandler<GeneratePdfArchiveComma
         border-radius: 1px;
     }
     
-    .mini-grid-cell {
-        background-color: #ffffff;
+    .print-card-container .mini-grid-cell {
+        background-color: #FFFFFF;
         border: 1px solid #cbd5e1;
-        box-sizing: border-box;
         border-radius: 50%;
-        width: 17px; /* УВЕЛИЧЕНО с 10px */
-        height: 17px; /* УВЕЛИЧЕНО с 10px */
+        width: 10px;
+        height: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 14px; /* Размер крестика */
+        font-size: 7px;
         line-height: 1;
     }
     
-    .mini-grid-cell.active-cross {
+    .print-card-container .mini-grid-cell.active-cross {
         border-color: {ACCENT_COLOR} !important;
         color: {ACCENT_COLOR} !important;
         font-weight: 700;
     }
     
-    .mini-grid-label {
-        font-family: 'Montserrat', sans-serif;
-        font-size: 10px; /* УВЕЛИЧЕНО с 7.5px */
+    .print-card-container .mini-grid-label {
+        font-size: 7.5px;
         color: #475569;
         text-align: center;
-        margin-top: 8px;
+        margin-top: 4px;
         font-weight: 500;
-    }
-    
-    /* =========================================================
-       ПЕРФОРАЦИЯ (Круглые вырезы)
-       ========================================================= */
-    .right-panel::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -0.75px; /* Идеально по центру линии border-left (1.5px) */
-        transform: translate(-50%, -50%);
-        width: 30px;
-        height: 30px;
-        background-color: {ACCENT_COLOR};
-        border-radius: 50%;
-        z-index: 10;
-    }
-    
-    .right-panel::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: -0.75px;
-        transform: translate(-50%, 50%);
-        width: 30px;
-        height: 30px;
-        background-color: {ACCENT_COLOR};
-        border-radius: 50%;
-        z-index: 10;
+        font-family: 'Montserrat', sans-serif;
     }
 </style>
 </head>
 <body>
-    <div class=""page-container"">
-        <div class=""card-wrapper"">
-            <div class=""inner-border-box"">
-                <div class=""left-panel"">
-                    <div class=""card-header-left"">
-                        — {COMPANY_NAME} —
-                    </div>
-                    <div class=""card-header-center"">
-                        {EDITION_NAME}
-                    </div>
-                    
-                    <div class=""title-row"">
-                        <span class=""title-line""></span>
-                        <h1 class=""title-text"">{TITLE_TEXT}</h1>
-                        <span class=""title-line""></span>
-                    </div>
-                    
-                    {TICKET_CODE_HTML}
-                    
-                    <div class=""bingo-grid"">
-                        {BINGO_CELLS_HTML}
-                    </div>
-                    
-                    <div class=""card-footer-row"">
-                        {FOOTER_TEXT}
-                    </div>
+    <div class=""print-card-container"">
+        <div class=""inner-border-box"">
+            <div class=""card-left-panel"">
+                <div class=""card-header-left"">
+                    <strong>{COMPANY_NAME}</strong>
+                </div>
+                <div class=""card-header-center"">
+                    <span>{EDITION_NAME}</span>
                 </div>
                 
-                <div class=""right-panel"">
-                    <div class=""scissors-label"">
-                        <span class=""scissors-icon"">✂</span> — твоя уникальная песня
-                    </div>
-                    
-                    <div class=""rules-panel-title"">Победные комбинации</div>
-                    
-                    <div class=""mini-grids-container"">
-                        {MINI_GRIDS_HTML}
-                    </div>
+                <div class=""title-row"">
+                    <span class=""title-line""></span>
+                    <h2 class=""card-title-text"">{TITLE_TEXT}</h2>
+                    <span class=""title-line""></span>
+                </div>
+                
+                {TICKET_CODE_HTML}
+                
+                <div class=""bingo-card"">
+                    {BINGO_CELLS_HTML}
+                </div>
+                
+                <div class=""card-footer-row"">
+                    <span>{FOOTER_TEXT}</span>
+                </div>
+            </div>
+            
+            <div class=""card-right-panel"">
+                <div class=""scissors-label"">
+                    <span class=""scissors-icon"">✂</span> — твоя уникальная песня
+                </div>
+                
+                <div class=""rules-panel-title"">Победные комбинации</div>
+                
+                <div class=""mini-grids-container"">
+                    {MINI_GRIDS_HTML}
                 </div>
             </div>
         </div>
@@ -670,13 +664,31 @@ public class GeneratePdfArchiveHandler : IRequestHandler<GeneratePdfArchiveComma
 
                     // Print to PDF via Puppeteer
                     using var page = await browser.NewPageAsync();
-                    await page.SetContentAsync(html);
+
+                    // Set viewport to the exact layout size (793x560) designed for the ticket elements
+                    await page.SetViewportAsync(new ViewPortOptions
+                    {
+                        Width = 793,
+                        Height = 560,
+                        IsMobile = false,
+                        DeviceScaleFactor = 1
+                    });
+
+                    // Wait for all resources (including web fonts) to be fully loaded
+                    await page.SetContentAsync(html, new NavigationOptions 
+                    { 
+                        WaitUntil = new[] { WaitUntilNavigation.Networkidle0 } 
+                    });
+
+                    // Ensure fonts are fully loaded and rendered before capturing PDF
+                    await page.EvaluateExpressionAsync("document.fonts.ready");
 
                     var pdfOptions = new PdfOptions
                     {
                         Format = PaperFormat.A4,
                         Landscape = true,
                         PrintBackground = true,
+                        Scale = 1.415m,
                         MarginOptions = new MarginOptions
                         {
                             Top = "0px",
