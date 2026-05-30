@@ -64,7 +64,7 @@ interface CardDto {
     cuteName?: string;
 }
 
-const SortableCell = ({ cell, song }: { cell: CardCellData; song?: Song }) => {
+const SortableCell = ({ cell, song, isCenter, accentColor }: { cell: CardCellData; song?: Song; isCenter?: boolean; accentColor?: string }) => {
     const id = `${cell.row}-${cell.column}`;
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
@@ -81,21 +81,17 @@ const SortableCell = ({ cell, song }: { cell: CardCellData; song?: Song }) => {
             {...listeners}
             className={`bingo-cell ${isDragging ? 'bingo-cell-dragging' : ''}`}
         >
-            <div className="cell-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 18V5l12-2v13"></path>
-                    <circle cx="6" cy="18" r="3"></circle>
-                    <circle cx="18" cy="16" r="3"></circle>
-                </svg>
-            </div>
-            <div className="cell-title" title={song ? `${song.title} - ${song.artist}` : 'Пустая ячейка'}>
-                {song ? (
-                    <>
-                        <span className="cell-song-artist">{song.artist}</span>
-                        <span className="cell-song-divider"> — </span>
-                        <span className="cell-song-title">{song.title}</span>
-                    </>
-                ) : '...'}
+            {isCenter && (
+                <>
+                    {/* SVG Bows for the center gift cell */}
+                    <svg className="corner-bow top-left" viewBox="0 0 100 100" style={{ stroke: accentColor }}><path d="M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90" fill="none" strokeWidth="8" strokeLinecap="round"/></svg>
+                    <svg className="corner-bow top-right" viewBox="0 0 100 100" style={{ stroke: accentColor }}><path d="M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90" fill="none" strokeWidth="8" strokeLinecap="round"/></svg>
+                    <svg className="corner-bow bottom-left" viewBox="0 0 100 100" style={{ stroke: accentColor }}><path d="M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90" fill="none" strokeWidth="8" strokeLinecap="round"/></svg>
+                    <svg className="corner-bow bottom-right" viewBox="0 0 100 100" style={{ stroke: accentColor }}><path d="M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90" fill="none" strokeWidth="8" strokeLinecap="round"/></svg>
+                </>
+            )}
+            <div className="cell-title" title={song ? `${song.artist} – ${song.title}` : 'Пустая ячейка'}>
+                {song ? `${song.artist} – ${song.title}` : '...'}
             </div>
         </div>
     );
@@ -667,138 +663,144 @@ const Cabinet: React.FC = () => {
                                                 fontFamily: fontFamily === 'Playfair Display' ? "'Playfair Display', serif" : fontFamily === 'Montserrat' ? "'Montserrat', sans-serif" : "'Inter', sans-serif"
                                             } as React.CSSProperties}
                                         >
-                                            <div className="card-left-panel">
-                                                <div className="card-header-row">
-                                                    <span className="header-line"></span>
-                                                    <span className="header-text">{companyName}</span>
-                                                    <span className="header-line"></span>
-                                                    <span className="header-text">{editionName}</span>
-                                                    <span className="header-line"></span>
-                                                </div>
-
-                                                <h2 className="card-title-text" style={{ fontFamily: fontFamily === 'Playfair Display' ? "'Playfair Display', serif" : undefined }}>
-                                                    {titleText}
-                                                </h2>
-
-                                                {currentCard?.cuteName && (
-                                                    <div className="card-subtitle-code" style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: accentColor, textAlign: 'center', marginBottom: '14px' }}>
-                                                        Код билета: {currentCard.cuteName}
+                                            <div className="inner-border-box">
+                                                <div className="card-left-panel">
+                                                    <div className="card-header-left">
+                                                        <strong>{companyName}</strong>
                                                     </div>
-                                                )}
+                                                    <div className="card-header-center">
+                                                        <span>{editionName}</span>
+                                                    </div>
 
-                                                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                                                    <SortableContext
-                                                        items={currentCard.cells.map(c => `${c.row}-${c.column}`)}
-                                                        strategy={rectSortingStrategy}
-                                                    >
-                                                        <div
-                                                            className="bingo-card"
-                                                            style={{
-                                                                gridTemplateColumns: `repeat(${cardSize}, 1fr)`,
-                                                                backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
-                                                                backgroundSize: backgroundImage ? 'cover' : undefined,
-                                                                backgroundPosition: backgroundImage ? 'center' : undefined,
-                                                                backgroundColor: backgroundImage ? 'transparent' : undefined,
-                                                                borderColor: accentColor
-                                                            }}
+                                                    <div className="title-row">
+                                                        <span className="title-line"></span>
+                                                        <h2 className="card-title-text" style={{ fontFamily: fontFamily === 'Playfair Display' ? "'Playfair Display', serif" : undefined }}>
+                                                            {titleText}
+                                                        </h2>
+                                                        <span className="title-line"></span>
+                                                    </div>
+
+                                                    {currentCard?.cuteName && (
+                                                        <div className="card-subtitle-code" style={{ color: accentColor }}>
+                                                            Код билета: {currentCard.cuteName}
+                                                        </div>
+                                                    )}
+
+                                                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                                                        <SortableContext
+                                                            items={currentCard.cells.map(c => `${c.row}-${c.column}`)}
+                                                            strategy={rectSortingStrategy}
                                                         >
-                                                            {currentCard.cells.map(cell => {
-                                                                const song = selectedSongs.find(s => s.id === cell.songId);
-                                                                return <SortableCell key={`${cell.row}-${cell.column}`} cell={cell} song={song} />;
-                                                            })}
-                                                        </div>
-                                                    </SortableContext>
-                                                </DndContext>
+                                                            <div
+                                                                className="bingo-card"
+                                                                style={{
+                                                                    gridTemplateColumns: `repeat(${cardSize}, 1fr)`,
+                                                                    backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
+                                                                    backgroundSize: backgroundImage ? 'cover' : undefined,
+                                                                    backgroundPosition: backgroundImage ? 'center' : undefined,
+                                                                    backgroundColor: backgroundImage ? 'transparent' : undefined,
+                                                                }}
+                                                            >
+                                                                {currentCard.cells.map(cell => {
+                                                                    const song = selectedSongs.find(s => s.id === cell.songId);
+                                                                    const isCenter = cell.row === 2 && cell.column === 2;
+                                                                    return (
+                                                                        <SortableCell 
+                                                                            key={`${cell.row}-${cell.column}`} 
+                                                                            cell={cell} 
+                                                                            song={song} 
+                                                                            isCenter={isCenter}
+                                                                            accentColor={accentColor}
+                                                                        />
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </SortableContext>
+                                                    </DndContext>
 
-                                                <div className="card-footer-row">
-                                                    <span className="footer-line"></span>
-                                                    <span className="footer-text">{footerText}</span>
-                                                    <span className="footer-line"></span>
+                                                    <div className="card-footer-row">
+                                                        <span>{footerText}</span>
+                                                    </div>
                                                 </div>
-                                            </div>
 
-                                            <div className="card-right-panel">
-                                                <div className="scissors-label">
-                                                    <span>✂</span> — твоя уникальная песня
-                                                </div>
-                                                <div className="rules-panel-title">Победные комбинации</div>
-                                                
-                                                <div className="mini-grids-container">
-                                                    {/* Horizontal rule (1) */}
-                                                    {(rules & 1) ? (
-                                                        <div className="mini-grid-wrapper">
-                                                            <div className="mini-grid-layout">
-                                                                {Array.from({ length: 25 }).map((_, idx) => {
-                                                                    const row = Math.floor(idx / 5);
-                                                                    const isAccent = row === 2;
-                                                                    return (
-                                                                        <div 
-                                                                            key={idx} 
-                                                                            className="mini-grid-cell"
-                                                                            style={isAccent ? { backgroundColor: accentColor } : {}}
-                                                                        />
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                            <span className="mini-grid-label">5 песен подряд в одном ряду</span>
-                                                        </div>
-                                                    ) : null}
-
-                                                    {/* Vertical rule (2) */}
-                                                    {(rules & 2) ? (
-                                                        <div className="mini-grid-wrapper">
-                                                            <div className="mini-grid-layout">
-                                                                {Array.from({ length: 25 }).map((_, idx) => {
-                                                                    const col = idx % 5;
-                                                                    const isAccent = col === 2;
-                                                                    return (
-                                                                        <div 
-                                                                            key={idx} 
-                                                                            className="mini-grid-cell"
-                                                                            style={isAccent ? { backgroundColor: accentColor } : {}}
-                                                                        />
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                            <span className="mini-grid-label">5 песен подряд в одной колонке</span>
-                                                        </div>
-                                                    ) : null}
-
-                                                    {/* Diagonal rule (8) */}
-                                                    {(rules & 8) ? (
-                                                        <div className="mini-grid-wrapper">
-                                                            <div className="mini-grid-layout">
-                                                                {Array.from({ length: 25 }).map((_, idx) => {
-                                                                    const row = Math.floor(idx / 5);
-                                                                    const col = idx % 5;
-                                                                    const isAccent = row === col || row + col === 4;
-                                                                    return (
-                                                                        <div 
-                                                                            key={idx} 
-                                                                            className="mini-grid-cell"
-                                                                            style={isAccent ? { backgroundColor: accentColor } : {}}
-                                                                        />
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                            <span className="mini-grid-label">5 песен подряд по диагонали</span>
-                                                        </div>
-                                                    ) : null}
-
-                                                    {/* Full Card / Default combo */}
-                                                    <div className="mini-grid-wrapper">
-                                                        <div className="mini-grid-layout">
-                                                            {Array.from({ length: 25 }).map((_, idx) => (
+                                                <div className="card-right-panel">
+                                                    <div className="scissors-label">
+                                                        <span className="scissors-icon">✂</span> — твоя уникальная песня
+                                                    </div>
+                                                    <div className="rules-panel-title">Победные комбинации</div>
+                                                    
+                                                    <div className="mini-grids-container">
+                                                        {/* Horizontal rule (1) */}
+                                                        {(rules & 1) ? (
+                                                            <div className="mini-grid-wrapper">
                                                                 <div 
-                                                                    key={idx} 
-                                                                    className="mini-grid-cell"
-                                                                    style={{ color: accentColor, fontWeight: 'bold' }}
+                                                                    className="mini-grid-layout horizontal-rule"
+                                                                    style={{ '--accent-color-rule': accentColor } as React.CSSProperties}
                                                                 >
-                                                                    ✖
+                                                                    {Array.from({ length: 25 }).map((_, idx) => (
+                                                                        <div key={idx} className="mini-grid-cell" />
+                                                                    ))}
                                                                 </div>
-                                                            ))}
+                                                                <span className="mini-grid-label">5 песен подряд в одном ряду</span>
+                                                            </div>
+                                                        ) : null}
+
+                                                        {/* Vertical rule (2) */}
+                                                        {(rules & 2) ? (
+                                                            <div className="mini-grid-wrapper">
+                                                                <div 
+                                                                    className="mini-grid-layout vertical-rule"
+                                                                    style={{ '--accent-color-rule': accentColor } as React.CSSProperties}
+                                                                >
+                                                                    {Array.from({ length: 25 }).map((_, idx) => (
+                                                                        <div key={idx} className="mini-grid-cell" />
+                                                                    ))}
+                                                                </div>
+                                                                <span className="mini-grid-label">5 песен подряд в одной колонке</span>
+                                                            </div>
+                                                        ) : null}
+
+                                                        {/* Diagonal rule (8) */}
+                                                        {(rules & 8) ? (
+                                                            <div className="mini-grid-wrapper">
+                                                                <div 
+                                                                    className="mini-grid-layout diagonal-rule"
+                                                                    style={{ '--accent-color-rule': accentColor } as React.CSSProperties}
+                                                                >
+                                                                    {Array.from({ length: 25 }).map((_, idx) => {
+                                                                        const row = Math.floor(idx / 5);
+                                                                        const col = idx % 5;
+                                                                        const isAccent = row === col || row + col === 4;
+                                                                        return (
+                                                                            <div 
+                                                                                key={idx} 
+                                                                                className={isAccent ? "mini-grid-cell active-cross" : "mini-grid-cell"}
+                                                                                style={isAccent ? { borderColor: accentColor, color: accentColor } : {}}
+                                                                            >
+                                                                                {isAccent ? "✕" : ""}
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                                <span className="mini-grid-label">5 песен подряд по диагонали</span>
+                                                            </div>
+                                                        ) : null}
+
+                                                        {/* Full Card / Default combo */}
+                                                        <div className="mini-grid-wrapper">
+                                                            <div className="mini-grid-layout">
+                                                                {Array.from({ length: 25 }).map((_, idx) => (
+                                                                    <div 
+                                                                        key={idx} 
+                                                                        className="mini-grid-cell active-cross"
+                                                                        style={{ borderColor: accentColor, color: accentColor }}
+                                                                    >
+                                                                        ✕
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                            <span className="mini-grid-label">комбинация из всех песен</span>
                                                         </div>
-                                                        <span className="mini-grid-label">комбинация из всех песен</span>
                                                     </div>
                                                 </div>
                                             </div>
