@@ -13,4 +13,8 @@ public class GeneratePdfArchiveCommand : IRequest<byte[]>
     public string EditionName { get; set; } = "Название издания";
     public string TitleText { get; set; } = "Заголовок";
     public string FooterText { get; set; } = "Подзаголовок";
+    
+    public string FontFamily { get; set; } = "Playfair Display";
+    public string AccentColor { get; set; } = "#B21016";
+    public int Rules { get; set; } = 0;
 }

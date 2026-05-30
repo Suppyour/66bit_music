@@ -21,4 +21,11 @@ COPY --from=build /app/publish .
 
 RUN mkdir -p /app/wwwroot && chmod 777 /app/wwwroot
 
+# Install Chromium and basic TTF fonts for Puppeteer rendering
+RUN apt-get update && apt-get install -y \
+    chromium \
+    fonts-freefont-ttf \
+    --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+
 ENTRYPOINT ["dotnet", "MusicalLotoBackend.Core.dll"]

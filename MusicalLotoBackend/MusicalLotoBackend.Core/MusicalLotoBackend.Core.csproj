@@ -18,7 +18,7 @@
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Minio" Version="7.0.0" />
-        <PackageReference Include="QuestPDF" Version="2026.2.4" />
+        <PackageReference Include="PuppeteerSharp" Version="20.0.0" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.17.0" />
         <PackageReference Include="TagLibSharp" Version="2.3.0" />

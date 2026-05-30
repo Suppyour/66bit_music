@@ -1,20 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import HeaderLibrary from '../../components/HeaderLibrary/HeaderLibrary';
-import CreateGameModal from '../../components/CreateGameModal/CreateGameModal';
 import DialogModal from '../../components/DialogModal/DialogModal';
+import SelectSongsModal from '../../components/SelectSongsModal/SelectSongsModal';
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
+import {
+    SortableContext,
+    sortableKeyboardCoordinates,
+    rectSortingStrategy,
+    useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import './Cabinet.css';
 import { apiFetch } from '../../utils/api';
 
 import playBtn from '../../assets/Cabinet/Значек плей в Играть.svg';
 import deleteBtn from '../../assets/Cabinet/Кнопка удалить в кабинет.svg';
 
-
 import plusIcon from '../../assets/Cabinet/Плюсик из Создать игру.svg';
 import noteIcon from '../../assets/Cabinet/Нота в кабинет.svg';
 import totalGamesIcon from '../../assets/Cabinet/Иконка в Всего игр.svg';
 import activePlayersIcon from '../../assets/Cabinet/Иконка в Активных игроков.svg';
 import songsLibraryIcon from '../../assets/Cabinet/Иконка в Песен в библиотеке.svg';
+
+import horizontalIcon from '../../assets/Cabinet/Горизонталь.svg';
+import verticalIcon from '../../assets/Cabinet/Вертикаль.svg';
+import diagonalIcon from '../../assets/Cabinet/Диагональ.svg';
+
+import LoadBgIcon from '../../assets/Generator/Иконка в кнопке Загрузить фон.svg';
+import InfinityIcon from '../../assets/Generator/Значек во все карточки уникальны.svg';
 
 interface Game {
     id: string;
@@ -30,14 +52,98 @@ export interface Song {
     artist: string;
 }
 
+interface CardCellData {
+    row: number;
+    column: number;
+    songId: string;
+}
+
+interface CardDto {
+    id: string;
+    cells: CardCellData[];
+    cuteName?: string;
+}
+
+const SortableCell = ({ cell, song }: { cell: CardCellData; song?: Song }) => {
+    const id = `${cell.row}-${cell.column}`;
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            {...attributes}
+            {...listeners}
+            className={`bingo-cell ${isDragging ? 'bingo-cell-dragging' : ''}`}
+        >
+            <div className="cell-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 18V5l12-2v13"></path>
+                    <circle cx="6" cy="18" r="3"></circle>
+                    <circle cx="18" cy="16" r="3"></circle>
+                </svg>
+            </div>
+            <div className="cell-title" title={song ? `${song.title} - ${song.artist}` : 'Пустая ячейка'}>
+                {song ? (
+                    <>
+                        <span className="cell-song-artist">{song.artist}</span>
+                        <span className="cell-song-divider"> — </span>
+                        <span className="cell-song-title">{song.title}</span>
+                    </>
+                ) : '...'}
+            </div>
+        </div>
+    );
+};
+
 const Cabinet: React.FC = () => {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [isCreatingGame, setIsCreatingGame] = useState<boolean>(searchParams.get('mode') === 'create');
+
     const [games, setGames] = useState<Game[]>([]);
     const [songs, setSongs] = useState<Song[]>([]);
     const [totalSongs, setTotalSongs] = useState<number>(0);
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
     const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
     const [gameToDelete, setGameToDelete] = useState<string | null>(null);
+
+    // --- CARD CREATION & GENERATION STATES ---
+    const [gameName, setGameName] = useState<string>('Новый год');
+    const [cardSize, setCardSize] = useState<number>(5);
+    const [participantsCount, setParticipantsCount] = useState<number>(2);
+    const [rules, setRules] = useState<number>(0);
+
+    // --- CARD CUSTOMIZATION STATES ---
+    const [accentColor, setAccentColor] = useState<string>('#B21016');
+    const [fontFamily, setFontFamily] = useState<string>('Playfair Display');
+    const [companyName, setCompanyName] = useState<string>('66 Бит');
+    const [editionName, setEditionName] = useState<string>('new year edition');
+    const [titleText, setTitleText] = useState<string>('МУЗЫКАЛЬНОЕ ЛОТО');
+    const [footerText, setFooterText] = useState<string>('год был трындец, а ты молодец');
+
+    const [selectedSongs, setSelectedSongs] = useState<Song[]>([]);
+    const [isSelectModalOpen, setIsSelectModalOpen] = useState<boolean>(false);
+
+    const [generatedCards, setGeneratedCards] = useState<CardDto[]>([]);
+    const [currentCardIndex, setCurrentCardIndex] = useState<number>(0);
+    const [isGenerating, setIsGenerating] = useState<boolean>(false);
+
+    const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const [isAlertOpen, setIsAlertOpen] = useState<boolean>(false);
+    const [alertMessage, setAlertMessage] = useState<string>('');
+
+    // --- DND-KIT SENSORS ---
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    );
 
     const totalGames = games.length;
     const activeGamesCount = games.filter(g => g.status === 'Active').length;
@@ -64,7 +170,6 @@ const Cabinet: React.FC = () => {
     useEffect(() => {
         fetchGames();
 
-
         const fetchSongs = async () => {
             try {
                 const response = await apiFetch('/api/Songs');
@@ -80,6 +185,43 @@ const Cabinet: React.FC = () => {
 
         fetchSongs();
     }, []);
+
+    // Sync mode parameter with router query string
+    useEffect(() => {
+        const mode = searchParams.get('mode');
+        setIsCreatingGame(mode === 'create');
+    }, [searchParams]);
+
+    // Pre-fill selected songs when entering creation mode
+    useEffect(() => {
+        if (isCreatingGame && songs.length > 0 && selectedSongs.length === 0) {
+            const generatorSongsJson = localStorage.getItem('generatorSelectedSongIds');
+            if (generatorSongsJson) {
+                try {
+                    const selectedIds: string[] = JSON.parse(generatorSongsJson);
+                    const filtered = songs.filter(s => selectedIds.includes(s.id));
+                    if (filtered.length >= cardSize * cardSize) {
+                        setSelectedSongs(filtered);
+                        return;
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+            // Fallback: default to first 30 songs
+            setSelectedSongs(songs.slice(0, Math.max(30, cardSize * cardSize)));
+        }
+    }, [isCreatingGame, songs, cardSize]);
+
+    // Automatically generate cards when inputs change
+    useEffect(() => {
+        if (isCreatingGame && selectedSongs.length >= cardSize * cardSize && participantsCount > 0) {
+            const timer = setTimeout(() => {
+                handleGenerate();
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [isCreatingGame, participantsCount, cardSize, selectedSongs]);
 
     const handleDeleteGame = (id: string) => {
         setGameToDelete(id);
@@ -105,111 +247,713 @@ const Cabinet: React.FC = () => {
         setIsConfirmOpen(false);
     };
 
+    const handleRemoveSong = (songId: string) => {
+        const nextSongs = selectedSongs.filter(s => s.id !== songId);
+        setSelectedSongs(nextSongs);
+        localStorage.setItem('generatorSelectedSongIds', JSON.stringify(nextSongs.map(s => s.id)));
+    };
+
+    const toggleRule = (rule: number) => {
+        if ((rules & rule) === rule) {
+            setRules(rules & ~rule);
+        } else {
+            setRules(rules | rule);
+        }
+    };
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const url = URL.createObjectURL(file);
+            setBackgroundImage(url);
+        }
+    };
+
+    const handleGenerate = async () => {
+        const minRequired = cardSize * cardSize;
+        if (selectedSongs.length < minRequired) {
+            return;
+        }
+
+        setIsGenerating(true);
+        try {
+            const response = await apiFetch('/api/Cards/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    count: participantsCount,
+                    cardSize: cardSize,
+                    songIds: selectedSongs.map(s => s.id)
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setGeneratedCards(data);
+                setCurrentCardIndex(0);
+            } else {
+                const err = await response.text();
+                console.error('Ошибка автоматической генерации карточек:', err);
+            }
+        } catch (error) {
+            console.error('Не удалось автоматически сгенерировать карточки:', error);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+
+        setGeneratedCards((prevCards) => {
+            const newCards = [...prevCards];
+            const currentCard = { ...newCards[currentCardIndex] };
+            const cells = [...currentCard.cells];
+
+            const oldIndex = cells.findIndex((c) => `${c.row}-${c.column}` === active.id);
+            const newIndex = cells.findIndex((c) => `${c.row}-${c.column}` === over.id);
+
+            const tempSongId = cells[oldIndex].songId;
+            cells[oldIndex].songId = cells[newIndex].songId;
+            cells[newIndex].songId = tempSongId;
+
+            currentCard.cells = cells;
+            newCards[currentCardIndex] = currentCard;
+            return newCards;
+        });
+    };
+
+    const handleDownloadZip = async () => {
+        if (generatedCards.length === 0) return;
+
+        const formData = new FormData();
+        formData.append('cardsJson', JSON.stringify(generatedCards));
+        formData.append('songsJson', JSON.stringify(selectedSongs));
+        formData.append('companyName', companyName);
+        formData.append('editionName', editionName);
+        formData.append('titleText', titleText);
+        formData.append('footerText', footerText);
+        formData.append('fontFamily', fontFamily);
+        formData.append('accentColor', accentColor);
+        formData.append('rules', rules.toString());
+
+        if (backgroundImage) {
+            try {
+                const res = await fetch(backgroundImage);
+                const blob = await res.blob();
+                formData.append('background', blob, 'background.png');
+            } catch (e) {
+                console.error("Failed to append background file:", e);
+            }
+        }
+
+        try {
+            const response = await apiFetch('/api/Pdf/generateArchive', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const err = await response.text();
+                throw new Error(err || 'Server error');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'CardsArchive.zip';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            console.error('Failed to download archive:', error);
+            alert('Ошибка при скачивании архива. Возможно, файл слишком большой.');
+        }
+    };
+
+    const handleCreateGame = async () => {
+        if (!gameName) {
+            setAlertMessage("Введите название игры");
+            setIsAlertOpen(true);
+            return;
+        }
+        if (participantsCount < 1) {
+            setAlertMessage("Введите корректное количество участников");
+            setIsAlertOpen(true);
+            return;
+        }
+        if (cardSize < 3 || cardSize > 7) {
+            setAlertMessage("Размер карточки должен быть от 3 до 7");
+            setIsAlertOpen(true);
+            return;
+        }
+        if (rules === 0) {
+            setAlertMessage("Выберите хотя бы одно правило победы");
+            setIsAlertOpen(true);
+            return;
+        }
+
+        const requiredSongs = cardSize * cardSize;
+        if (selectedSongs.length < requiredSongs) {
+            setAlertMessage(`Выбранного пула песен недостаточно. Нужно минимум ${requiredSongs} (выбрано: ${selectedSongs.length}).`);
+            setIsAlertOpen(true);
+            return;
+        }
+
+        try {
+            const response = await apiFetch('/api/Games', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: gameName,
+                    participantsCount: participantsCount,
+                    cardSize: cardSize,
+                    rules: rules,
+                    selectedSongIds: selectedSongs.map(s => s.id),
+                    preGeneratedCards: generatedCards.length > 0 ? generatedCards : null
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const gameId = data.id || data.Id;
+                navigate(`/presentation?sessionId=${gameId}`);
+            } else {
+                const text = await response.text();
+                setAlertMessage(text || "Произошла ошибка при создании игры");
+                setIsAlertOpen(true);
+            }
+        } catch (err: any) {
+            setAlertMessage(err.message || "Ошибка соединения с сервером");
+            setIsAlertOpen(true);
+        }
+    };
+
+    const currentCard = generatedCards[currentCardIndex];
+
     return (
         <div className="cabinet-wrapper">
             <HeaderLibrary />
 
             <main className="container cabinet-main">
-                <div className="cabinet-card">
-                    
-                    <div className="cabinet-header-section">
-                        <div>
-                            <h1 className="cabinet-heading">Личный кабинет</h1>
-                            <p className="cabinet-subtitle">Управляйте играми, карточками и музыкальной библиотекой</p>
-                        </div>
-                        <button className="create-game-btn" onClick={() => setIsCreateModalOpen(true)}>
-                            <img src={plusIcon} alt="+" className="create-game-plus-icon" />
-                            <span>Создать игру</span>
-                        </button>
-                    </div>
-
-                    
-                    <div className="cabinet-stats-grid">
-                        <div className="stat-card">
-                            <div className="stat-icon-wrapper">
-                                <img src={totalGamesIcon} alt="Всего игр" />
-                            </div>
-                            <div className="stat-info">
-                                <div className="stat-value">{totalGames}</div>
-                                <div className="stat-label">Всего игр</div>
-                            </div>
+                {isCreatingGame ? (
+                    <div className="create-card-view">
+                        <div className="cabinet-breadcrumbs">
+                            <span className="breadcrumb-link" onClick={() => {
+                                setIsCreatingGame(false);
+                                setSearchParams({});
+                            }}>Личный кабинет</span>
+                            <span className="breadcrumb-separator"> &gt; </span>
+                            <span className="breadcrumb-current">Создание карточки</span>
                         </div>
 
-                        <div className="stat-card">
-                            <div className="stat-icon-wrapper">
-                                <img src={activePlayersIcon} alt="Активных игр" />
-                            </div>
-                            <div className="stat-info">
-                                <div className="stat-value">{activeGamesCount}</div>
-                                <div className="stat-label">Активных игр</div>
-                            </div>
-                        </div>
+                        <h1 className="cabinet-heading card-creation-heading">Создание карточки</h1>
 
-                        <div className="stat-card">
-                            <div className="stat-icon-wrapper">
-                                <img src={songsLibraryIcon} alt="Песен в библиотеке" />
-                            </div>
-                            <div className="stat-info">
-                                <div className="stat-value">{totalSongs}</div>
-                                <div className="stat-label">Песен в библиотеке</div>
-                            </div>
-                        </div>
-                    </div>
+                        {/* Section 1: Создание новой игры */}
+                        <div className="creation-section-card">
+                            <h2 className="section-card-title">Создание новой игры</h2>
 
-                    
-                    <div className="cabinet-games-section">
-                        <h2 className="games-heading">Ваши игры</h2>
-                        <div className="games-list">
-                            {games.length === 0 ? (
-                                <div className="game-row">
-                                    <div className="game-empty">У вас пока нет игр. Создайте свою первую игру!</div>
+                            <div className="creation-form-grid">
+                                <div className="creation-field">
+                                    <label>Название игры <span className="req">*</span></label>
+                                    <input
+                                        type="text"
+                                        placeholder="Новый год"
+                                        value={gameName}
+                                        onChange={e => setGameName(e.target.value)}
+                                    />
+                                </div>
+                                <div className="creation-field">
+                                    <label>Размер карточки (N x N) <span className="req">*</span></label>
+                                    <input
+                                        type="number"
+                                        placeholder="5"
+                                        value={cardSize}
+                                        onChange={e => setCardSize(Math.max(3, Math.min(7, parseInt(e.target.value) || 3)))}
+                                    />
+                                    <span className="field-hint">Например, 5</span>
+                                </div>
+                                <div className="creation-field">
+                                    <label>Количество участников <span className="req">*</span></label>
+                                    <input
+                                        type="number"
+                                        placeholder="2"
+                                        value={participantsCount}
+                                        onChange={e => setParticipantsCount(Math.max(1, parseInt(e.target.value) || 1))}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="creation-rules-section">
+                                <label className="rules-section-label">Правила победы <span className="req">*</span></label>
+                                <div className="rules-cards-grid">
+                                    <div className={`rule-card ${(rules & 1) ? 'active' : ''}`} onClick={() => toggleRule(1)}>
+                                        <div className="rule-blueprint">
+                                            <img src={horizontalIcon} alt="Горизонталь" />
+                                        </div>
+                                        <span className="rule-card-label">Горизонталь</span>
+                                    </div>
+                                    <div className={`rule-card ${(rules & 2) ? 'active' : ''}`} onClick={() => toggleRule(2)}>
+                                        <div className="rule-blueprint">
+                                            <img src={verticalIcon} alt="Вертикаль" />
+                                        </div>
+                                        <span className="rule-card-label">Вертикаль</span>
+                                    </div>
+                                    <div className={`rule-card ${(rules & 8) ? 'active' : ''}`} onClick={() => toggleRule(8)}>
+                                        <div className="rule-blueprint">
+                                            <img src={diagonalIcon} alt="Диагональ" />
+                                        </div>
+                                        <span className="rule-card-label">Диагональ</span>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            {/* Songs Selection Pool status */}
+                            {selectedSongs.length >= cardSize * cardSize ? (
+                                <div className="songs-pool-status success">
+                                    <div className="status-icon">
+                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                            <circle cx="10" cy="10" r="9" fill="#D1FAE5" stroke="#10B981" strokeWidth="2" />
+                                            <path d="M6 10l3 3 5-5" stroke="#10B981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </div>
+                                    <div className="status-text">
+                                        <strong>Выбрано {selectedSongs.length} песен</strong>
+                                        <span>Достаточно для {cardSize}x{cardSize}</span>
+                                    </div>
                                 </div>
                             ) : (
-                                games.map((game) => (
-                                    <div className="game-row" key={game.id}>
-                                        <div className="game-info-col">
-                                            <div className="game-icon-placeholder">
-                                                <img src={noteIcon} alt="Game Icon" />
+                                <div className="songs-pool-status warning">
+                                    <div className="status-icon">
+                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                            <circle cx="10" cy="10" r="9" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="2" />
+                                            <path d="M10 6v5M10 14h.01" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </div>
+                                    <div className="status-text">
+                                        <strong>Выбрано {selectedSongs.length} песен</strong>
+                                        <span>Нужно минимум {cardSize * cardSize} для {cardSize}x{cardSize}</span>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Selected song list (matching mockup: 5 items + "Посмотреть все") */}
+                            <div className="selected-songs-pool">
+                                <div className="selected-songs-list">
+                                    {selectedSongs.slice(0, 5).map(song => (
+                                        <div className="song-thumbnail-card" key={song.id}>
+                                            <div className="song-thumb-icon">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2E68F5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M9 18V5l12-2v13"></path>
+                                                    <circle cx="6" cy="18" r="3"></circle>
+                                                    <circle cx="18" cy="16" r="3"></circle>
+                                                </svg>
                                             </div>
-                                            <div className="game-details">
-                                                <div className="game-title-row">
-                                                    <span className="game-title">{game.title}</span>
-                                                    <span className={`game-badge ${game.status === 'Active' ? 'badge-active' : 'badge-completed'}`}>
-                                                        {game.status === 'Active' ? 'Активная' : 'Завершённая'}
-                                                    </span>
-                                                </div>
-                                                <div className="game-meta">
-                                                    <span>👤 {game.participants} участников</span>
-                                                    <span>🕒 {game.date}</span>
-                                                </div>
+                                            <div className="song-thumb-info">
+                                                <div className="song-thumb-title" title={song.title}>{song.title}</div>
+                                                <div className="song-thumb-artist" title={song.artist}>{song.artist}</div>
                                             </div>
+                                            <button className="song-thumb-remove" onClick={() => handleRemoveSong(song.id)}>&times;</button>
                                         </div>
-                                        <div className="game-actions-col">
-                                            <button className="play-game-btn" onClick={() => navigate(`/presentation?sessionId=${game.id}`)}>
-                                                <img src={playBtn} alt="Play" className="play-game-icon" />
-                                                Играть
-                                            </button>
-                                            <button className="delete-game-btn" onClick={() => handleDeleteGame(game.id)} title="Удалить">
-                                                <img src={deleteBtn} alt="Delete" />
-                                            </button>
+                                    ))}
+                                    <button className="btn-view-all-songs" onClick={() => setIsSelectModalOpen(true)}>
+                                        Посмотреть все
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Section 2: Генератор карточек */}
+                        <div className="creation-section-card mt-32">
+                            <div className="generator-section-header">
+                                <div>
+                                    <h2 className="section-card-title">Генератор карточек</h2>
+                                    <p className="section-card-subtitle">Создайте уникальные {cardSize}x{cardSize} билеты для участников</p>
+                                </div>
+                                <button className="btn-random-order" onClick={handleGenerate} disabled={isGenerating || selectedSongs.length < cardSize * cardSize}>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isGenerating ? 'spin' : ''}>
+                                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                                    </svg>
+                                    <span>Случайный порядок песен</span>
+                                </button>
+                            </div>
+
+                            {/* Ticket Appearance Live Customizer Toolbar */}
+                            <div className="card-customizer-toolbar" style={{ marginBottom: '30px', padding: '24px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '16px' }}>
+                                <h3 className="customizer-toolbar-title" style={{ fontSize: '16px', fontWeight: '700', color: '#1E293B', marginTop: 0, marginBottom: '20px' }}>Настройка внешнего вида билета</h3>
+                                <div className="customizer-fields-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+                                    <div className="customizer-field" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <label style={{ fontSize: '13px', fontWeight: '600', color: '#475569' }}>Шрифт заголовка</label>
+                                        <select value={fontFamily} onChange={e => setFontFamily(e.target.value)} style={{ height: '40px', padding: '0 12px', border: '1px solid #CBD5E1', borderRadius: '8px', background: '#FFFFFF', outline: 'none' }}>
+                                            <option value="Playfair Display">Serif (Playfair Display)</option>
+                                            <option value="Montserrat">Sans-Serif (Montserrat)</option>
+                                            <option value="Inter">Classic (Inter)</option>
+                                        </select>
+                                    </div>
+                                    <div className="customizer-field" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <label style={{ fontSize: '13px', fontWeight: '600', color: '#475569' }}>Акцентный цвет</label>
+                                        <div className="color-picker-container" style={{ display: 'flex', alignItems: 'center', gap: '12px', height: '40px' }}>
+                                            <input type="color" value={accentColor} onChange={e => setAccentColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer', padding: 0, background: 'transparent' }} />
+                                            <span className="color-hex-label" style={{ fontSize: '14px', fontWeight: '600', color: '#1E293B', fontFamily: 'monospace' }}>{accentColor}</span>
                                         </div>
                                     </div>
-                                ))
-                            )}
+                                    <div className="customizer-field" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <label style={{ fontSize: '13px', fontWeight: '600', color: '#475569' }}>Название компании</label>
+                                        <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="66 Бит" style={{ height: '40px', padding: '0 12px', border: '1px solid #CBD5E1', borderRadius: '8px', outline: 'none' }} />
+                                    </div>
+                                    <div className="customizer-field" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <label style={{ fontSize: '13px', fontWeight: '600', color: '#475569' }}>Название издания</label>
+                                        <input type="text" value={editionName} onChange={e => setEditionName(e.target.value)} placeholder="new year edition" style={{ height: '40px', padding: '0 12px', border: '1px solid #CBD5E1', borderRadius: '8px', outline: 'none' }} />
+                                    </div>
+                                    <div className="customizer-field" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <label style={{ fontSize: '13px', fontWeight: '600', color: '#475569' }}>Главный заголовок</label>
+                                        <input type="text" value={titleText} onChange={e => setTitleText(e.target.value)} placeholder="МУЗЫКАЛЬНОЕ ЛОТО" style={{ height: '40px', padding: '0 12px', border: '1px solid #CBD5E1', borderRadius: '8px', outline: 'none' }} />
+                                    </div>
+                                    <div className="customizer-field" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <label style={{ fontSize: '13px', fontWeight: '600', color: '#475569' }}>Текст в подвале</label>
+                                        <input type="text" value={footerText} onChange={e => setFooterText(e.target.value)} placeholder="год был трындец, а ты молодец" style={{ height: '40px', padding: '0 12px', border: '1px solid #CBD5E1', borderRadius: '8px', outline: 'none' }} />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="preview-subsection">
+                                <div className="preview-subheader">
+                                    <h3 className="preview-title">Предварительный просмотр</h3>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        style={{ display: 'none' }}
+                                        ref={fileInputRef}
+                                        onChange={handleImageUpload}
+                                    />
+                                    <button className="btn-load-bg" onClick={() => fileInputRef.current?.click()}>
+                                        <img src={LoadBgIcon} alt="Load" />
+                                        <span>Загрузить фон</span>
+                                    </button>
+                                </div>
+
+                                <div className="preview-workspace">
+                                    <div className="pagination">
+                                        <button
+                                            className="btn-page"
+                                            disabled={currentCardIndex === 0 || generatedCards.length === 0}
+                                            onClick={() => setCurrentCardIndex(prev => prev - 1)}
+                                        >
+                                            &lt;
+                                        </button>
+                                        <span className="page-info">
+                                            {generatedCards.length > 0 ? `${currentCardIndex + 1} / ${generatedCards.length}` : '0 / 0'}
+                                            {currentCard?.cuteName && ` — ${currentCard.cuteName}`}
+                                        </span>
+                                        <button
+                                            className="btn-page"
+                                            disabled={currentCardIndex >= generatedCards.length - 1 || generatedCards.length === 0}
+                                            onClick={() => setCurrentCardIndex(prev => prev + 1)}
+                                        >
+                                            &gt;
+                                        </button>
+                                    </div>
+
+                                    {currentCard ? (
+                                        <div 
+                                            className="print-card-container" 
+                                            style={{ 
+                                                '--accent-color': accentColor,
+                                                fontFamily: fontFamily === 'Playfair Display' ? "'Playfair Display', serif" : fontFamily === 'Montserrat' ? "'Montserrat', sans-serif" : "'Inter', sans-serif"
+                                            } as React.CSSProperties}
+                                        >
+                                            <div className="card-left-panel">
+                                                <div className="card-header-row">
+                                                    <span className="header-line"></span>
+                                                    <span className="header-text">{companyName}</span>
+                                                    <span className="header-line"></span>
+                                                    <span className="header-text">{editionName}</span>
+                                                    <span className="header-line"></span>
+                                                </div>
+
+                                                <h2 className="card-title-text" style={{ fontFamily: fontFamily === 'Playfair Display' ? "'Playfair Display', serif" : undefined }}>
+                                                    {titleText}
+                                                </h2>
+
+                                                {currentCard?.cuteName && (
+                                                    <div className="card-subtitle-code" style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: accentColor, textAlign: 'center', marginBottom: '14px' }}>
+                                                        Код билета: {currentCard.cuteName}
+                                                    </div>
+                                                )}
+
+                                                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                                                    <SortableContext
+                                                        items={currentCard.cells.map(c => `${c.row}-${c.column}`)}
+                                                        strategy={rectSortingStrategy}
+                                                    >
+                                                        <div
+                                                            className="bingo-card"
+                                                            style={{
+                                                                gridTemplateColumns: `repeat(${cardSize}, 1fr)`,
+                                                                backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
+                                                                backgroundSize: backgroundImage ? 'cover' : undefined,
+                                                                backgroundPosition: backgroundImage ? 'center' : undefined,
+                                                                backgroundColor: backgroundImage ? 'transparent' : undefined,
+                                                                borderColor: accentColor
+                                                            }}
+                                                        >
+                                                            {currentCard.cells.map(cell => {
+                                                                const song = selectedSongs.find(s => s.id === cell.songId);
+                                                                return <SortableCell key={`${cell.row}-${cell.column}`} cell={cell} song={song} />;
+                                                            })}
+                                                        </div>
+                                                    </SortableContext>
+                                                </DndContext>
+
+                                                <div className="card-footer-row">
+                                                    <span className="footer-line"></span>
+                                                    <span className="footer-text">{footerText}</span>
+                                                    <span className="footer-line"></span>
+                                                </div>
+                                            </div>
+
+                                            <div className="card-right-panel">
+                                                <div className="scissors-label">
+                                                    <span>✂</span> — твоя уникальная песня
+                                                </div>
+                                                <div className="rules-panel-title">Победные комбинации</div>
+                                                
+                                                <div className="mini-grids-container">
+                                                    {/* Horizontal rule (1) */}
+                                                    {(rules & 1) ? (
+                                                        <div className="mini-grid-wrapper">
+                                                            <div className="mini-grid-layout">
+                                                                {Array.from({ length: 25 }).map((_, idx) => {
+                                                                    const row = Math.floor(idx / 5);
+                                                                    const isAccent = row === 2;
+                                                                    return (
+                                                                        <div 
+                                                                            key={idx} 
+                                                                            className="mini-grid-cell"
+                                                                            style={isAccent ? { backgroundColor: accentColor } : {}}
+                                                                        />
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                            <span className="mini-grid-label">5 песен подряд в одном ряду</span>
+                                                        </div>
+                                                    ) : null}
+
+                                                    {/* Vertical rule (2) */}
+                                                    {(rules & 2) ? (
+                                                        <div className="mini-grid-wrapper">
+                                                            <div className="mini-grid-layout">
+                                                                {Array.from({ length: 25 }).map((_, idx) => {
+                                                                    const col = idx % 5;
+                                                                    const isAccent = col === 2;
+                                                                    return (
+                                                                        <div 
+                                                                            key={idx} 
+                                                                            className="mini-grid-cell"
+                                                                            style={isAccent ? { backgroundColor: accentColor } : {}}
+                                                                        />
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                            <span className="mini-grid-label">5 песен подряд в одной колонке</span>
+                                                        </div>
+                                                    ) : null}
+
+                                                    {/* Diagonal rule (8) */}
+                                                    {(rules & 8) ? (
+                                                        <div className="mini-grid-wrapper">
+                                                            <div className="mini-grid-layout">
+                                                                {Array.from({ length: 25 }).map((_, idx) => {
+                                                                    const row = Math.floor(idx / 5);
+                                                                    const col = idx % 5;
+                                                                    const isAccent = row === col || row + col === 4;
+                                                                    return (
+                                                                        <div 
+                                                                            key={idx} 
+                                                                            className="mini-grid-cell"
+                                                                            style={isAccent ? { backgroundColor: accentColor } : {}}
+                                                                        />
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                            <span className="mini-grid-label">5 песен подряд по диагонали</span>
+                                                        </div>
+                                                    ) : null}
+
+                                                    {/* Full Card / Default combo */}
+                                                    <div className="mini-grid-wrapper">
+                                                        <div className="mini-grid-layout">
+                                                            {Array.from({ length: 25 }).map((_, idx) => (
+                                                                <div 
+                                                                    key={idx} 
+                                                                    className="mini-grid-cell"
+                                                                    style={{ color: accentColor, fontWeight: 'bold' }}
+                                                                >
+                                                                    ✖
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                        <span className="mini-grid-label">комбинация из всех песен</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="bingo-card empty-card" style={{ gridTemplateColumns: `repeat(${cardSize}, 1fr)`, opacity: 0.5 }}>
+                                            {Array.from({ length: cardSize * cardSize }).map((_, i) => (
+                                                <div key={i} className="bingo-cell empty-cell">
+                                                    <div className="cell-icon">...</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <div className="drag-hint">Перетаскивайте ячейки для изменения порядка внутри карточки</div>
+
+                                    <div className="presentation-btn-wrapper" style={{ gap: '16px' }}>
+                                        <button className="btn-load-bg" onClick={handleDownloadZip} disabled={generatedCards.length === 0} style={{ borderStyle: 'solid', background: 'transparent' }}>
+                                            <span>Скачать архив PDF</span>
+                                        </button>
+                                        <button className="btn-launch-presentation" onClick={handleCreateGame}>
+                                            <span>Перейти к презентации</span>
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <polyline points="9 18 15 12 9 6"></polyline>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Bottom Stats Row */}
+                        <div className="creation-stats-grid">
+                            <div className="creation-stat-box">
+                                <div className="creation-stat-val">{generatedCards.length || 0}</div>
+                                <div className="creation-stat-label">Всего карточек</div>
+                            </div>
+                            <div className="creation-stat-box">
+                                <div className="creation-stat-val">{cardSize * cardSize}</div>
+                                <div className="creation-stat-label">Ячеек на карточке</div>
+                            </div>
+                            <div className="creation-stat-box">
+                                <div className="creation-stat-val">
+                                    <img src={InfinityIcon} alt="∞" className="infinity-stat-icon" />
+                                </div>
+                                <div className="creation-stat-label">Все карточки уникальны</div>
+                            </div>
+                            <div className="creation-stat-box">
+                                <div className="creation-stat-val">{cardSize}×{cardSize}</div>
+                                <div className="creation-stat-label">Размер сетки</div>
+                            </div>
                         </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="cabinet-card">
+                        <div className="cabinet-header-section">
+                            <div>
+                                <h1 className="cabinet-heading">Личный кабинет</h1>
+                                <p className="cabinet-subtitle">Управляйте играми, карточками и музыкальной библиотекой</p>
+                            </div>
+                            <button className="create-game-btn" onClick={() => {
+                                setIsCreatingGame(true);
+                                setSearchParams({ mode: 'create' });
+                            }}>
+                                <img src={plusIcon} alt="+" className="create-game-plus-icon" />
+                                <span>Создать игру</span>
+                            </button>
+                        </div>
+
+                        <div className="cabinet-stats-grid">
+                            <div className="stat-card">
+                                <div className="stat-icon-wrapper">
+                                    <img src={totalGamesIcon} alt="Всего игр" />
+                                </div>
+                                <div className="stat-info">
+                                    <div className="stat-value">{totalGames}</div>
+                                    <div className="stat-label">Всего игр</div>
+                                </div>
+                            </div>
+
+                            <div className="stat-card">
+                                <div className="stat-icon-wrapper">
+                                    <img src={activePlayersIcon} alt="Активных игр" />
+                                </div>
+                                <div className="stat-info">
+                                    <div className="stat-value">{activeGamesCount}</div>
+                                    <div className="stat-label">Активных игр</div>
+                                </div>
+                            </div>
+
+                            <div className="stat-card">
+                                <div className="stat-icon-wrapper">
+                                    <img src={songsLibraryIcon} alt="Песен в библиотеке" />
+                                </div>
+                                <div className="stat-info">
+                                    <div className="stat-value">{totalSongs}</div>
+                                    <div className="stat-label">Песен в библиотеке</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="cabinet-games-section">
+                            <h2 className="games-heading">Ваши игры</h2>
+                            <div className="games-list">
+                                {games.length === 0 ? (
+                                    <div className="game-row">
+                                        <div className="game-empty">У вас пока нет игр. Создайте свою первую игру!</div>
+                                    </div>
+                                ) : (
+                                    games.map((game) => (
+                                        <div className="game-row" key={game.id}>
+                                            <div className="game-info-col">
+                                                <div className="game-icon-placeholder">
+                                                    <img src={noteIcon} alt="Game Icon" />
+                                                </div>
+                                                <div className="game-details">
+                                                    <div className="game-title-row">
+                                                        <span className="game-title">{game.title}</span>
+                                                        <span className={`game-badge ${game.status === 'Active' ? 'badge-active' : 'badge-completed'}`}>
+                                                            {game.status === 'Active' ? 'Активная' : 'Завершённая'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="game-meta">
+                                                        <span>👤 {game.participants} участников</span>
+                                                        <span>🕒 {game.date}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="game-actions-col">
+                                                <button className="play-game-btn" onClick={() => navigate(`/presentation?sessionId=${game.id}`)}>
+                                                    <img src={playBtn} alt="Play" className="play-game-icon" />
+                                                    Играть
+                                                </button>
+                                                <button className="delete-game-btn" onClick={() => handleDeleteGame(game.id)} title="Удалить">
+                                                    <img src={deleteBtn} alt="Delete" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </main>
 
-            {isCreateModalOpen && (
-                <CreateGameModal
-                    isOpen={isCreateModalOpen}
-                    onClose={() => setIsCreateModalOpen(false)}
-                    songs={songs}
-                    onGameCreated={(gameId) => {
-                        setIsCreateModalOpen(false);
-                        navigate(`/generator?sessionId=${gameId}`);
+            {isSelectModalOpen && (
+                <SelectSongsModal
+                    isOpen={isSelectModalOpen}
+                    onClose={() => setIsSelectModalOpen(false)}
+                    onSelect={(songs) => {
+                        setSelectedSongs(songs);
+                        localStorage.setItem('generatorSelectedSongIds', JSON.stringify(songs.map(s => s.id)));
                     }}
+                    initialSelectedIds={selectedSongs.map(s => s.id)}
                 />
             )}
 
@@ -224,6 +968,15 @@ const Cabinet: React.FC = () => {
                     setIsConfirmOpen(false);
                     setGameToDelete(null);
                 }}
+            />
+
+            <DialogModal
+                isOpen={isAlertOpen}
+                title="Уведомление"
+                message={alertMessage}
+                isAlert={true}
+                onConfirm={() => setIsAlertOpen(false)}
+                onCancel={() => setIsAlertOpen(false)}
             />
         </div>
     );
