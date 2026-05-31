@@ -393,7 +393,7 @@ const Cabinet: React.FC = () => {
             return;
         }
 
-        const requiredSongs = cardSize * cardSize;
+        const requiredSongs = cardSize * cardSize + participantsCount;
         if (selectedSongs.length < requiredSongs) {
             setAlertMessage(`Выбранного пула песен недостаточно. Нужно минимум ${requiredSongs} (выбрано: ${selectedSongs.length}).`);
             setIsAlertOpen(true);
@@ -510,7 +510,20 @@ const Cabinet: React.FC = () => {
                             </div>
 
                             {/* Songs Selection Pool status */}
-                            {selectedSongs.length >= cardSize * cardSize ? (
+                            {songs.length === 0 ? (
+                                <div className="songs-pool-status warning" style={{ backgroundColor: '#FEF3C7', border: '1px solid #F59E0B' }}>
+                                    <div className="status-icon">
+                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                            <circle cx="10" cy="10" r="9" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="2" />
+                                            <path d="M10 6v5M10 14h.01" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </div>
+                                    <div className="status-text">
+                                        <strong>В вашей библиотеке пока нет песен</strong>
+                                        <span>Пожалуйста, добавьте песни в библиотеку, чтобы настроить игру</span>
+                                    </div>
+                                </div>
+                            ) : selectedSongs.length >= cardSize * cardSize + participantsCount ? (
                                 <div className="songs-pool-status success">
                                     <div className="status-icon">
                                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -520,7 +533,7 @@ const Cabinet: React.FC = () => {
                                     </div>
                                     <div className="status-text">
                                         <strong>Выбрано {selectedSongs.length} песен</strong>
-                                        <span>Достаточно для {cardSize}x{cardSize}</span>
+                                        <span>Достаточно для карточек и {participantsCount} участников (минимум {cardSize * cardSize + participantsCount})</span>
                                     </div>
                                 </div>
                             ) : (
@@ -533,7 +546,7 @@ const Cabinet: React.FC = () => {
                                     </div>
                                     <div className="status-text">
                                         <strong>Выбрано {selectedSongs.length} песен</strong>
-                                        <span>Нужно минимум {cardSize * cardSize} для {cardSize}x{cardSize}</span>
+                                        <span>Нужно минимум {cardSize * cardSize + participantsCount} для {cardSize}x{cardSize} с {participantsCount} участниками.</span>
                                     </div>
                                 </div>
                             )}
@@ -914,9 +927,19 @@ const Cabinet: React.FC = () => {
                                                 </div>
                                             </div>
                                             <div className="game-actions-col">
-                                                <button className="play-game-btn" onClick={() => navigate(`/presentation?sessionId=${game.id}`)}>
-                                                    <img src={playBtn} alt="Play" className="play-game-icon" />
-                                                    Играть
+                                                {game.status === 'Active' ? (
+                                                    <button className="play-game-btn" onClick={() => navigate(`/gameplay?sessionId=${game.id}`)}>
+                                                        <img src={playBtn} alt="Play" className="play-game-icon" />
+                                                        Играть
+                                                    </button>
+                                                ) : (
+                                                    <button className="play-game-btn completed-view-btn" onClick={() => navigate(`/gameplay?sessionId=${game.id}&preview=true`)} style={{ background: '#64748B', borderColor: '#64748B' }}>
+                                                        <img src={playBtn} alt="Play" className="play-game-icon" style={{ filter: 'grayscale(1) brightness(1.5)' }} />
+                                                        Просмотр
+                                                    </button>
+                                                )}
+                                                <button className="edit-game-btn" onClick={() => navigate(`/presentation?sessionId=${game.id}`)} title="Редактировать презентацию" style={{ padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', background: '#FFFFFF', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    ⚙️
                                                 </button>
                                                 <button className="delete-game-btn" onClick={() => handleDeleteGame(game.id)} title="Удалить">
                                                     <img src={deleteBtn} alt="Delete" />
@@ -940,6 +963,7 @@ const Cabinet: React.FC = () => {
                         localStorage.setItem('generatorSelectedSongIds', JSON.stringify(songs.map(s => s.id)));
                     }}
                     initialSelectedIds={selectedSongs.map(s => s.id)}
+                    minRequired={cardSize * cardSize + participantsCount}
                 />
             )}
 

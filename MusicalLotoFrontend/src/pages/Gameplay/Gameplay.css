@@ -185,7 +185,7 @@
 
 /* Слайд-превью бокс */
 .slide-preview-box {
-    height: 340px;
+    height: 700px;
     border-radius: 18px;
     display: flex;
     align-items: center;
@@ -609,9 +609,11 @@
     0% {
         transform: scale(1);
     }
+
     50% {
         transform: scale(1.06);
     }
+
     100% {
         transform: scale(1);
     }
@@ -1029,7 +1031,7 @@ body.presenter-active {
     padding: 24px 60px;
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
 
 /* QR Code View */
@@ -1090,7 +1092,7 @@ body.presenter-active {
     letter-spacing: -0.03em;
     line-height: 1.1;
     color: #FFFFFF;
-    text-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    text-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
 .presenter-song-artist {
@@ -1206,7 +1208,8 @@ body.presenter-active {
     z-index: 100;
     box-sizing: border-box;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    opacity: 0.15; /* Subtly visible when idle */
+    opacity: 0.15;
+    /* Subtly visible when idle */
 }
 
 .presenter-toolbar:hover,
@@ -1329,6 +1332,7 @@ body.presenter-active {
         opacity: 0;
         transform: translateY(30px);
     }
+
     100% {
         opacity: 1;
         transform: translateY(0);
@@ -1339,9 +1343,11 @@ body.presenter-active {
     0% {
         transform: scale(1);
     }
+
     50% {
         transform: scale(1.05);
     }
+
     100% {
         transform: scale(1);
     }
@@ -1351,9 +1357,11 @@ body.presenter-active {
     0% {
         transform: translateY(0px);
     }
+
     50% {
         transform: translateY(-12px);
     }
+
     100% {
         transform: translateY(0px);
     }
@@ -1422,4 +1430,130 @@ body.presenter-active {
 
 .btn-manual-check-submit:active {
     transform: translateY(0);
+}
+
+/* --- CUSTOM BINGO GAMEBOARD GRID DESIGN --- */
+.gameboard-container-custom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.gameboard-title-custom {
+    font-size: 24px;
+    font-weight: 800;
+    color: #FFFFFF;
+    margin: 0 0 16px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.gameboard-grid-custom {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    /* 6x6 grid for 36 songs like screenshot */
+    gap: 16px;
+    width: 100%;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+    .gameboard-grid-custom {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .gameboard-grid-custom {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.gameboard-cell-custom {
+    position: relative;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-sizing: border-box;
+}
+
+.gameboard-cell-custom:hover {
+    transform: translateY(-3px);
+    border-color: #2168F5;
+    box-shadow: 0 10px 20px rgba(33, 104, 245, 0.12);
+}
+
+.gameboard-cell-custom .gameboard-cell-number {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1E293B;
+    transition: color 0.2s;
+}
+
+.gameboard-cell-custom:hover .gameboard-cell-number {
+    color: #2168F5;
+}
+
+.gameboard-cell-custom.played {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+    cursor: default;
+    opacity: 0.5;
+    box-shadow: none;
+    transform: none;
+}
+
+.gameboard-cell-custom.played .gameboard-cell-number {
+    color: rgba(255, 255, 255, 0.5);
+    text-decoration: line-through;
+}
+
+.gameboard-cell-dots {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    opacity: 0.4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gameboard-cell-custom.played .gameboard-cell-dots {
+    display: none;
+}
+
+/* Custom banner styles for preview mode */
+.preview-top-banner {
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+.preview-top-banner button:hover {
+    background: #EFF6FF !important;
+    transform: scale(1.02);
+}
+
+/* Preview active class columns adjustments */
+.gameplay-main-grid.preview-active {
+    grid-template-columns: 250px 1fr !important;
 }

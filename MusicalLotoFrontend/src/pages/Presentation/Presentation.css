@@ -234,6 +234,20 @@
     stroke: #3B82F6;
 }
 
+.btn-delete-slide {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-delete-slide:hover svg {
+    stroke: #EF4444;
+}
+
 /* Polished Dragging & Loading Styles */
 .slide-item.dragging {
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);

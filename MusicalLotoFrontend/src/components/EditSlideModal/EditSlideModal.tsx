@@ -153,73 +153,71 @@ const EditSlideModal: React.FC<EditSlideModalProps> = ({
                 </h2>
 
                 <div className="edit-slide-modal-content">
-                    {(slideTypeStr === 'Title' || slideTypeStr === 'GameBoard') && (
-                        <div className="edit-slide-field-group">
-                            <label className="edit-slide-field-label">Название</label>
-                            <input
-                                type="text"
-                                className="edit-slide-field-input"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                placeholder={slideTypeStr === 'Title' ? "Введите название игры" : "Введите заголовок слайда"}
-                            />
-                        </div>
-                    )}
-
-                    {slideTypeStr === 'Rules' && (
-                        <div className="edit-slide-field-group">
-                            <label className="edit-slide-field-label">Текст правил</label>
-                            <div className="rules-editor-toolbar">
-                                <button type="button" onClick={() => insertMarkdown('**', '**')} title="Жирный">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/>
-                                    </svg>
-                                </button>
-                                <button type="button" onClick={() => insertMarkdown('*', '*')} title="Курсив">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <line x1="19" y1="4" x2="10" y2="4"/>
-                                        <line x1="14" y1="20" x2="5" y2="20"/>
-                                        <line x1="15" y1="4" x2="9" y2="20"/>
-                                    </svg>
-                                </button>
-                                <button type="button" onClick={() => insertMarkdown('\n- ')} title="Список">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <line x1="8" y1="6" x2="21" y2="6"/>
-                                        <line x1="8" y1="12" x2="21" y2="12"/>
-                                        <line x1="8" y1="18" x2="21" y2="18"/>
-                                        <line x1="3" y1="6" x2="3.01" y2="6"/>
-                                        <line x1="3" y1="12" x2="3.01" y2="12"/>
-                                        <line x1="3" y1="18" x2="3.01" y2="18"/>
-                                    </svg>
-                                </button>
+                    {slideTypeStr !== 'Song' ? (
+                        <>
+                            <div className="edit-slide-field-group">
+                                <label className="edit-slide-field-label">Заголовок слайда</label>
+                                <input
+                                    type="text"
+                                    className="edit-slide-field-input"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    placeholder="Введите заголовок слайда"
+                                />
                             </div>
-                            <textarea
-                                ref={textareaRef}
-                                className="edit-slide-field-textarea"
-                                value={content}
-                                onChange={(e) => setContent(e.target.value)}
-                                placeholder="Введите правила..."
-                                rows={6}
-                            />
-                        </div>
-                    )}
-
-                    {(slideTypeStr === 'GameBoard' || slideTypeStr === 'QrCode' || slideTypeStr === 'Winner') && (
-                        <div className="edit-slide-field-group">
-                            <label className="edit-slide-field-label">Текст</label>
-                            <input
-                                type="text"
-                                className="edit-slide-field-input"
-                                value={content}
-                                onChange={(e) => setContent(e.target.value)}
-                                placeholder={
-                                    slideTypeStr === 'QrCode' ? 'Ссылка для входа' : 'Введите текст на слайде'
-                                }
-                            />
-                        </div>
-                    )}
-
-                    {slideTypeStr === 'Song' && (
+                            
+                            {slideTypeStr === 'Rules' ? (
+                                <div className="edit-slide-field-group">
+                                    <label className="edit-slide-field-label">Текст правил</label>
+                                    <div className="rules-editor-toolbar">
+                                        <button type="button" onClick={() => insertMarkdown('**', '**')} title="Жирный">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/>
+                                            </svg>
+                                        </button>
+                                        <button type="button" onClick={() => insertMarkdown('*', '*')} title="Курсив">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <line x1="19" y1="4" x2="10" y2="4"/>
+                                                <line x1="14" y1="20" x2="5" y2="20"/>
+                                                <line x1="15" y1="4" x2="9" y2="20"/>
+                                            </svg>
+                                        </button>
+                                        <button type="button" onClick={() => insertMarkdown('\n- ')} title="Список">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <line x1="8" y1="6" x2="21" y2="6"/>
+                                                <line x1="8" y1="12" x2="21" y2="12"/>
+                                                <line x1="8" y1="18" x2="21" y2="18"/>
+                                                <line x1="3" y1="6" x2="3.01" y2="6"/>
+                                                <line x1="3" y1="12" x2="3.01" y2="12"/>
+                                                <line x1="3" y1="18" x2="3.01" y2="18"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <textarea
+                                        ref={textareaRef}
+                                        className="edit-slide-field-textarea"
+                                        style={{ borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' }}
+                                        value={content}
+                                        onChange={(e) => setContent(e.target.value)}
+                                        placeholder="Введите правила..."
+                                        rows={6}
+                                    />
+                                </div>
+                            ) : (
+                                <div className="edit-slide-field-group">
+                                    <label className="edit-slide-field-label">Текст слайда</label>
+                                    <textarea
+                                        className="edit-slide-field-textarea"
+                                        style={{ borderRadius: '12px' }}
+                                        value={content}
+                                        onChange={(e) => setContent(e.target.value)}
+                                        placeholder="Введите текст слайда..."
+                                        rows={4}
+                                    />
+                                </div>
+                            )}
+                        </>
+                    ) : (
                         <>
                             <div className="edit-slide-field-group">
                                 <label className="edit-slide-field-label">Название песни</label>

@@ -13,9 +13,10 @@ interface SelectSongsModalProps {
     onClose: () => void;
     onSelect: (selectedSongs: Song[]) => void;
     initialSelectedIds?: string[];
+    minRequired?: number;
 }
 
-const SelectSongsModal: React.FC<SelectSongsModalProps> = ({ isOpen, onClose, onSelect, initialSelectedIds = [] }) => {
+const SelectSongsModal: React.FC<SelectSongsModalProps> = ({ isOpen, onClose, onSelect, initialSelectedIds = [], minRequired = 9 }) => {
     const [songs, setSongs] = useState<Song[]>([]);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(initialSelectedIds));
     const [isLoading, setIsLoading] = useState(false);
@@ -79,7 +80,7 @@ const SelectSongsModal: React.FC<SelectSongsModalProps> = ({ isOpen, onClose, on
 
                 <div className="ssm-header">
                     <h2 className="ssm-title">Выбор песен</h2>
-                    <p className="ssm-subtitle">Выберите минимум 9 песен для генерации карточек</p>
+                    <p className="ssm-subtitle">Выберите минимум {minRequired} песен для настройки игры</p>
                 </div>
 
                 {isLoading ? (
@@ -118,7 +119,7 @@ const SelectSongsModal: React.FC<SelectSongsModalProps> = ({ isOpen, onClose, on
                     <button
                         className="ssm-btn-submit"
                         onClick={handleSubmit}
-                        disabled={selectedIds.size < 9}
+                        disabled={selectedIds.size < minRequired}
                     >
                         Сохранить ({selectedIds.size})
                     </button>

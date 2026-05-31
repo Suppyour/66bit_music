@@ -45,9 +45,10 @@ interface Claim {
 const Gameplay: React.FC = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const { playSong, isPlaying, togglePlay, currentSong } = useMusic();
+    const { playSong, isPlaying, togglePlay, currentSong, closePlayer } = useMusic();
 
     const sessionId = searchParams.get('sessionId');
+    const isPreview = searchParams.get('preview') === 'true';
 
     const [gameName, setGameName] = useState('Проведение игры');
     const [slides, setSlides] = useState<Slide[]>([]);
@@ -76,13 +77,74 @@ const Gameplay: React.FC = () => {
     });
     const [currentLotoSong, setCurrentLotoSong] = useState<MusicSong | null>(null);
     const [isLotoRunning, setIsLotoRunning] = useState(false);
-    const [isSongRevealed, setIsSongRevealed] = useState(false);
     const [activeCheckingClaim, setActiveCheckingClaim] = useState<Claim | null>(null);
     const [cards, setCards] = useState<any[]>([]);
     const [manualCardQuery, setManualCardQuery] = useState('');
     const [isEndGameConfirmOpen, setIsEndGameConfirmOpen] = useState(false);
     const [isPresenterActive, setIsPresenterActive] = useState(false);
     const [isBrowserFullscreen, setIsBrowserFullscreen] = useState(false);
+
+    const [playedSongs, setPlayedSongs] = useState<string[]>(() => {
+        if (!sessionId) return [];
+        try {
+            const saved = localStorage.getItem(`loto_played_songs_${sessionId}`);
+            return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+            console.error(e);
+            return [];
+        }
+    });
+
+    const { songs: allLibrarySongs } = useMusic();
+
+    useEffect(() => {
+        if (sessionId) {
+            localStorage.setItem(`loto_played_songs_${sessionId}`, JSON.stringify(playedSongs));
+        }
+    }, [playedSongs, sessionId]);
+
+    const handleSelectSongFromBoard = async (songSlide: Slide, slideIndex: number) => {
+        setActiveSlideIndex(slideIndex);
+        if (!playedSongs.includes(songSlide.id)) {
+            setPlayedSongs(prev => [...prev, songSlide.id]);
+        }
+
+        // Play the music using the global music context
+        if (songSlide.songId) {
+            const librarySong = allLibrarySongs.find(s => s.id === songSlide.songId);
+            if (librarySong) {
+                playSong(librarySong);
+            } else {
+                try {
+                    const response = await apiFetch(`/api/Songs/${songSlide.songId}`);
+                    if (response.ok) {
+                        const songData = await response.json();
+                        if (songData && songData.audioPath) {
+                            playSong({
+                                id: songData.id,
+                                title: songData.title,
+                                artist: songData.artist,
+                                audioPath: songData.audioPath
+                            });
+                        }
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch clicked song for playback:", err);
+                }
+            }
+        }
+    };
+
+    // Block global keyboard slide transitions using arrows
+    useEffect(() => {
+        const handleGlobalKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                e.preventDefault();
+            }
+        };
+        window.addEventListener('keydown', handleGlobalKeyDown);
+        return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+    }, []);
 
     useEffect(() => {
         if (!sessionId) {
@@ -144,9 +206,6 @@ const Gameplay: React.FC = () => {
         fetchGameplayDetails();
     }, [sessionId]);
 
-    useEffect(() => {
-        setIsSongRevealed(false);
-    }, [activeSlideIndex]);
 
     useEffect(() => {
         if (sessionId) {
@@ -179,10 +238,10 @@ const Gameplay: React.FC = () => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'ArrowRight') {
                 e.preventDefault();
-                handleNextSlide();
+                // Blocked
             } else if (e.key === 'ArrowLeft') {
                 e.preventDefault();
-                handlePrevSlide();
+                // Blocked
             } else if (e.key === 'Escape') {
                 e.preventDefault();
                 setIsPresenterActive(false);
@@ -345,7 +404,9 @@ const Gameplay: React.FC = () => {
             setActiveSlideIndex(nextIdx);
 
             if (typeStr === 'Song') {
-                await playNextSongApi();
+                if (!isPreview) {
+                    await playNextSongApi();
+                }
             } else if (isPlaying) {
                 togglePlay();
             }
@@ -363,7 +424,9 @@ const Gameplay: React.FC = () => {
             setActiveSlideIndex(prevIdx);
 
             if (typeStr === 'Song') {
-                await playPrevSongApi();
+                if (!isPreview) {
+                    await playPrevSongApi();
+                }
             } else if (isPlaying) {
                 togglePlay();
             }
@@ -634,12 +697,21 @@ const Gameplay: React.FC = () => {
         <div className="gameplay-wrapper">
             <HeaderLibrary />
 
+            {isPreview && (
+                <div className="preview-top-banner" style={{ background: '#3B82F6', color: '#FFFFFF', padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: '600', fontSize: '15px' }}>
+                    <span>👀 РЕЖИМ ПРЕДПРОСМОТРА • Звуковые эффекты и интерактивное управление отключены</span>
+                    <button className="btn-back-editor" onClick={() => navigate(`/presentation?sessionId=${sessionId}`)} style={{ background: '#FFFFFF', color: '#3B82F6', border: 'none', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', transition: 'all 0.2s' }}>
+                        Вернуться к редактированию
+                    </button>
+                </div>
+            )}
+
             <div className="gameplay-header-title container">
                 <h1>Проведение игры</h1>
                 <p>{gameName}</p>
             </div>
 
-            <main className="container gameplay-main-grid">
+            <main className={`container gameplay-main-grid ${isPreview ? 'preview-active' : ''}`}>
                 {/* 1. Левая колонка: Сценарий */}
                 <aside className="gameplay-sidebar scenario-sidebar">
                     <h2 className="sidebar-heading">Сценарий игры</h2>
@@ -660,7 +732,7 @@ const Gameplay: React.FC = () => {
                                     </div>
                                     <div className="scenario-info">
                                         <span className="scenario-title">
-                                            {typeStr === 'Song' ? `Песня #${idx - 3}` : getSlideTypeName(slide.type)}
+                                            {typeStr === 'Song' ? `Песня # ${idx - 2}` : getSlideTypeName(slide.type)}
                                         </span>
                                         <span className="scenario-desc">
                                             {typeStr === 'Song' ? slide.title : (slide.content ? (slide.content.substring(0, 30) + '...') : 'Инструктаж')}
@@ -721,10 +793,44 @@ const Gameplay: React.FC = () => {
                                 )}
 
                                 {activeSlideTypeStr === 'GameBoard' && (
-                                    <div className="slide-gameboard-view">
-                                        <div className="slide-view-logo">🎮</div>
-                                        <h2>ИГРОВОЕ ПОЛЕ</h2>
-                                        <p className="gameboard-view-start">{activeSlide.content || 'ИГРА НАЧАЛАСЬ!'}</p>
+                                    <div className="gameboard-container-custom">
+                                        <h2 className="gameboard-title-custom">Игровое поле</h2>
+                                        <div className="gameboard-grid-custom">
+                                            {slides.filter(s => {
+                                                const type = typeof s.type === 'number'
+                                                    ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type]
+                                                    : String(s.type);
+                                                return type === 'Song';
+                                            }).map((songSlide, index) => {
+                                                const isPlayed = playedSongs.includes(songSlide.id);
+                                                const originalIndex = slides.findIndex(s => s.id === songSlide.id);
+                                                return (
+                                                    <div
+                                                        key={songSlide.id}
+                                                        className={`gameboard-cell-custom ${isPlayed ? 'played' : ''}`}
+                                                        onClick={() => {
+                                                            if (isPreview) {
+                                                                setActiveSlideIndex(originalIndex);
+                                                            } else {
+                                                                handleSelectSongFromBoard(songSlide, originalIndex);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <div className="gameboard-cell-dots">
+                                                            <svg width="8" height="12" viewBox="0 0 8 12" fill="none">
+                                                                <circle cx="2" cy="2" r="1.2" fill="#D1D5DB" />
+                                                                <circle cx="2" cy="6" r="1.2" fill="#D1D5DB" />
+                                                                <circle cx="2" cy="10" r="1.2" fill="#D1D5DB" />
+                                                                <circle cx="6" cy="2" r="1.2" fill="#D1D5DB" />
+                                                                <circle cx="6" cy="6" r="1.2" fill="#D1D5DB" />
+                                                                <circle cx="6" cy="10" r="1.2" fill="#D1D5DB" />
+                                                            </svg>
+                                                        </div>
+                                                        <span className="gameboard-cell-number">{index + 1}</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 )}
 
@@ -747,37 +853,33 @@ const Gameplay: React.FC = () => {
                                 {activeSlideTypeStr === 'Song' && (
                                     <div className="slide-song-view">
                                         <span className="slide-song-badge">АКТИВНАЯ ПЕСНЯ</span>
-                                        <h2 className="slide-song-title">{isSongRevealed ? activeSlide.title : '???'}</h2>
-                                        <p className="slide-song-artist">{isSongRevealed ? (activeSlide.content || 'Исполнитель') : 'Исполнитель скрыт'}</p>
-                                        <div style={{ marginBottom: '14px' }}>
-                                            <button
-                                                type="button"
-                                                className="btn-reveal-song"
-                                                onClick={() => setIsSongRevealed(prev => !prev)}
-                                            >
-                                                {isSongRevealed ? '👁️ Скрыть песню' : '👁️ Показать песню'}
-                                            </button>
-                                        </div>
+                                        <h2 className="slide-song-title">{activeSlide.title}</h2>
+                                        <p className="slide-song-artist">{activeSlide.content || 'Исполнитель'}</p>
 
-                                        <button
-                                            type="button"
-                                            className={`btn-run-loto ${isPlaying ? 'playing' : ''}`}
-                                            onClick={handleLotoButtonClick}
-                                            disabled={isLotoRunning}
-                                        >
-                                            {isLotoRunning ? (
-                                                <span className="spinner"></span>
-                                            ) : isPlaying ? (
-                                                <>⏸️ Пауза лототрона</>
-                                            ) : (
-                                                <>
-                                                    <img src={PlayHubIcon || '/src/assets/Presentation/Иконка в кнопке запустить.svg'} alt="Play" />
-                                                    Запустить лототрон
-                                                </>
-                                            )}
-                                        </button>
-                                        {currentLotoSong && currentLotoSong.title === activeSlide.title && (
-                                            <p className="loto-status-text">Сейчас играет в плеере 🔊</p>
+                                        {!isPreview && (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    className={`btn-run-loto ${isPlaying ? 'playing' : ''}`}
+                                                    onClick={handleLotoButtonClick}
+                                                    disabled={isLotoRunning}
+                                                    style={{ marginTop: '20px' }}
+                                                >
+                                                    {isLotoRunning ? (
+                                                        <span className="spinner"></span>
+                                                    ) : isPlaying ? (
+                                                        <>⏸️ Пауза лототрона</>
+                                                    ) : (
+                                                        <>
+                                                            <img src={PlayHubIcon || '/src/assets/Presentation/Иконка в кнопке запустить.svg'} alt="Play" />
+                                                            Запустить лототрон
+                                                        </>
+                                                    )}
+                                                </button>
+                                                {currentLotoSong && currentLotoSong.title === activeSlide.title && (
+                                                    <p className="loto-status-text">Сейчас играет в плеере 🔊</p>
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                 )}
@@ -794,34 +896,68 @@ const Gameplay: React.FC = () => {
 
                         {/* Панель управления и шагов */}
                         <div className="slide-navigation-controls">
-                            <button
-                                type="button"
-                                className="btn-nav-step"
-                                onClick={handlePrevSlide}
-                                disabled={activeSlideIndex === 0}
-                            >
-                                ◀ НАЗАД
-                            </button>
+                            {activeSlideTypeStr === 'Song' ? (
+                                <button
+                                    type="button"
+                                    className="btn-return-gameboard"
+                                    onClick={() => {
+                                        closePlayer();
+                                        const idx = slides.findIndex(s => {
+                                            const type = typeof s.type === 'number'
+                                                ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type]
+                                                : String(s.type);
+                                            return type === 'GameBoard';
+                                        });
+                                        if (idx !== -1) setActiveSlideIndex(idx);
+                                    }}
+                                    style={{
+                                        background: '#2168F5',
+                                        color: '#FFFFFF',
+                                        border: 'none',
+                                        padding: '12px 24px',
+                                        borderRadius: '8px',
+                                        fontWeight: 'bold',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        boxShadow: '0 4px 12px rgba(33, 104, 245, 0.2)'
+                                    }}
+                                >
+                                    Вернуться в игровое поле
+                                </button>
+                            ) : (
+                                <>
+                                    <button
+                                        type="button"
+                                        className="btn-nav-step"
+                                        onClick={handlePrevSlide}
+                                        disabled={activeSlideIndex === 0}
+                                    >
+                                        ◀ НАЗАД
+                                    </button>
 
-                            <span className="step-info-counter">
-                                Шаг {activeSlideIndex + 1} / {slides.length}
-                            </span>
+                                    <span className="step-info-counter">
+                                        Шаг {activeSlideIndex + 1} / {slides.length}
+                                    </span>
 
-                            <button
-                                type="button"
-                                className="btn-nav-step"
-                                onClick={handleNextSlide}
-                                disabled={activeSlideIndex === slides.length - 1}
-                            >
-                                СЛЕДУЮЩИЙ СЛАЙД ▶
-                            </button>
+                                    <button
+                                        type="button"
+                                        className="btn-nav-step"
+                                        onClick={handleNextSlide}
+                                        disabled={activeSlideIndex === slides.length - 1}
+                                    >
+                                        СЛЕДУЮЩИЙ СЛАЙД ▶
+                                    </button>
+                                </>
+                            )}
                         </div>
 
-                        <div className="center-end-game-wrapper">
-                            <button type="button" className="btn-end-game-session" onClick={handleEndGame}>
-                                ЗАВЕРШИТЬ ИГРУ
-                            </button>
-                        </div>
+                        {!isPreview && (
+                            <div className="center-end-game-wrapper">
+                                <button type="button" className="btn-end-game-session" onClick={handleEndGame}>
+                                    ЗАВЕРШИТЬ ИГРУ
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Статистика внизу */}
@@ -863,60 +999,62 @@ const Gameplay: React.FC = () => {
                 />
 
                 {/* 3. Правая колонка: Проверка победителей */}
-                <aside className="gameplay-sidebar winners-sidebar">
-                    <h2 className="sidebar-heading">Проверка победителей</h2>
+                {!isPreview && (
+                    <aside className="gameplay-sidebar winners-sidebar">
+                        <h2 className="sidebar-heading">Проверка победителей</h2>
 
-                    <div className="card-manual-check">
-                        <div className="manual-check-title">Быстрая проверка билета</div>
-                        <div className="manual-check-form">
-                            <input
-                                type="text"
-                                placeholder="ID билета (например, 1, 2...)"
-                                value={manualCardQuery}
-                                onChange={(e) => setManualCardQuery(e.target.value)}
-                                className="manual-check-input"
-                            />
-                            <button
-                                type="button"
-                                onClick={handleManualCardCheck}
-                                className="btn-manual-check-submit"
-                            >
-                                Проверить билет
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="claims-list-section">
-                        <div className="claims-header">Заявки на бинго (кликните для проверки)</div>
-                        {claims.length === 0 ? (
-                            <div className="empty-claims-text">
-                                Ожидание новых заявок...
-                            </div>
-                        ) : (
-                            claims.map(claim => (
-                                <div
-                                    key={claim.id}
-                                    className={`claim-card ${claim.status.toLowerCase()}`}
-                                    onClick={() => setActiveCheckingClaim(claim)}
-                                    style={{ cursor: 'pointer' }}
+                        <div className="card-manual-check">
+                            <div className="manual-check-title">Быстая проверка билета</div>
+                            <div className="manual-check-form">
+                                <input
+                                    type="text"
+                                    placeholder="ID билета (например, 1, 2...)"
+                                    value={manualCardQuery}
+                                    onChange={(e) => setManualCardQuery(e.target.value)}
+                                    className="manual-check-input"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleManualCardCheck}
+                                    className="btn-manual-check-submit"
                                 >
-                                    <div className="claim-header-row">
-                                        <span className="claim-number">#{claim.id}</span>
-                                        <span className="claim-user-name">{claim.name}</span>
-                                    </div>
-                                    <div className="claim-footer-row">
-                                        <span className="claim-time">{claim.time}</span>
-                                        <span className={`claim-status-badge ${claim.status.toLowerCase()}`}>
-                                            {claim.status === 'Pending' && 'Ожидает проверки'}
-                                            {claim.status === 'Confirmed' && 'Бинго подтверждено!'}
-                                            {claim.status === 'Rejected' && 'Отклонено'}
-                                        </span>
-                                    </div>
+                                    Проверить билет
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="claims-list-section">
+                            <div className="claims-header">Заявки на бинго (кликните для проверки)</div>
+                            {claims.length === 0 ? (
+                                <div className="empty-claims-text">
+                                    Ожидание новых заявок...
                                 </div>
-                            ))
-                        )}
-                    </div>
-                </aside>
+                            ) : (
+                                claims.map(claim => (
+                                    <div
+                                        key={claim.id}
+                                        className={`claim-card ${claim.status.toLowerCase()}`}
+                                        onClick={() => setActiveCheckingClaim(claim)}
+                                        style={{ cursor: 'pointer' }}
+                                    >
+                                        <div className="claim-header-row">
+                                            <span className="claim-number">#{claim.id}</span>
+                                            <span className="claim-user-name">{claim.name}</span>
+                                        </div>
+                                        <div className="claim-footer-row">
+                                            <span className="claim-time">{claim.time}</span>
+                                            <span className={`claim-status-badge ${claim.status.toLowerCase()}`}>
+                                                {claim.status === 'Pending' && 'Ожидает проверки'}
+                                                {claim.status === 'Confirmed' && 'Бинго подтверждено!'}
+                                                {claim.status === 'Rejected' && 'Отклонено'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </aside>
+                )}
             </main>
 
             {activeCheckingClaim && activeCheckingClaim.card && (
@@ -1029,7 +1167,7 @@ const Gameplay: React.FC = () => {
                 <div className="presenter-mode-overlay">
                     <div className="presenter-slide-viewport" style={activeBackgroundStyle}>
                         {activeSlide.backgroundImageUrl && <div className="slide-image-overlay"></div>}
-                        
+
                         <div className="presenter-slide-content">
                             {activeSlideTypeStr === 'Title' && (
                                 <div className="presenter-slide-view title-view">
@@ -1051,10 +1189,45 @@ const Gameplay: React.FC = () => {
                             )}
 
                             {activeSlideTypeStr === 'GameBoard' && (
-                                <div className="presenter-slide-view gameboard-view">
-                                    <div className="presenter-logo">🎮</div>
-                                    <h1 className="presenter-heading">ИГРОВОЕ ПОЛЕ</h1>
-                                    <p className="presenter-body-text">{activeSlide.content || 'ИГРА НАЧАЛАСЬ!'}</p>
+                                <div className="presenter-slide-view gameboard-view-fullscreen" style={{ width: '100%', maxWidth: '900px' }}>
+                                    <h1 className="presenter-heading" style={{ marginBottom: '24px' }}>Игровое поле</h1>
+                                    <div className="gameboard-grid-custom" style={{ width: '100%', gap: '20px' }}>
+                                        {slides.filter(s => {
+                                            const type = typeof s.type === 'number'
+                                                ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type]
+                                                : String(s.type);
+                                            return type === 'Song';
+                                        }).map((songSlide, index) => {
+                                            const isPlayed = playedSongs.includes(songSlide.id);
+                                            const originalIndex = slides.findIndex(s => s.id === songSlide.id);
+                                            return (
+                                                <div
+                                                    key={songSlide.id}
+                                                    className={`gameboard-cell-custom ${isPlayed ? 'played' : ''}`}
+                                                    onClick={() => {
+                                                        if (isPreview) {
+                                                            setActiveSlideIndex(originalIndex);
+                                                        } else {
+                                                            handleSelectSongFromBoard(songSlide, originalIndex);
+                                                        }
+                                                    }}
+                                                    style={{ height: '100px', cursor: isPlayed ? 'default' : 'pointer' }}
+                                                >
+                                                    <div className="gameboard-cell-dots">
+                                                        <svg width="8" height="12" viewBox="0 0 8 12" fill="none">
+                                                            <circle cx="2" cy="2" r="1.2" fill="#D1D5DB" />
+                                                            <circle cx="2" cy="6" r="1.2" fill="#D1D5DB" />
+                                                            <circle cx="2" cy="10" r="1.2" fill="#D1D5DB" />
+                                                            <circle cx="6" cy="2" r="1.2" fill="#D1D5DB" />
+                                                            <circle cx="6" cy="6" r="1.2" fill="#D1D5DB" />
+                                                            <circle cx="6" cy="10" r="1.2" fill="#D1D5DB" />
+                                                        </svg>
+                                                    </div>
+                                                    <span className="gameboard-cell-number" style={{ fontSize: '28px' }}>{index + 1}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             )}
 
@@ -1077,39 +1250,42 @@ const Gameplay: React.FC = () => {
                                 <div className="presenter-slide-view song-view">
                                     <span className="presenter-song-badge">🎵 АКТИВНАЯ ПЕСНЯ</span>
                                     <h1 className="presenter-song-title">
-                                        {isSongRevealed ? activeSlide.title : '???'}
+                                        {activeSlide.title}
                                     </h1>
                                     <p className="presenter-song-artist">
-                                        {isSongRevealed ? (activeSlide.content || 'Исполнитель') : 'Исполнитель скрыт'}
+                                        {activeSlide.content || 'Исполнитель'}
                                     </p>
-                                    
-                                    <div className="presenter-song-controls">
+
+                                    <div className="presenter-song-controls" style={{ marginTop: '30px' }}>
                                         <button
                                             type="button"
-                                            className="btn-presenter-action reveal"
-                                            onClick={() => setIsSongRevealed(prev => !prev)}
+                                            className="btn-presenter-action return-gameboard-presenter"
+                                            onClick={() => {
+                                                closePlayer();
+                                                const idx = slides.findIndex(s => {
+                                                    const type = typeof s.type === 'number'
+                                                        ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type]
+                                                        : String(s.type);
+                                                    return type === 'GameBoard';
+                                                });
+                                                if (idx !== -1) setActiveSlideIndex(idx);
+                                            }}
+                                            style={{
+                                                background: '#2168F5',
+                                                color: '#FFFFFF',
+                                                border: 'none',
+                                                padding: '16px 36px',
+                                                borderRadius: '12px',
+                                                fontSize: '18px',
+                                                fontWeight: 'bold',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                boxShadow: '0 4px 15px rgba(33, 104, 245, 0.3)'
+                                            }}
                                         >
-                                            {isSongRevealed ? '👁️ Скрыть песню' : '👁️ Показать песню'}
-                                        </button>
-                                        
-                                        <button
-                                            type="button"
-                                            className={`btn-presenter-action loto ${isPlaying ? 'playing' : ''}`}
-                                            onClick={handleLotoButtonClick}
-                                            disabled={isLotoRunning}
-                                        >
-                                            {isLotoRunning ? (
-                                                <span className="spinner"></span>
-                                            ) : isPlaying ? (
-                                                '⏸️ Пауза лототрона'
-                                            ) : (
-                                                '▶️ Запустить лототрон'
-                                            )}
+                                            Вернуться в игровое поле
                                         </button>
                                     </div>
-                                    {currentLotoSong && currentLotoSong.title === activeSlide.title && (
-                                        <p className="presenter-status-playing-text">Сейчас играет в плеере 🔊</p>
-                                    )}
                                 </div>
                             )}
 
@@ -1128,10 +1304,10 @@ const Gameplay: React.FC = () => {
                                     🎵 {gameName}
                                 </span>
                             </div>
-                            
+
                             <div className="presenter-toolbar-section center">
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className="btn-toolbar-nav"
                                     onClick={handlePrevSlide}
                                     disabled={activeSlideIndex === 0}
@@ -1142,8 +1318,8 @@ const Gameplay: React.FC = () => {
                                 <span className="presenter-toolbar-counter">
                                     Слайд {activeSlideIndex + 1} из {slides.length}
                                 </span>
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className="btn-toolbar-nav"
                                     onClick={handleNextSlide}
                                     disabled={activeSlideIndex === slides.length - 1}
@@ -1154,16 +1330,16 @@ const Gameplay: React.FC = () => {
                             </div>
 
                             <div className="presenter-toolbar-section right">
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className="btn-toolbar-action fullscreen"
                                     onClick={toggleFullscreen}
                                     title="Полноэкранный режим браузера"
                                 >
                                     {isBrowserFullscreen ? '🗗' : '🗖'}
                                 </button>
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className="btn-toolbar-action close"
                                     onClick={togglePresenterMode}
                                     title="Выйти из презентации"

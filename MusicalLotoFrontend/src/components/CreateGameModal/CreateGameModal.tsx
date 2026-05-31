@@ -72,7 +72,7 @@ const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, song
         if (isNaN(cSize) || cSize < 3 || cSize > 7) { setError("Размер карточки должен быть от 3 до 7"); return; }
         if (rules === 0) { setError("Выберите хотя бы одно правило победы"); return; }
 
-        const requiredSongs = cSize * cSize;
+        const requiredSongs = cSize * cSize + pCount;
         if (selectedSongsPool.length < requiredSongs) {
             setError(`Выбранного пула песен недостаточно. Нужно минимум ${requiredSongs} (выбрано: ${selectedSongsPool.length}).`);
             return;
@@ -123,7 +123,13 @@ const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, song
                     <p className="cgm-subtitle">Заполните поля для настройки ({selectedSongsPool.length} песен в пуле игры)</p>
                 </div>
 
-                {error && <div className="cgm-error">{error}</div>}
+                {songs.length === 0 ? (
+                    <div className="cgm-warning-soft" style={{ color: '#F59E0B', backgroundColor: '#FEF3C7', padding: '10px 14px', borderRadius: '8px', fontSize: '14px', margin: '0 24px 16px 24px', textAlign: 'center', fontWeight: '500' }}>
+                        (В вашей библиотеке пока нет песен.)
+                    </div>
+                ) : error ? (
+                    <div className="cgm-error">{error}</div>
+                ) : null}
 
                 <div className="cgm-form">
                     <div className="cgm-field">
@@ -172,7 +178,7 @@ const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, song
 
                 <div className="cgm-actions">
                     <button className="cgm-btn-cancel" onClick={onClose} disabled={isSubmitting}>Отмена</button>
-                    <button className="cgm-btn-submit" onClick={handleSubmit} disabled={isSubmitting}>Сохранить</button>
+                    <button className="cgm-btn-submit" onClick={handleSubmit} disabled={isSubmitting || songs.length === 0}>Сохранить</button>
                 </div>
             </div>
         </div>
