@@ -17,13 +17,25 @@ const AddSongModal: React.FC<AddSongModalProps> = ({ isOpen, onClose, onUpload, 
     const [artist, setArtist] = useState('');
 
     useEffect(() => {
-        if (!isOpen) {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            window.addEventListener('keydown', handleKeyDown);
+        } else {
             setAudioFileName(null);
             setCoverImagePreview(null);
             setTitle('');
             setArtist('');
         }
-    }, [isOpen]);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isOpen, onClose]);
 
     const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {

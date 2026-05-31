@@ -22,11 +22,22 @@ const SelectSongsModal: React.FC<SelectSongsModalProps> = ({ isOpen, onClose, on
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+
         if (isOpen) {
             setSelectedIds(new Set(initialSelectedIds));
             fetchSongs();
+            window.addEventListener('keydown', handleKeyDown);
         }
-    }, [isOpen, initialSelectedIds]);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isOpen, initialSelectedIds, onClose]);
 
     const fetchSongs = async () => {
         setIsLoading(true);

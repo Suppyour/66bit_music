@@ -19,13 +19,24 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) 
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
     useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+
         if (isOpen) {
             fetchProfile();
             setErrorMsg(null);
             setSuccessMsg(null);
             setPassword('');
+            window.addEventListener('keydown', handleKeyDown);
         }
-    }, [isOpen]);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isOpen, onClose]);
 
     const fetchProfile = async () => {
         setIsLoading(true);

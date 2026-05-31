@@ -1,6 +1,6 @@
 .footer {
   width: 100%;
-  background-color: #ffffff;
+  background-color: transparent;
   
   display: flex;
   justify-content: center;
@@ -13,7 +13,7 @@
   height: 127.87px;
   width: 100%;
   max-width: 1980px;
-  padding: 0 115.5px;
+  padding: 0 112.75px 0 115.5px;
   box-sizing: border-box;
 }
 
@@ -21,7 +21,7 @@
   font-family: 'Inter', sans-serif;
   font-weight: 400;
   font-size: 19.25px;
-  line-height: 28.88px;
+  line-height: 29px;
   color: #9CA3AF;
   margin: 0;
 }
@@ -30,14 +30,9 @@
   font-family: 'Inter', sans-serif;
   font-weight: 400;
   font-size: 19.25px;
-  line-height: 28.88px;
+  line-height: 29px;
   color: #6B7280;
   text-decoration-line: none;
   margin: 0;
-  transition: color 0.2s ease;
-}
-
-.footer-policy:hover {
-  text-decoration-line: underline;
-  color: #4B5563;
+  cursor: default;
 }

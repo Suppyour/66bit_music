@@ -22,9 +22,6 @@ import { CSS } from '@dnd-kit/utilities';
 import './Cabinet.css';
 import { apiFetch } from '../../utils/api';
 
-import playBtn from '../../assets/Cabinet/Значек плей в Играть.svg';
-import deleteBtn from '../../assets/Cabinet/Кнопка удалить в кабинет.svg';
-
 import plusIcon from '../../assets/Cabinet/Плюсик из Создать игру.svg';
 import noteIcon from '../../assets/Cabinet/Нота в кабинет.svg';
 import totalGamesIcon from '../../assets/Cabinet/Иконка в Всего игр.svg';
@@ -868,7 +865,7 @@ const Cabinet: React.FC = () => {
                         </div>
 
                         <div className="cabinet-stats-grid">
-                            <div className="stat-card">
+                            <div className="stat-card total-games-card">
                                 <div className="stat-icon-wrapper">
                                     <img src={totalGamesIcon} alt="Всего игр" />
                                 </div>
@@ -878,7 +875,7 @@ const Cabinet: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="stat-card">
+                            <div className="stat-card active-games-card">
                                 <div className="stat-icon-wrapper">
                                     <img src={activePlayersIcon} alt="Активных игр" />
                                 </div>
@@ -888,7 +885,7 @@ const Cabinet: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="stat-card">
+                            <div className="stat-card songs-card">
                                 <div className="stat-icon-wrapper">
                                     <img src={songsLibraryIcon} alt="Песен в библиотеке" />
                                 </div>
@@ -921,28 +918,49 @@ const Cabinet: React.FC = () => {
                                                         </span>
                                                     </div>
                                                     <div className="game-meta">
-                                                        <span>👤 {game.participants} участников</span>
-                                                        <span>🕒 {game.date}</span>
+                                                        <span>
+                                                            <svg width="12.45" height="12.45" viewBox="0 0 12.45 12.45" fill="none" style={{ marginRight: '6px' }}>
+                                                                <path d="M6.225 6.225a2.075 2.075 0 100-4.15 2.075 2.075 0 000 4.15zM2.075 10.375a4.15 4.15 0 018.3 0" stroke="#64748B" strokeWidth="1.03722" strokeLinecap="round" />
+                                                            </svg>
+                                                            {game.participants} участников
+                                                        </span>
+                                                        <span>
+                                                            <svg width="12.45" height="12.45" viewBox="0 0 12.45 12.45" fill="none" style={{ marginRight: '6px' }}>
+                                                                <rect x="1.5" y="2.5" width="9.45" height="8.45" rx="1.5" stroke="#64748B" strokeWidth="1.03722" />
+                                                                <path d="M3.5 1.5v2M8.9 1.5v2M1.5 5.5h9.45" stroke="#64748B" strokeWidth="1.03722" strokeLinecap="round" />
+                                                            </svg>
+                                                            {game.date}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div className="game-actions-col">
                                                 {game.status === 'Active' ? (
-                                                    <button className="play-game-btn" onClick={() => navigate(`/gameplay?sessionId=${game.id}`)}>
-                                                        <img src={playBtn} alt="Play" className="play-game-icon" />
-                                                        Играть
+                                                    <button className="play-game-btn" onClick={() => navigate(`/gameplay?sessionId=${game.id}`)} title="Играть">
+                                                        <svg width="9" height="10" viewBox="0 0 9 10" fill="none">
+                                                            <path d="M1 1l6 4-6 4V1z" fill="#2E68F5" stroke="#2E68F5" strokeWidth="1.5" strokeLinejoin="round" />
+                                                        </svg>
                                                     </button>
                                                 ) : (
-                                                    <button className="play-game-btn completed-view-btn" onClick={() => navigate(`/gameplay?sessionId=${game.id}&preview=true`)} style={{ background: '#64748B', borderColor: '#64748B' }}>
-                                                        <img src={playBtn} alt="Play" className="play-game-icon" style={{ filter: 'grayscale(1) brightness(1.5)' }} />
-                                                        Просмотр
+                                                    <button className="play-game-btn completed-view-btn" onClick={() => navigate(`/gameplay?sessionId=${game.id}&preview=true`)} title="Просмотр">
+                                                        <svg width="9" height="10" viewBox="0 0 9 10" fill="none">
+                                                            <path d="M1 1l6 4-6 4V1z" fill="#2E68F5" stroke="#2E68F5" strokeWidth="1.5" strokeLinejoin="round" />
+                                                        </svg>
                                                     </button>
                                                 )}
-                                                <button className="edit-game-btn" onClick={() => navigate(`/presentation?sessionId=${game.id}`)} title="Редактировать презентацию" style={{ padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', background: '#FFFFFF', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                    ⚙️
+                                                <button className="edit-game-btn" onClick={() => navigate(`/presentation?sessionId=${game.id}`)} title="Редактировать презентацию">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <circle cx="12" cy="12" r="3" />
+                                                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                                                    </svg>
                                                 </button>
                                                 <button className="delete-game-btn" onClick={() => handleDeleteGame(game.id)} title="Удалить">
-                                                    <img src={deleteBtn} alt="Delete" />
+                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <polyline points="3 6 5 6 21 6" />
+                                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                                        <line x1="10" y1="11" x2="10" y2="17" />
+                                                        <line x1="14" y1="11" x2="14" y2="17" />
+                                                    </svg>
                                                 </button>
                                             </div>
                                         </div>

@@ -23,6 +23,12 @@ const EditSongModal: React.FC<EditSongModalProps> = ({ isOpen, onClose, onEdit, 
     const [artist, setArtist] = useState('');
 
     useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+
         if (isOpen && initialData) {
             setTitle(initialData.title || '');
             setArtist(initialData.artist || '');
@@ -34,7 +40,15 @@ const EditSongModal: React.FC<EditSongModalProps> = ({ isOpen, onClose, onEdit, 
             setTitle('');
             setArtist('');
         }
-    }, [isOpen, initialData]);
+
+        if (isOpen) {
+            window.addEventListener('keydown', handleKeyDown);
+        }
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isOpen, initialData, onClose]);
 
     const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {

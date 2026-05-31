@@ -8,9 +8,9 @@ const Footer: React.FC = () => {
         <div className="footer-copyright">
           © 2026 Музлото
         </div>
-        <a href="#" className="footer-policy">
+        <span className="footer-policy">
           Политика конфиденциальности
-        </a>
+        </span>
       </div>
     </footer>
   );

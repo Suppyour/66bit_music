@@ -12,22 +12,23 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  
-  margin-bottom: 72px; 
+  margin-bottom: 66px; 
 }
 
 .howItWorksTitle {
   font-family: var(--font-main);
-  font-size: 40px;
+  font-size: 41.25px;
+  line-height: 50px;
   font-weight: 700;
   color: #111827;
-  margin-bottom: 16px;
+  margin-bottom: 16.5px;
 }
 
 .howItWorksSubtitle {
   font-family: var(--font-main);
-  font-size: 18px;
-  color: #6B7280;
+  font-size: 22px;
+  line-height: 33px;
+  color: #64748B;
   max-width: 600px;
 }
 
@@ -35,33 +36,38 @@
   display: flex;
   flex-direction: row;
   justify-content: center;
-  align-items: center;
-  gap: 33px;
+  align-items: stretch;
+  gap: 21px;
   width: 100%;
 }
 
 .howItWorksCard {
-  width: 327.25px;
-  height: 231px;
-  background-color: #ffffff;
-  border-radius: 20px;
-  box-shadow: 0px 5.5px 19.25px rgba(46, 104, 245, 0.08); 
+  width: 339.25px;
+  height: 233.75px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1.375px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0px 5.5px 19.25px rgba(46, 104, 245, 0.12);
+  border-radius: 22px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   text-align: center;
   box-sizing: border-box;
-  padding: 0 52px;
+  padding: 34.38px 24px 37.12px 24px;
 }
 
 .howItWorksCard-number {
   font-family: 'Inter', sans-serif;
   font-weight: 900;
   font-size: 41.25px;
-  line-height: 48.5px;
-  color: #2E68F5;
-  margin-bottom: 5.5px;
+  line-height: 50px;
+  background: linear-gradient(100.84deg, #2E68F5 0%, #5B8AF7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 16.5px;
 }
 
 .howItWorksCard-title {
@@ -71,14 +77,14 @@
   line-height: 33px;
   color: #111827;
   margin: 0;
-  margin-bottom: 5.5px;
+  margin-bottom: 12.37px;
 }
 
 .howItWorksCard-desc {
   font-family: 'Inter', sans-serif;
   font-weight: 400;
   font-size: 19.25px;
-  line-height: 27.5px;
+  line-height: 27px;
   color: #64748B;
   margin: 0;
 }

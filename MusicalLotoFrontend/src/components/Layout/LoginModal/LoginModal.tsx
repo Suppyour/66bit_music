@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './LoginModal.css';
 
 import closeIcon from '../../../assets/MainPage/Закрыть на входе.svg';
@@ -12,6 +13,7 @@ interface LoginModalProps {
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, initialRegisterMode = false }) => {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [email, setEmail] = useState('');
@@ -24,20 +26,28 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, initialRegiste
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
     if (isOpen) {
       setIsRegisterMode(initialRegisterMode);
       setIsForgotPasswordMode(false);
       setIsResetSuccess(false);
       setErrorStr('');
       document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
     } else {
       document.body.style.overflow = 'unset';
     }
 
     return () => {
       document.body.style.overflow = 'unset';
+      window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, initialRegisterMode]);
+  }, [isOpen, initialRegisterMode, onClose]);
 
   if (!isOpen) return null;
 
@@ -110,6 +120,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, initialRegiste
         setPassword('');
         setConfirmPassword('');
         setIsRegisterMode(false);
+        navigate('/cabinet');
         onClose();
       } else {
         setErrorStr(data.error || data.title || 'Ошибка сервера');
@@ -124,7 +135,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, initialRegiste
 
   return (
     <div className="modalOverlay">
-      <div className="modalContent" onClick={(e) => e.stopPropagation()}>
+      <div className={`modalContent ${isRegisterMode ? 'registerMode' : ''} ${isForgotPasswordMode ? 'forgotPasswordMode' : ''}`} onClick={(e) => e.stopPropagation()}>
         <button className="modalCloseBtn" onClick={onClose} disabled={isLoading}>
           <img src={closeIcon} alt="Закрыть" />
         </button>
@@ -158,7 +169,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, initialRegiste
             />
           </div>
 
-          <div className="formGroup" style={{ marginTop: '27.5px' }}>
+          <div className="formGroup" style={{ marginTop: isRegisterMode ? '27.5px' : '41.25px' }}>
             <label className="formLabel">{isForgotPasswordMode ? 'Новый пароль' : 'Пароль'}</label>
             <div className="passwordInputContainer">
               <input
@@ -220,7 +231,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, initialRegiste
 
           {errorStr && <div style={{ color: 'red', marginTop: 10, fontSize: 14, textAlign: 'center' }}>{errorStr}</div>}
 
-          <button type="submit" className="loginSubmitBtn" disabled={isLoading} style={{ marginTop: 40 }}>
+          <button type="submit" className="loginSubmitBtn" disabled={isLoading} style={{ marginTop: isRegisterMode ? '39.88px' : '27px' }}>
             {isLoading ? 'Загрузка...' : (isForgotPasswordMode ? 'Сбросить пароль' : (isRegisterMode ? 'Зарегистрироваться' : 'Войти'))}
           </button>
 

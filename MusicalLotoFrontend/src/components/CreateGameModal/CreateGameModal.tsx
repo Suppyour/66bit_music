@@ -28,6 +28,12 @@ const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, song
     const [selectedSongsPool, setSelectedSongsPool] = useState<Song[]>(songs);
 
     useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+
         if (isOpen) {
             setName('');
             setParticipantsCount('');
@@ -43,6 +49,7 @@ const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, song
                         const filtered = songs.filter(s => selectedIds.includes(s.id));
                         if (filtered.length > 0) {
                             setSelectedSongsPool(filtered);
+                            window.addEventListener('keydown', handleKeyDown);
                             return;
                         }
                     }
@@ -51,8 +58,13 @@ const CreateGameModal: React.FC<CreateGameModalProps> = ({ isOpen, onClose, song
                 }
             }
             setSelectedSongsPool(songs);
+            window.addEventListener('keydown', handleKeyDown);
         }
-    }, [isOpen, songs]);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isOpen, songs, onClose]);
 
     if (!isOpen) return null;
 

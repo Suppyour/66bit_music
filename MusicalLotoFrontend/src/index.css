@@ -15,7 +15,8 @@
 
 body {
   font-family: var(--font-main);
-  background-color: var(--bg-color);
+  background: linear-gradient(146.54deg, #EEF2FA 0%, #F8FAFC 50%, #E8EEF9 100%);
+  background-attachment: fixed;
   color: var(--text-color);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

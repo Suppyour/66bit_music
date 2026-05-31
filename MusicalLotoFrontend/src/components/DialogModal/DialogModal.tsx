@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import './DialogModal.css';
 
 interface DialogModalProps {
@@ -24,6 +24,22 @@ const DialogModal: React.FC<DialogModalProps> = ({
     onConfirm, 
     onCancel 
 }) => {
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onCancel();
+            }
+        };
+
+        if (isOpen) {
+            window.addEventListener('keydown', handleKeyDown);
+        }
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isOpen, onCancel]);
+
     if (!isOpen) return null;
 
     return (
