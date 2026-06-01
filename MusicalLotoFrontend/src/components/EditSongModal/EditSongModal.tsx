@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../AddSongModal/AddSongModal.css';
 import logoIcon from '../../assets/SongLibrary/Лого в Добавить песню.svg';
+import { apiFetch } from '../../utils/api';
 
 interface EditSongModalProps {
     isOpen: boolean;
@@ -11,6 +12,7 @@ interface EditSongModalProps {
         id: string;
         title: string;
         artist: string;
+        backgroundImagePath?: string;
     } | null;
 }
 
@@ -29,11 +31,26 @@ const EditSongModal: React.FC<EditSongModalProps> = ({ isOpen, onClose, onEdit, 
             }
         };
 
+        const fetchSongDetails = async (id: string) => {
+            try {
+                const response = await apiFetch(`/api/Songs/${id}`);
+                if (response.ok) {
+                    const songData = await response.json();
+                    if (songData.backgroundImagePath) {
+                        setCoverImagePreview(songData.backgroundImagePath);
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка при загрузке обложки песни с сервера:', error);
+            }
+        };
+
         if (isOpen && initialData) {
             setTitle(initialData.title || '');
             setArtist(initialData.artist || '');
             setAudioFileName(null);
-            setCoverImagePreview(null);
+            setCoverImagePreview(initialData.backgroundImagePath || null);
+            fetchSongDetails(initialData.id);
         } else if (!isOpen) {
             setAudioFileName(null);
             setCoverImagePreview(null);

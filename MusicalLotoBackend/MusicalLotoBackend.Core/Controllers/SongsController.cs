@@ -64,6 +64,25 @@ public class SongsController : ControllerBase
         return Ok(songs); 
     }
 
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetSong(Guid id)
+    {
+        Guid userId;
+        try
+        {
+            userId = GetUserId();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+
+        var song = await _mediator.Send(new GetSongQuery { Id = id, UserId = userId });
+        if (song == null) return NotFound(new { Message = "Песня не найдена" });
+    
+        return Ok(song); 
+    }
+
     [HttpPut("{id}")]
     [RequestSizeLimit(104857600)] // 100 MB
     public async Task<IActionResult> UpdateSong(Guid id, [FromForm] UpdateSongCommand command)

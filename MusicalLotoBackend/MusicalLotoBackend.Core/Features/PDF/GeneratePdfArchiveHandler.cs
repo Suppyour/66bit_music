@@ -521,192 +521,203 @@ public class GeneratePdfArchiveHandler : IRequestHandler<GeneratePdfArchiveComma
             };
             using var browser = await Puppeteer.LaunchAsync(launchOptions);
 
+            async Task<byte[]> GenerateCardPdfAsync(PdfCardDto card, IBrowser browser, int index)
+            {
+                // Generate cells HTML
+                var orderedCells = card.Cells.OrderBy(c => c.Row).ThenBy(c => c.Column).ToList();
+                int gridSize = (int)Math.Sqrt(card.Cells.Count);
+                if (gridSize == 0) gridSize = 5;
+
+                var cellsHtmlBuilder = new StringBuilder();
+                for (int cIdx = 0; cIdx < orderedCells.Count; cIdx++)
+                {
+                    var cell = orderedCells[cIdx];
+                    var song = songDict.GetValueOrDefault(cell.SongId);
+                    string title = song?.Title ?? "...";
+                    string artist = song?.Artist ?? "";
+                    string fullText = !string.IsNullOrEmpty(artist) ? $"{artist} – {title}" : title;
+
+                    string bowsHtml = "";
+                    // Center cell is Row 2 Column 2 (0-indexed)
+                    if (cell.Row == 2 && cell.Column == 2)
+                    {
+                        bowsHtml = $@"
+                        <svg class=""corner-bow top-left"" viewBox=""0 0 100 100"" style=""stroke: {request.AccentColor};""><path d=""M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90"" fill=""none"" stroke-width=""8"" stroke-linecap=""round""/></svg>
+                        <svg class=""corner-bow top-right"" viewBox=""0 0 100 100"" style=""stroke: {request.AccentColor};""><path d=""M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90"" fill=""none"" stroke-width=""8"" stroke-linecap=""round""/></svg>
+                        <svg class=""corner-bow bottom-left"" viewBox=""0 0 100 100"" style=""stroke: {request.AccentColor};""><path d=""M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90"" fill=""none"" stroke-width=""8"" stroke-linecap=""round""/></svg>
+                        <svg class=""corner-bow bottom-right"" viewBox=""0 0 100 100"" style=""stroke: {request.AccentColor};""><path d=""M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90"" fill=""none"" stroke-width=""8"" stroke-linecap=""round""/></svg>";
+                    }
+
+                    cellsHtmlBuilder.Append($@"
+                    <div class=""bingo-cell"">
+                        {bowsHtml}
+                        <div class=""cell-title"">{WebUtility.HtmlEncode(fullText)}</div>
+                    </div>");
+                }
+
+                // Generate active rules grids
+                var miniGridsBuilder = new StringBuilder();
+                int rules = request.Rules;
+
+                // Horizontal (1)
+                if ((rules & 1) != 0)
+                {
+                    var cellsGrid = new StringBuilder();
+                    for (int idx = 0; idx < 25; idx++)
+                    {
+                        cellsGrid.Append("<div class=\"mini-grid-cell\"></div>");
+                    }
+                    
+                    miniGridsBuilder.Append($@"
+                    <div class=""mini-grid-wrapper"">
+                        <div class=""mini-grid-layout horizontal-rule"">
+                            {cellsGrid}
+                        </div>
+                        <span class=""mini-grid-label"">5 песен подряд в одном ряду</span>
+                    </div>");
+                }
+
+                // Vertical (2)
+                if ((rules & 2) != 0)
+                {
+                    var cellsGrid = new StringBuilder();
+                    for (int idx = 0; idx < 25; idx++)
+                    {
+                        cellsGrid.Append("<div class=\"mini-grid-cell\"></div>");
+                    }
+                    
+                    miniGridsBuilder.Append($@"
+                    <div class=""mini-grid-wrapper"">
+                        <div class=""mini-grid-layout vertical-rule"">
+                            {cellsGrid}
+                        </div>
+                        <span class=""mini-grid-label"">5 песен подряд в одной колонке</span>
+                    </div>");
+                }
+
+                // Diagonal (8)
+                if ((rules & 8) != 0)
+                {
+                    var cellsGrid = new StringBuilder();
+                    for (int idx = 0; idx < 25; idx++)
+                    {
+                        int r = idx / 5;
+                        int col = idx % 5;
+                        bool isAccent = r == col || r + col == 4;
+                        if (isAccent)
+                        {
+                            cellsGrid.Append("<div class=\"mini-grid-cell active-cross\">✕</div>");
+                        }
+                        else
+                        {
+                            cellsGrid.Append("<div class=\"mini-grid-cell\"></div>");
+                        }
+                    }
+                    
+                    miniGridsBuilder.Append($@"
+                    <div class=""mini-grid-wrapper"">
+                        <div class=""mini-grid-layout"">
+                            {cellsGrid}
+                        </div>
+                        <span class=""mini-grid-label"">5 песен подряд по диагонали</span>
+                    </div>");
+                }
+
+                // Full Card (always)
+                {
+                    var cellsGrid = new StringBuilder();
+                    for (int idx = 0; idx < 25; idx++)
+                    {
+                        cellsGrid.Append("<div class=\"mini-grid-cell active-cross\">✕</div>");
+                    }
+                    
+                    miniGridsBuilder.Append($@"
+                    <div class=""mini-grid-wrapper"">
+                        <div class=""mini-grid-layout"">
+                            {cellsGrid}
+                        </div>
+                        <span class=""mini-grid-label"">комбинация из всех песен</span>
+                    </div>");
+                }
+
+                string ticketCodeHtml = !string.IsNullOrEmpty(card.CuteName)
+                    ? $"<div class=\"card-subtitle-code\">Код билета: {WebUtility.HtmlEncode(card.CuteName)}</div>"
+                    : "";
+
+                // Construct final HTML page
+                string html = HtmlTemplate
+                    .Replace("{FONT_FAMILY_CSS}", fontFamilyCss)
+                    .Replace("{ACCENT_COLOR}", request.AccentColor)
+                    .Replace("{COMPANY_NAME}", WebUtility.HtmlEncode(request.CompanyName))
+                    .Replace("{EDITION_NAME}", WebUtility.HtmlEncode(request.EditionName))
+                    .Replace("{TITLE_TEXT}", WebUtility.HtmlEncode(request.TitleText))
+                    .Replace("{FOOTER_TEXT}", WebUtility.HtmlEncode(request.FooterText))
+                    .Replace("{TICKET_CODE_HTML}", ticketCodeHtml)
+                    .Replace("{GRID_SIZE}", gridSize.ToString())
+                    .Replace("{BACKGROUND_IMAGE_CSS}", bgImageCss)
+                    .Replace("{BINGO_CELLS_HTML}", cellsHtmlBuilder.ToString())
+                    .Replace("{MINI_GRIDS_HTML}", miniGridsBuilder.ToString());
+
+                // Print to PDF via Puppeteer
+                using var page = await browser.NewPageAsync();
+
+                // Set viewport to the exact layout size (793x560) designed for the ticket elements
+                await page.SetViewportAsync(new ViewPortOptions
+                {
+                    Width = 793,
+                    Height = 560,
+                    IsMobile = false,
+                    DeviceScaleFactor = 1
+                });
+
+                // Wait for all resources (including web fonts) to be fully loaded
+                await page.SetContentAsync(html, new NavigationOptions 
+                { 
+                    WaitUntil = new[] { WaitUntilNavigation.Networkidle0 } 
+                });
+
+                // Ensure fonts are fully loaded and rendered before capturing PDF
+                await page.EvaluateExpressionAsync("document.fonts.ready");
+
+                var pdfOptions = new PdfOptions
+                {
+                    Format = PaperFormat.A4,
+                    Landscape = true,
+                    PrintBackground = true,
+                    Scale = 1.415m,
+                    MarginOptions = new MarginOptions
+                    {
+                        Top = "0px",
+                        Bottom = "0px",
+                        Left = "0px",
+                        Right = "0px"
+                    }
+                };
+
+                var pdfBytes = await page.PdfDataAsync(pdfOptions);
+                return pdfBytes;
+            }
+
+            if (request.IsSingle)
+            {
+                var card = cards.FirstOrDefault();
+                if (card == null) return Array.Empty<byte>();
+                return await GenerateCardPdfAsync(card, browser, 1);
+            }
+
             using var memoryStream = new MemoryStream();
             using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
             {
                 int index = 1;
                 foreach (var card in cards)
                 {
-                    // Generate cells HTML
-                    var orderedCells = card.Cells.OrderBy(c => c.Row).ThenBy(c => c.Column).ToList();
-                    int gridSize = (int)Math.Sqrt(card.Cells.Count);
-                    if (gridSize == 0) gridSize = 5;
-
-                    var cellsHtmlBuilder = new StringBuilder();
-                    for (int cIdx = 0; cIdx < orderedCells.Count; cIdx++)
-                    {
-                        var cell = orderedCells[cIdx];
-                        var song = songDict.GetValueOrDefault(cell.SongId);
-                        string title = song?.Title ?? "...";
-                        string artist = song?.Artist ?? "";
-                        string fullText = !string.IsNullOrEmpty(artist) ? $"{artist} – {title}" : title;
-
-                        string bowsHtml = "";
-                        // Center cell is Row 2 Column 2 (0-indexed)
-                        if (cell.Row == 2 && cell.Column == 2)
-                        {
-                            bowsHtml = $@"
-                            <svg class=""corner-bow top-left"" viewBox=""0 0 100 100"" style=""stroke: {request.AccentColor};""><path d=""M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90"" fill=""none"" stroke-width=""8"" stroke-linecap=""round""/></svg>
-                            <svg class=""corner-bow top-right"" viewBox=""0 0 100 100"" style=""stroke: {request.AccentColor};""><path d=""M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90"" fill=""none"" stroke-width=""8"" stroke-linecap=""round""/></svg>
-                            <svg class=""corner-bow bottom-left"" viewBox=""0 0 100 100"" style=""stroke: {request.AccentColor};""><path d=""M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90"" fill=""none"" stroke-width=""8"" stroke-linecap=""round""/></svg>
-                            <svg class=""corner-bow bottom-right"" viewBox=""0 0 100 100"" style=""stroke: {request.AccentColor};""><path d=""M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90"" fill=""none"" stroke-width=""8"" stroke-linecap=""round""/></svg>";
-                        }
-
-                        cellsHtmlBuilder.Append($@"
-                        <div class=""bingo-cell"">
-                            {bowsHtml}
-                            <div class=""cell-title"">{WebUtility.HtmlEncode(fullText)}</div>
-                        </div>");
-                    }
-
-                    // Generate active rules grids
-                    var miniGridsBuilder = new StringBuilder();
-                    int rules = request.Rules;
-
-                    // Horizontal (1)
-                    if ((rules & 1) != 0)
-                    {
-                        var cellsGrid = new StringBuilder();
-                        for (int idx = 0; idx < 25; idx++)
-                        {
-                            cellsGrid.Append("<div class=\"mini-grid-cell\"></div>");
-                        }
-                        
-                        miniGridsBuilder.Append($@"
-                        <div class=""mini-grid-wrapper"">
-                            <div class=""mini-grid-layout horizontal-rule"">
-                                {cellsGrid}
-                            </div>
-                            <span class=""mini-grid-label"">5 песен подряд в одном ряду</span>
-                        </div>");
-                    }
-
-                    // Vertical (2)
-                    if ((rules & 2) != 0)
-                    {
-                        var cellsGrid = new StringBuilder();
-                        for (int idx = 0; idx < 25; idx++)
-                        {
-                            cellsGrid.Append("<div class=\"mini-grid-cell\"></div>");
-                        }
-                        
-                        miniGridsBuilder.Append($@"
-                        <div class=""mini-grid-wrapper"">
-                            <div class=""mini-grid-layout vertical-rule"">
-                                {cellsGrid}
-                            </div>
-                            <span class=""mini-grid-label"">5 песен подряд в одной колонке</span>
-                        </div>");
-                    }
-
-                    // Diagonal (8)
-                    if ((rules & 8) != 0)
-                    {
-                        var cellsGrid = new StringBuilder();
-                        for (int idx = 0; idx < 25; idx++)
-                        {
-                            int r = idx / 5;
-                            int col = idx % 5;
-                            bool isAccent = r == col || r + col == 4;
-                            if (isAccent)
-                            {
-                                cellsGrid.Append("<div class=\"mini-grid-cell active-cross\">✕</div>");
-                            }
-                            else
-                            {
-                                cellsGrid.Append("<div class=\"mini-grid-cell\"></div>");
-                            }
-                        }
-                        
-                        miniGridsBuilder.Append($@"
-                        <div class=""mini-grid-wrapper"">
-                            <div class=""mini-grid-layout"">
-                                {cellsGrid}
-                            </div>
-                            <span class=""mini-grid-label"">5 песен подряд по диагонали</span>
-                        </div>");
-                    }
-
-                    // Full Card (always)
-                    {
-                        var cellsGrid = new StringBuilder();
-                        for (int idx = 0; idx < 25; idx++)
-                        {
-                            cellsGrid.Append("<div class=\"mini-grid-cell active-cross\">✕</div>");
-                        }
-                        
-                        miniGridsBuilder.Append($@"
-                        <div class=""mini-grid-wrapper"">
-                            <div class=""mini-grid-layout"">
-                                {cellsGrid}
-                            </div>
-                            <span class=""mini-grid-label"">комбинация из всех песен</span>
-                        </div>");
-                    }
-
-                    string ticketCodeHtml = !string.IsNullOrEmpty(card.CuteName)
-                        ? $"<div class=\"card-subtitle-code\">Код билета: {WebUtility.HtmlEncode(card.CuteName)}</div>"
-                        : "";
-
-                    // Construct final HTML page
-                    string html = HtmlTemplate
-                        .Replace("{FONT_FAMILY_CSS}", fontFamilyCss)
-                        .Replace("{ACCENT_COLOR}", request.AccentColor)
-                        .Replace("{COMPANY_NAME}", WebUtility.HtmlEncode(request.CompanyName))
-                        .Replace("{EDITION_NAME}", WebUtility.HtmlEncode(request.EditionName))
-                        .Replace("{TITLE_TEXT}", WebUtility.HtmlEncode(request.TitleText))
-                        .Replace("{FOOTER_TEXT}", WebUtility.HtmlEncode(request.FooterText))
-                        .Replace("{TICKET_CODE_HTML}", ticketCodeHtml)
-                        .Replace("{GRID_SIZE}", gridSize.ToString())
-                        .Replace("{BACKGROUND_IMAGE_CSS}", bgImageCss)
-                        .Replace("{BINGO_CELLS_HTML}", cellsHtmlBuilder.ToString())
-                        .Replace("{MINI_GRIDS_HTML}", miniGridsBuilder.ToString());
-
-                    // Print to PDF via Puppeteer
-                    using var page = await browser.NewPageAsync();
-
-                    // Set viewport to the exact layout size (793x560) designed for the ticket elements
-                    await page.SetViewportAsync(new ViewPortOptions
-                    {
-                        Width = 793,
-                        Height = 560,
-                        IsMobile = false,
-                        DeviceScaleFactor = 1
-                    });
-
-                    // Wait for all resources (including web fonts) to be fully loaded
-                    await page.SetContentAsync(html, new NavigationOptions 
-                    { 
-                        WaitUntil = new[] { WaitUntilNavigation.Networkidle0 } 
-                    });
-
-                    // Ensure fonts are fully loaded and rendered before capturing PDF
-                    await page.EvaluateExpressionAsync("document.fonts.ready");
-
-                    var pdfOptions = new PdfOptions
-                    {
-                        Format = PaperFormat.A4,
-                        Landscape = true,
-                        PrintBackground = true,
-                        Scale = 1.415m,
-                        MarginOptions = new MarginOptions
-                        {
-                            Top = "0px",
-                            Bottom = "0px",
-                            Left = "0px",
-                            Right = "0px"
-                        }
-                    };
-
-                    var pdfBytes = await page.PdfDataAsync(pdfOptions);
-
-                    var fileName = !string.IsNullOrEmpty(card.CuteName) ? $"Card_{card.CuteName}.pdf" : $"Card_{index}.pdf";
+                    var pdfBytes = await GenerateCardPdfAsync(card, browser, index);
+                    var fileName = !string.IsNullOrEmpty(card.CuteName) ? $"Карточка {card.CuteName}.pdf" : $"Карточка {index}.pdf";
                     var entry = archive.CreateEntry(fileName, CompressionLevel.Fastest);
                     using (var entryStream = entry.Open())
                     {
                         await entryStream.WriteAsync(pdfBytes, 0, pdfBytes.Length, cancellationToken);
                     }
-
                     index++;
                 }
             }

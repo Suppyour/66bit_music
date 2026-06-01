@@ -131,6 +131,8 @@ const Cabinet: React.FC = () => {
     const [generatedCards, setGeneratedCards] = useState<CardDto[]>([]);
     const [currentCardIndex, setCurrentCardIndex] = useState<number>(0);
     const [isGenerating, setIsGenerating] = useState<boolean>(false);
+    const [isDownloadingArchive, setIsDownloadingArchive] = useState<boolean>(false);
+    const [isDownloadingSingle, setIsDownloadingSingle] = useState<boolean>(false);
 
     const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -325,6 +327,7 @@ const Cabinet: React.FC = () => {
 
     const handleDownloadZip = async () => {
         if (generatedCards.length === 0) return;
+        setIsDownloadingArchive(true);
 
         const formData = new FormData();
         formData.append('cardsJson', JSON.stringify(generatedCards));
@@ -363,7 +366,7 @@ const Cabinet: React.FC = () => {
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = url;
-            a.download = 'CardsArchive.zip';
+            a.download = 'КарточныйАрхив.zip';
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -371,6 +374,62 @@ const Cabinet: React.FC = () => {
         } catch (error) {
             console.error('Failed to download archive:', error);
             alert('Ошибка при скачивании архива. Возможно, файл слишком большой.');
+        } finally {
+            setIsDownloadingArchive(false);
+        }
+    };
+
+    const handleDownloadSingle = async () => {
+        if (!currentCard) return;
+        setIsDownloadingSingle(true);
+
+        const formData = new FormData();
+        formData.append('cardsJson', JSON.stringify([currentCard]));
+        formData.append('songsJson', JSON.stringify(selectedSongs));
+        formData.append('companyName', companyName);
+        formData.append('editionName', editionName);
+        formData.append('titleText', titleText);
+        formData.append('footerText', footerText);
+        formData.append('fontFamily', fontFamily);
+        formData.append('accentColor', accentColor);
+        formData.append('rules', rules.toString());
+
+        if (backgroundImage) {
+            try {
+                const res = await fetch(backgroundImage);
+                const blob = await res.blob();
+                formData.append('background', blob, 'background.png');
+            } catch (e) {
+                console.error("Failed to append background file:", e);
+            }
+        }
+
+        try {
+            const response = await apiFetch('/api/Pdf/generateSingle', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const err = await response.text();
+                throw new Error(err || 'Server error');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `Карточка ${currentCard.cuteName || (currentCardIndex + 1)}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            console.error('Failed to download single card:', error);
+            alert('Ошибка при скачивании карточки.');
+        } finally {
+            setIsDownloadingSingle(false);
         }
     };
 
@@ -658,9 +717,40 @@ const Cabinet: React.FC = () => {
                                         >
                                             &lt;
                                         </button>
-                                        <span className="page-info">
+                                        <span className="page-info" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                                             {generatedCards.length > 0 ? `${currentCardIndex + 1} / ${generatedCards.length}` : '0 / 0'}
-                                            {currentCard?.cuteName && ` — ${currentCard.cuteName}`}
+                                            {currentCard && (
+                                                <>
+                                                    <span> — </span>
+                                                    <input
+                                                        type="text"
+                                                        value={currentCard.cuteName || ''}
+                                                        placeholder="Назовите карточку..."
+                                                        onChange={(e) => {
+                                                            const newName = e.target.value;
+                                                            setGeneratedCards(prev => {
+                                                                const copy = [...prev];
+                                                                copy[currentCardIndex] = {
+                                                                    ...copy[currentCardIndex],
+                                                                    cuteName: newName
+                                                                };
+                                                                return copy;
+                                                            });
+                                                        }}
+                                                        style={{
+                                                            border: '1px solid #CBD5E1',
+                                                            borderRadius: '8px',
+                                                            padding: '4px 12px',
+                                                            fontSize: '14px',
+                                                            color: '#1E293B',
+                                                            backgroundColor: '#FFFFFF',
+                                                            outline: 'none',
+                                                            width: '180px',
+                                                            fontWeight: '600'
+                                                        }}
+                                                    />
+                                                </>
+                                            )}
                                         </span>
                                         <button
                                             className="btn-page"
@@ -817,9 +907,12 @@ const Cabinet: React.FC = () => {
 
                                     <div className="drag-hint">Перетаскивайте ячейки для изменения порядка внутри карточки</div>
 
-                                    <div className="presentation-btn-wrapper" style={{ gap: '16px' }}>
-                                        <button className="btn-load-bg" onClick={handleDownloadZip} disabled={generatedCards.length === 0} style={{ borderStyle: 'solid', background: 'transparent' }}>
-                                            <span>Скачать архив PDF</span>
+                                    <div className="presentation-btn-wrapper" style={{ gap: '16px', flexWrap: 'wrap' }}>
+                                        <button className="btn-load-bg" onClick={handleDownloadSingle} disabled={generatedCards.length === 0 || isDownloadingSingle || isDownloadingArchive} style={{ borderStyle: 'solid', background: 'transparent', height: '52px' }}>
+                                            <span>{isDownloadingSingle ? 'Генерация карточки' : 'Скачать эту карточку PDF'}</span>
+                                        </button>
+                                        <button className="btn-load-bg" onClick={handleDownloadZip} disabled={generatedCards.length === 0 || isDownloadingSingle || isDownloadingArchive} style={{ borderStyle: 'solid', background: 'transparent', height: '52px' }}>
+                                            <span>{isDownloadingArchive ? 'Генерация архива' : 'Скачать весь архив PDF'}</span>
                                         </button>
                                         <button className="btn-launch-presentation" onClick={handleCreateGame}>
                                             <span>Перейти к презентации</span>

@@ -17,4 +17,5 @@ public class GeneratePdfArchiveCommand : IRequest<byte[]>
     public string FontFamily { get; set; } = "Playfair Display";
     public string AccentColor { get; set; } = "#B21016";
     public int Rules { get; set; } = 0;
+    public bool IsSingle { get; set; } = false;
 }

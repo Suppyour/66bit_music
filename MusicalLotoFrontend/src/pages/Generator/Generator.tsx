@@ -137,7 +137,7 @@ const Generator: React.FC = () => {
                 const response = await apiFetch('/api/Songs');
                 if (response.ok) {
                     const data = await response.json();
-                    
+
                     const generatorSongsJson = localStorage.getItem('generatorSelectedSongIds');
                     if (generatorSongsJson) {
                         try {
@@ -173,6 +173,7 @@ const Generator: React.FC = () => {
     const [generatedCards, setGeneratedCards] = useState<CardDto[]>([]);
     const [currentCardIndex, setCurrentCardIndex] = useState<number>(0);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isDownloading, setIsDownloading] = useState<boolean>(false);
 
     const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
     const [backgroundImageFile, setBackgroundImageFile] = useState<File | null>(null);
@@ -195,6 +196,7 @@ const Generator: React.FC = () => {
 
     const handleDownloadZip = async () => {
         if (generatedCards.length === 0) return;
+        setIsDownloading(true);
 
         const formData = new FormData();
         formData.append('cardsJson', JSON.stringify(generatedCards));
@@ -224,7 +226,7 @@ const Generator: React.FC = () => {
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = url;
-            a.download = 'CardsArchive.zip';
+            a.download = 'КарточныйАрхив.zip';
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -232,6 +234,8 @@ const Generator: React.FC = () => {
         } catch (error) {
             console.error('Failed to download archive:', error);
             alert('Ошибка при скачивании архива. Возможно, файл слишком большой.');
+        } finally {
+            setIsDownloading(false);
         }
     };
 
@@ -354,7 +358,7 @@ const Generator: React.FC = () => {
                             disabled={isGenerating}
                         >
                             <img src={GenerateIcon} alt="Generate" />
-                            {isGenerating ? 'Генерация...' : 'Сгенерировать'}
+                            {isGenerating ? 'Генерация' : 'Сгенерировать'}
                         </button>
                     </div>
                 </div>
@@ -443,7 +447,7 @@ const Generator: React.FC = () => {
 
                         <div className="preview-hint">Перетаскивайте ячейки для изменения порядка внутри карточки</div>
 
-                        <button className="btn-download-pdf" disabled={generatedCards.length === 0} onClick={handleDownloadZip}>
+                        <button className="btn-download-pdf" disabled={generatedCards.length === 0 || isDownloading} onClick={handleDownloadZip}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                                 <polyline points="14 2 14 8 20 8"></polyline>
@@ -451,7 +455,7 @@ const Generator: React.FC = () => {
                                 <line x1="16" y1="17" x2="8" y2="17"></line>
                                 <polyline points="10 9 9 9 8 9"></polyline>
                             </svg>
-                            Скачать архив PDF
+                            {isDownloading ? 'Генерация архива' : 'Скачать архив PDF'}
                         </button>
                     </div>
                 </div>

@@ -35,6 +35,7 @@ public class CreateGameSessionCommand : IRequest<Guid>
 public class PreGeneratedCardDto
 {
     public Guid Id { get; init; }
+    public string? CuteName { get; init; }
     public required List<PreGeneratedCellDto> Cells { get; init; }
 }
 
@@ -81,7 +82,7 @@ public class CreateGameSessionHandler : IRequestHandler<CreateGameSessionCommand
             session.Cards = request.PreGeneratedCards.Select((c, idx) => new GameCard
             {
                 Id = c.Id != Guid.Empty ? c.Id : Guid.NewGuid(),
-                CuteName = Cards.CuteNameGenerator.Generate(idx),
+                CuteName = !string.IsNullOrEmpty(c.CuteName) ? c.CuteName : Cards.CuteNameGenerator.Generate(idx),
                 Cells = c.Cells.Select(cell => new CardCell
                 {
                     Row = cell.Row,
