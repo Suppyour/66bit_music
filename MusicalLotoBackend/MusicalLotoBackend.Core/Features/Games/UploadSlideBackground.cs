@@ -39,7 +39,6 @@ public class UploadSlideBackgroundHandler : IRequestHandler<UploadSlideBackgroun
         var slide = session.Slides.FirstOrDefault(s => s.Id == request.SlideId);
         if (slide == null) return null;
 
-        // Upload custom slide background image to storage
         var imageUrl = await _fileStorageService.UploadFileAsync(request.BackgroundImageFile, "images", cancellationToken);
 
         slide.BackgroundImageUrl = imageUrl;

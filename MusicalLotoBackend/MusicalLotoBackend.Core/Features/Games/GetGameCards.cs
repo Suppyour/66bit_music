@@ -55,7 +55,6 @@ public class GetGameCardsHandler : IRequestHandler<GetGameCardsQuery, List<GameC
             .Where(c => c.GameSessionId == request.SessionId)
             .ToListAsync(cancellationToken);
 
-        // Fetch all songs for this session to map Title and Artist
         var songs = await _dbContext.Songs
             .AsNoTracking()
             .Where(s => session.Playlist.Contains(s.Id))

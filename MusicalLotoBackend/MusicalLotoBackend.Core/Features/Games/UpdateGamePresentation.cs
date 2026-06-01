@@ -46,10 +46,8 @@ public class UpdateGamePresentationHandler : IRequestHandler<UpdateGamePresentat
 
         if (session == null || session.UserId != request.UserId) return false;
 
-        // 1. Map everything to completely fresh untracked Slide instances
         var freshSlides = new List<Slide>();
 
-        // Preserve QrCode slides as they are not editable/sent by frontend
         var qrCodeSlides = session.Slides
             .Where(s => s.Type == SlideType.QrCode)
             .Select(s => new Slide
@@ -67,10 +65,8 @@ public class UpdateGamePresentationHandler : IRequestHandler<UpdateGamePresentat
             .ToList();
         freshSlides.AddRange(qrCodeSlides);
 
-        // Process incoming slides
         foreach (var slideDto in request.Slides)
         {
-            // Skip incoming QrCode to avoid duplicates if they sent it
             if (slideDto.Type == SlideType.QrCode) continue;
 
             freshSlides.Add(new Slide
@@ -87,14 +83,12 @@ public class UpdateGamePresentationHandler : IRequestHandler<UpdateGamePresentat
             });
         }
 
-        // 2. Detach all tracked Slide entries from the EF Core change tracker to prevent synthesized ordinal conflicts
         var slideEntries = _dbContext.ChangeTracker.Entries<Slide>().ToList();
         foreach (var entry in slideEntries)
         {
             entry.State = EntityState.Detached;
         }
 
-        // 3. Rebuild the collection in-place using the fresh, untracked Slide instances
         session.Slides.Clear();
         foreach (var slide in freshSlides.OrderBy(s => s.Order))
         {

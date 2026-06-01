@@ -97,14 +97,12 @@ public class GenerateRandomCardsHandler : IRequestHandler<GenerateRandomCardsCom
 
             if (sessionExists)
             {
-                // 1. Load and delete all existing cards for this session directly from DB
                 var oldCards = await _dbContext.GameCards
                     .Where(c => c.GameSessionId == request.SessionId.Value)
                     .ToListAsync(cancellationToken);
 
                 _dbContext.GameCards.RemoveRange(oldCards);
 
-                // 2. Add the newly generated cards directly to the DB
                 var newCards = generatedCards.Select(c => new GameCard
                 {
                     Id = c.Id,

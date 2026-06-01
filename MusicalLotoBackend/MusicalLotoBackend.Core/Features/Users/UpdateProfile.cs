@@ -39,7 +39,6 @@ public class UpdateProfileHandler : IRequestHandler<UpdateProfileCommand, bool>
         var user = await _dbContext.Users.FindAsync(new object[] { request.UserId }, cancellationToken);
         if (user == null) return false;
 
-        // Check if Email is taken by another user
         var emailExists = await _dbContext.Users
             .AnyAsync(u => u.Email.ToLower() == request.Email.ToLower() && u.Id != request.UserId, cancellationToken);
 

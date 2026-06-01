@@ -43,22 +43,46 @@ public class UpdateSongHandler : IRequestHandler<UpdateSongCommand, bool>
 
         if (request.AudioFile != null)
         {
-            // Delete old audio from MinIO
             await _fileStorageService.DeleteFileAsync(song.AudioPath, cancellationToken);
 
-            // Upload new audio to MinIO
-            var audioPath = await _fileStorageService.UploadFileAsync(request.AudioFile, "audio", cancellationToken);
+            IFormFile fileToUpload = request.AudioFile;
+            MemoryStream? trimmedStream = null;
+            try
+            {
+                using (var originalStream = request.AudioFile.OpenReadStream())
+                {
+                    trimmedStream = AudioTrimmer.TryTrimMp3(originalStream, 30);
+                }
+
+                if (trimmedStream != null)
+                {
+                    fileToUpload = new StreamFormFile(
+                        trimmedStream,
+                        request.AudioFile.Name,
+                        request.AudioFile.FileName,
+                        request.AudioFile.ContentType
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[UpdateSong] Ошибка при автоматической нарезке: {ex.Message}");
+            }
+
+            var audioPath = await _fileStorageService.UploadFileAsync(fileToUpload, "audio", cancellationToken);
             song.AudioPath = audioPath;
 
-            // Calculate duration using a safe temp file with correct extension
             int durationSeconds = 0;
-            var extension = Path.GetExtension(request.AudioFile.FileName);
+            var extension = Path.GetExtension(fileToUpload.FileName);
             var tempFilePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}{extension}");
             try
             {
                 using (var stream = new FileStream(tempFilePath, FileMode.Create))
                 {
-                    await request.AudioFile.CopyToAsync(stream, cancellationToken);
+                    using (var uploadStream = fileToUpload.OpenReadStream())
+                    {
+                        await uploadStream.CopyToAsync(stream, cancellationToken);
+                    }
                 }
                 using var tfile = TagLib.File.Create(tempFilePath);
                 durationSeconds = (int)tfile.Properties.Duration.TotalSeconds;
@@ -73,19 +97,18 @@ public class UpdateSongHandler : IRequestHandler<UpdateSongCommand, bool>
                 {
                     File.Delete(tempFilePath);
                 }
+                trimmedStream?.Dispose();
             }
             song.DurationSeconds = durationSeconds;
         }
 
         if (request.BackgroundImageFile != null)
         {
-            // Delete old background image from MinIO if exists
             if (song.BackgoundImagePath != null)
             {
                 await _fileStorageService.DeleteFileAsync(song.BackgoundImagePath, cancellationToken);
             }
 
-            // Upload new background image to MinIO
             var imagePath = await _fileStorageService.UploadFileAsync(request.BackgroundImageFile, "images", cancellationToken);
             song.BackgoundImagePath = imagePath;
         }

@@ -17,7 +17,7 @@ public class CreateGameSessionCommand : IRequest<Guid>
     [DefaultValue(10)]
     public required int ParticipantsCount { get; init; }
     
-    [Range(3, 7)] // range card
+    [Range(3, 7)]
     [DefaultValue(3)]
     public required int CardSize { get; init; }
     
@@ -96,12 +96,9 @@ public class CreateGameSessionHandler : IRequestHandler<CreateGameSessionCommand
             session.Cards = GenerateUniqueCards(request.ParticipantsCount, request.CardSize, request.SelectedSongIds);
         }
 
-        // Fetch song details to construct presentation slides
         var songsDict = await _dbContext.Songs
             .Where(s => request.SelectedSongIds.Contains(s.Id))
             .ToDictionaryAsync(s => s.Id, cancellationToken);
-
-        // Populate default slides
         session.Slides.Add(new Slide
         {
             Type = SlideType.Title,
