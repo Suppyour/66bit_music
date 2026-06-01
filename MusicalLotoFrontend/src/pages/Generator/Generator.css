@@ -385,3 +385,38 @@
     font-size: 14px;
     color: #6B7280;
 }
+
+/* --- BREADCRUMBS --- */
+.cabinet-breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.18px;
+    font-weight: 500;
+    margin-bottom: 24px;
+    font-family: 'Inter', sans-serif;
+}
+
+.breadcrumb-link {
+    cursor: pointer;
+    color: rgba(17, 24, 39, 0.5);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.breadcrumb-link:hover {
+    color: #2E68F5;
+}
+
+.breadcrumb-separator-img {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    display: inline-block;
+    user-select: none;
+}
+
+.breadcrumb-current {
+    color: #111827;
+    font-weight: 500;
+}

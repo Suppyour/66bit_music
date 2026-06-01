@@ -1,18 +1,91 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useMusic } from '../../context/MusicContext';
-import EditProfileModal from '../EditProfileModal/EditProfileModal';
+import { apiFetch } from '../../utils/api';
 import './HeaderLibrary.css';
 
 import logoIcon from '../../assets/SongLibrary/Лого хедер.svg';
 import avatarIcon from '../../assets/SongLibrary/Аватарка новая.svg';
 import arrowIcon from '../../assets/SongLibrary/Стрелка у администратора.svg';
+import pencilIcon from '../../assets/Cabinet/Значок карандаша в кнопке изменить имя.svg';
+import logoutIcon from '../../assets/Cabinet/Иконка в Выход из системы.svg';
 
 const HeaderLibrary: React.FC = () => {
     const [showDropdown, setShowDropdown] = useState(false);
-    const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+    const [userName, setUserName] = useState('');
+    const [surName, setSurName] = useState('');
+    const [email, setEmail] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    const [errorMessage, setErrorMessage] = useState('');
+
     const navigate = useNavigate();
     const { closePlayer } = useMusic();
+
+    useEffect(() => {
+        if (showDropdown) {
+            setSaveStatus('idle');
+            setErrorMessage('');
+            apiFetch('/api/Users/profile')
+                .then((res) => {
+                    if (res.ok) {
+                        return res.json();
+                    }
+                    throw new Error('Не удалось загрузить данные профиля.');
+                })
+                .then((data) => {
+                    setUserName(data.name || '');
+                    setSurName(data.surName || '');
+                    setEmail(data.email || '');
+                })
+                .catch((err) => {
+                    console.error('Error fetching profile:', err);
+                });
+        }
+    }, [showDropdown]);
+
+    const handleUpdateName = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!userName.trim()) return;
+
+        setIsSaving(true);
+        setSaveStatus('idle');
+        setErrorMessage('');
+
+        const command = {
+            name: userName.trim(),
+            surName,
+            email,
+            password: null
+        };
+
+        try {
+            const response = await apiFetch('/api/Users/profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(command)
+            });
+
+            if (response.ok) {
+                setSaveStatus('success');
+                setTimeout(() => {
+                    setSaveStatus('idle');
+                }, 2000);
+            } else {
+                const errData = await response.json();
+                setSaveStatus('error');
+                setErrorMessage(errData.error || errData.message || 'Ошибка обновления.');
+            }
+        } catch (error) {
+            console.error('Error updating profile name:', error);
+            setSaveStatus('error');
+            setErrorMessage('Ошибка сети.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const handleLogout = () => {
         closePlayer();
@@ -24,11 +97,10 @@ const HeaderLibrary: React.FC = () => {
     return (
         <header className="header-library">
             <div className="container header-content">
-                <NavLink to="/" onClick={(e) => { e.preventDefault(); handleLogout(); }} className="logo-section" style={{ textDecoration: 'none' }}>
+                <NavLink to="/" className="logo-section" style={{ textDecoration: 'none' }}>
                     <img src={logoIcon} alt="Logo" className="logo-icon" />
                     <span className="logo-text">66bit</span>
                 </NavLink>
-
 
                 <div className="user-profile-container">
                     <div className="user-profile-trigger" onClick={() => setShowDropdown(!showDropdown)}>
@@ -40,18 +112,54 @@ const HeaderLibrary: React.FC = () => {
                     {showDropdown && (
                         <>
                             <div className="dropdown-overlay" onClick={() => setShowDropdown(false)} />
-                            <div className="profile-dropdown">
-                                <button className="dropdown-item" onClick={() => { setShowDropdown(false); setIsEditProfileOpen(true); }}>Профиль</button>
-                                <button className="dropdown-item logout-item" onClick={() => { setShowDropdown(false); handleLogout(); }}>Выйти</button>
+                            <div className="profile-dropdown" onClick={(e) => e.stopPropagation()}>
+                                <div className="profile-dropdown-title">Профиль администратора</div>
+                                
+                                <form className="profile-dropdown-form" onSubmit={handleUpdateName}>
+                                    <label className="profile-input-label">Ввести имя</label>
+                                    <input
+                                        type="text"
+                                        className="profile-input"
+                                        value={userName}
+                                        onChange={(e) => setUserName(e.target.value)}
+                                        placeholder="Напр. Иван Иванов"
+                                        disabled={isSaving}
+                                        required
+                                    />
+                                    
+                                    <button 
+                                        type="submit" 
+                                        className={`profile-change-btn ${saveStatus === 'success' ? 'success' : ''}`}
+                                        disabled={isSaving || !userName.trim()}
+                                    >
+                                        {saveStatus === 'success' ? (
+                                            'Успешно!'
+                                        ) : isSaving ? (
+                                            'Сохранение...'
+                                        ) : (
+                                            <>
+                                                <img src={pencilIcon} alt="" className="pencil-icon" />
+                                                Изменить имя
+                                            </>
+                                        )}
+                                    </button>
+                                    
+                                    {saveStatus === 'error' && (
+                                        <div className="profile-error-msg">{errorMessage}</div>
+                                    )}
+                                </form>
+                                
+                                <div className="profile-divider"></div>
+                                
+                                <button className="profile-logout-btn" onClick={handleLogout}>
+                                    <img src={logoutIcon} alt="" className="logout-icon" />
+                                    Выход из системы
+                                </button>
                             </div>
                         </>
                     )}
                 </div>
             </div>
-            <EditProfileModal 
-                isOpen={isEditProfileOpen} 
-                onClose={() => setIsEditProfileOpen(false)} 
-            />
         </header>
     );
 };

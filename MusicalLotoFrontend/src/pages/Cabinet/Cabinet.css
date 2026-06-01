@@ -102,6 +102,42 @@
     align-items: flex-start;
 }
 
+.stat-card.songs-card {
+    position: relative;
+}
+
+.songs-library-link-btn {
+    position: absolute;
+    right: 23.92px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28.83px;
+    height: 28.83px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.songs-library-link-btn:hover {
+    transform: translateY(-50%) scale(1.1);
+    opacity: 0.8;
+}
+
+.songs-library-link-btn:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+.songs-library-link-btn img {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
 .stat-icon-wrapper {
     width: 40.76px;
     height: 40.76px;
@@ -188,13 +224,19 @@
 .game-icon-placeholder {
     width: 45.3px;
     height: 45.3px;
-    background: rgba(46, 104, 245, 0.1);
-    border: 1.13255px solid rgba(46, 104, 245, 0.2);
-    border-radius: 13.5905px;
+    background: none;
+    border: none;
     display: flex;
     justify-content: center;
     align-items: center;
     box-sizing: border-box;
+}
+
+.game-icon-placeholder img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
 }
 
 .game-details {
@@ -209,7 +251,7 @@
     gap: 8.6px;
 }
 
-.game-title {
+.cabinet-game-title {
     font-family: 'Inter', sans-serif;
     font-weight: 600;
     font-size: 15.8556px;
@@ -271,83 +313,41 @@
     gap: 22.65px;
 }
 
-.play-game-btn {
-    width: 35.11px;
-    height: 33.98px;
-    background: #E9EEFD;
-    border-radius: 10.1929px;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-    box-sizing: border-box;
-}
-
-.play-game-btn:hover {
-    background-color: #dbe4fc;
-}
-
-.play-game-btn:active {
-    transform: scale(0.95);
-}
-
-.play-game-icon {
-    width: 9px;
-    height: 10px;
-}
-
-.edit-game-btn {
-    width: 35.11px;
-    height: 33.98px;
-    background: #2E68F5;
-    border-radius: 10.1929px;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-    box-sizing: border-box;
-}
-
-.edit-game-btn:hover {
-    background-color: #2558d6;
-}
-
-.edit-game-btn:active {
-    transform: scale(0.95);
-}
-
+.play-game-btn,
+.edit-game-btn,
 .delete-game-btn {
     width: 35.11px;
     height: 33.98px;
-    background: rgba(239, 68, 68, 0.2);
-    border: 1.13255px solid rgba(239, 68, 68, 0.5);
-    border-radius: 10.1929px;
+    background: none;
+    border: none;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    transition: transform 0.15s ease;
     box-sizing: border-box;
 }
 
+.play-game-btn img,
+.edit-game-btn img,
+.delete-game-btn img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
+}
+
+.play-game-btn:hover,
+.edit-game-btn:hover,
 .delete-game-btn:hover {
-    background-color: rgba(239, 68, 68, 0.3);
+    transform: scale(1.08);
 }
 
+.play-game-btn:active,
+.edit-game-btn:active,
 .delete-game-btn:active {
-    transform: scale(0.95);
-}
-
-.delete-game-btn img, .delete-game-btn svg {
-    width: 13.18px;
-    height: 13.18px;
+    transform: scale(0.92);
 }
 
 @media (max-width: 1200px) {
@@ -388,16 +388,17 @@
 .cabinet-breadcrumbs {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 14px;
+    gap: 8px;
+    font-size: 13.18px;
+    font-weight: 500;
     margin-bottom: 24px;
-    color: #64748B;
     font-family: 'Inter', sans-serif;
 }
 
 .breadcrumb-link {
     cursor: pointer;
-    color: #64748B;
+    color: rgba(17, 24, 39, 0.5);
+    text-decoration: none;
     transition: color 0.2s;
 }
 
@@ -405,12 +406,16 @@
     color: #2E68F5;
 }
 
-.breadcrumb-separator {
-    color: #CBD5E1;
+.breadcrumb-separator-img {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    display: inline-block;
+    user-select: none;
 }
 
 .breadcrumb-current {
-    color: #0F172A;
+    color: #111827;
     font-weight: 500;
 }
 

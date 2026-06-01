@@ -25,6 +25,7 @@ import './Presentation.css';
 import { apiFetch } from '../../utils/api';
 import PlayIcon from '../../assets/Presentation/Иконка в кнопке запустить.svg';
 import PreviewIcon from '../../assets/Presentation/Иконка в кнопке предпросмотр.svg';
+import arrowIcon from '../../assets/Cabinet/Стрелка в Песен в библиотеке.svg';
 const generateUUID = () => {
     if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
         return crypto.randomUUID();
@@ -385,6 +386,14 @@ const Presentation: React.FC = () => {
             <HeaderLibrary />
 
             <main className="container presentation-main">
+                <div className="cabinet-breadcrumbs">
+                    <span className="breadcrumb-link" onClick={() => navigate('/cabinet')}>Личный кабинет</span>
+                    <img src={arrowIcon} alt=">" className="breadcrumb-separator-img" />
+                    <span className="breadcrumb-link" onClick={() => navigate(`/generator?sessionId=${sessionId}`)}>Создание карточки</span>
+                    <img src={arrowIcon} alt=">" className="breadcrumb-separator-img" />
+                    <span className="breadcrumb-current">Слайды презентации</span>
+                </div>
+
                 <div className="presentation-content">
                     <div className="presentation-left">
                         <div className="presentation-header">

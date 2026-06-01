@@ -6,5 +6,15 @@ export const apiFetch = async (url: string, options: RequestInit = {}) => {
         ...(token ? { 'Authorization': `Bearer ${token}` } : {})
     };
 
-    return fetch(url, { ...options, headers });
+    const response = await fetch(url, { ...options, headers });
+
+    if (response.status === 401) {
+        localStorage.removeItem('token');
+        window.dispatchEvent(new Event('auth-change'));
+        if (window.location.pathname !== '/') {
+            window.location.href = '/';
+        }
+    }
+
+    return response;
 };

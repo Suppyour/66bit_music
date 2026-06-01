@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import HeaderLibrary from '../../components/HeaderLibrary/HeaderLibrary';
 import AddSongModal from '../../components/AddSongModal/AddSongModal';
 import EditSongModal from '../../components/EditSongModal/EditSongModal';
 import NotificationToast, { type NotificationType } from '../../components/NotificationToast/NotificationToast';
 import { apiFetch } from '../../utils/api';
 import './SongLibrary.css';
+import arrowIcon from '../../assets/Cabinet/Стрелка в Песен в библиотеке.svg';
 
 import plusIcon from '../../assets/SongLibrary/Плюсик в добавить песню.svg';
 import playBtn from '../../assets/SongLibrary/Кнопка Play.svg';
@@ -98,6 +100,7 @@ const SongDuration: React.FC<SongDurationProps> = ({ audioPath, durationSeconds 
 import { useMusic } from '../../context/MusicContext';
 
 const SongLibrary: React.FC = () => {
+    const navigate = useNavigate();
     const [songs, setSongs] = useState<BackendSong[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [isUploading, setIsUploading] = useState(false);
@@ -249,6 +252,12 @@ const SongLibrary: React.FC = () => {
             <HeaderLibrary />
 
             <main className="container library-main">
+                <div className="cabinet-breadcrumbs">
+                    <span className="breadcrumb-link" onClick={() => navigate('/cabinet')}>Личный кабинет</span>
+                    <img src={arrowIcon} alt=">" className="breadcrumb-separator-img" />
+                    <span className="breadcrumb-current">Библиотека песен</span>
+                </div>
+
                 <div className="library-title-row">
                     <div>
                         <h1 className="library-heading">Библиотека песен</h1>

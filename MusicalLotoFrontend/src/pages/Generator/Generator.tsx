@@ -26,6 +26,7 @@ import SelectSongIcon from '../../assets/Generator/Иконка в кнопке 
 import GenerateIcon from '../../assets/Generator/Иконка в кнопке Сгенерировать.svg';
 import LoadBgIcon from '../../assets/Generator/Иконка в кнопке Загрузить фон.svg';
 import InfinityIcon from '../../assets/Generator/Значек во все карточки уникальны.svg';
+import arrowIcon from '../../assets/Cabinet/Стрелка в Песен в библиотеке.svg';
 
 import './Generator.css';
 import { apiFetch } from '../../utils/api';
@@ -305,6 +306,12 @@ const Generator: React.FC = () => {
             <HeaderLibrary />
 
             <main className="generator-main">
+                <div className="cabinet-breadcrumbs">
+                    <span className="breadcrumb-link" onClick={() => navigate('/cabinet')}>Личный кабинет</span>
+                    <img src={arrowIcon} alt=">" className="breadcrumb-separator-img" />
+                    <span className="breadcrumb-current">Создание карточки</span>
+                </div>
+
                 <div className="generator-header">
                     <h1 className="generator-title">Генератор карточек</h1>
                     <p className="generator-subtitle">Создайте уникальные 5x5 билеты для участников</p>
