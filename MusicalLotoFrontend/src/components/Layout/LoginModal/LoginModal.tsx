@@ -94,9 +94,15 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, initialRegiste
       return;
     }
 
-    if (isRegisterMode && password !== confirmPassword) {
-      setErrorStr('Пароли не совпадают');
-      return;
+    if (isRegisterMode) {
+      if (password.length < 6) {
+        setErrorStr('Пароль должен содержать минимум 6 символов');
+        return;
+      }
+      if (password !== confirmPassword) {
+        setErrorStr('Пароли не совпадают');
+        return;
+      }
     }
 
     setErrorStr('');

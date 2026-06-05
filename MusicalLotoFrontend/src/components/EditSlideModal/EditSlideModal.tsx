@@ -280,8 +280,22 @@ const EditSlideModal: React.FC<EditSlideModalProps> = ({
                                     value={bgColor.startsWith('#') ? bgColor : '#2563EB'}
                                     onChange={handleCustomColorChange}
                                 />
-                                <label htmlFor="bg-custom-color-picker" className="bg-custom-color-btn" title="Выбрать цвет">
-                                    <div className="bg-gradient-circle"></div>
+                                <label 
+                                    htmlFor="bg-custom-color-picker" 
+                                    className="bg-custom-color-btn" 
+                                    title="Выбрать цвет"
+                                    style={{
+                                        borderColor: (!PRESET_COLORS.includes(bgColor) && !bgImageUrl) ? '#111827' : undefined,
+                                        borderStyle: (!PRESET_COLORS.includes(bgColor) && !bgImageUrl) ? 'solid' : undefined,
+                                        borderWidth: (!PRESET_COLORS.includes(bgColor) && !bgImageUrl) ? '2px' : undefined,
+                                    }}
+                                >
+                                    <div 
+                                        className="bg-gradient-circle"
+                                        style={{
+                                            background: (!PRESET_COLORS.includes(bgColor) && !bgImageUrl) ? bgColor : undefined
+                                        }}
+                                    ></div>
                                 </label>
                             </div>
 

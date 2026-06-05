@@ -22,11 +22,15 @@ import HeaderLibrary from '../../components/HeaderLibrary/HeaderLibrary';
 import SelectSongsModal from '../../components/SelectSongsModal/SelectSongsModal';
 import type { Song } from '../../components/SelectSongsModal/SelectSongsModal';
 
-import SelectSongIcon from '../../assets/Generator/Иконка в кнопке Выбрать песню из библиотеки.svg';
-import GenerateIcon from '../../assets/Generator/Иконка в кнопке Сгенерировать.svg';
-import LoadBgIcon from '../../assets/Generator/Иконка в кнопке Загрузить фон.svg';
 import InfinityIcon from '../../assets/Generator/Значек во все карточки уникальны.svg';
 import arrowIcon from '../../assets/Cabinet/Стрелка в Песен в библиотеке.svg';
+
+import SelectSongsBtn from '../../assets/Generator/Кнопка Выбрать песню из библиотеки.svg';
+import LoadBgBtn from '../../assets/Generator/Кнопка Загрузить фон.svg';
+import PresentationBtn from '../../assets/Generator/Кнопка Перейти к презентации.svg';
+import GenerateBtn from '../../assets/Generator/Кнопка Сгенерировать.svg';
+import SelectedSongsBg from '../../assets/Generator/Фон для песен выбрано.svg';
+import PreviewCellsBg from '../../assets/Generator/Фон ячеек под карточкой предварительного просмотра.svg';
 
 import './Generator.css';
 import { apiFetch } from '../../utils/api';
@@ -325,7 +329,7 @@ const Generator: React.FC = () => {
                     <div className="settings-left">
                         <div className="settings-header">
                             <h2 className="settings-title">Настройки генерации</h2>
-                            <span className="settings-count">Количество карточек: {cardCount}</span>
+                            <span className="settings-count-new">Количество карточек: {cardCount}</span>
                         </div>
                         <div className="settings-slider-wrapper">
                             <input
@@ -337,28 +341,33 @@ const Generator: React.FC = () => {
                                 style={{ background: `linear-gradient(to right, #2563EB ${(cardCount / 50) * 100}%, #E5E7EB ${(cardCount / 50) * 100}%)` }}
                             />
                         </div>
-                        <button className="btn-select-songs" onClick={() => setIsSelectModalOpen(true)}>
-                            <img src={SelectSongIcon} alt="Select" />
-                            Выбрать песню из библиотеки
+                        <button className="btn-select-songs-new" onClick={() => setIsSelectModalOpen(true)}>
+                            <img src={SelectSongsBtn} alt="Выбрать песню из библиотеки" />
                         </button>
                     </div>
 
-                    <div className="settings-middle">
-                        <div className="settings-middle-val">{selectedSongs.length} песен выбрано</div>
-                        <div className="settings-middle-desc">
-                            {selectedSongs.length >= 25 ? 'Достаточно для 5x5' : 'Нужно минимум 25 для 5x5'}
-                        </div>
+                    <div className="settings-middle-new">
+                        <img src={SelectedSongsBg} alt="" className="settings-middle-bg" />
+                        <span className="settings-middle-count-overlay">{selectedSongs.length}</span>
                     </div>
 
-                    <div className="settings-right">
-                        <button className="btn-presentation" onClick={handleGoToPresentation}>Перейти к презентации</button>
+                    <div className="settings-right-new">
+                        <button className="btn-presentation-new" onClick={handleGoToPresentation}>
+                            <img src={PresentationBtn} alt="Перейти к презентации" />
+                        </button>
                         <button
-                            className="btn-generate"
+                            className="btn-generate-new"
                             onClick={handleGenerate}
                             disabled={isGenerating}
                         >
-                            <img src={GenerateIcon} alt="Generate" />
-                            {isGenerating ? 'Генерация' : 'Сгенерировать'}
+                            {isGenerating ? (
+                                <div className="btn-generate-loading">
+                                    <span className="spinner"></span>
+                                    <span>Генерация...</span>
+                                </div>
+                            ) : (
+                                <img src={GenerateBtn} alt="Сгенерировать" />
+                            )}
                         </button>
                     </div>
                 </div>
@@ -393,9 +402,12 @@ const Generator: React.FC = () => {
                             ref={fileInputRef}
                             onChange={handleImageUpload}
                         />
-                        <button className="btn-load-bg" onClick={() => fileInputRef.current?.click()}>
-                            <img src={LoadBgIcon} alt="Load" />
-                            {backgroundImage ? 'Изменить фон' : 'Загрузить фон'}
+                        <button className="btn-load-bg-new" onClick={() => fileInputRef.current?.click()}>
+                            {backgroundImage ? (
+                                <div className="btn-load-bg-active">Изменить фон</div>
+                            ) : (
+                                <img src={LoadBgBtn} alt="Загрузить фон" />
+                            )}
                         </button>
                     </div>
 
@@ -475,9 +487,8 @@ const Generator: React.FC = () => {
                         </div>
                         <div className="stat-box-label">Все карточки уникальны</div>
                     </div>
-                    <div className="stat-box">
-                        <div className="stat-box-val">5×5</div>
-                        <div className="stat-box-label">Размер сетки</div>
+                    <div className="stat-box stat-box-svg">
+                        <img src={PreviewCellsBg} alt="Размер сетки 5x5" />
                     </div>
                 </div>
             </main>

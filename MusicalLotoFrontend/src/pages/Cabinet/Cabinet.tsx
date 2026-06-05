@@ -40,6 +40,7 @@ import diagonalIcon from '../../assets/Cabinet/Диагональ.svg';
 
 import LoadBgIcon from '../../assets/Generator/Иконка в кнопке Загрузить фон.svg';
 import InfinityIcon from '../../assets/Generator/Значек во все карточки уникальны.svg';
+import SelectSongsForCardBtn from '../../assets/Generator/Кнопка выбрать песни для карточки.svg';
 
 interface Game {
     id: string;
@@ -111,11 +112,19 @@ const Cabinet: React.FC = () => {
     const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
     const [gameToDelete, setGameToDelete] = useState<string | null>(null);
 
+    const clearCreationDraft = () => {
+        localStorage.removeItem('creation_gameName');
+        localStorage.removeItem('creation_cardSize');
+        localStorage.removeItem('creation_participantsCount');
+        localStorage.removeItem('creation_rules');
+        localStorage.removeItem('creation_selectedSongs');
+    };
+
     // --- CARD CREATION & GENERATION STATES ---
-    const [gameName, setGameName] = useState<string>('Новый год');
-    const [cardSize, setCardSize] = useState<number>(5);
-    const [participantsCount, setParticipantsCount] = useState<number>(2);
-    const [rules, setRules] = useState<number>(0);
+    const [gameName, setGameName] = useState<string>(() => localStorage.getItem('creation_gameName') || 'Новый год');
+    const [cardSize, setCardSize] = useState<number>(() => Number(localStorage.getItem('creation_cardSize')) || 5);
+    const [participantsCount, setParticipantsCount] = useState<number>(() => Number(localStorage.getItem('creation_participantsCount')) || 2);
+    const [rules, setRules] = useState<number>(() => Number(localStorage.getItem('creation_rules')) || 0);
 
     // --- CARD CUSTOMIZATION STATES ---
     const [accentColor, setAccentColor] = useState<string>('#B21016');
@@ -125,8 +134,25 @@ const Cabinet: React.FC = () => {
     const [titleText, setTitleText] = useState<string>('МУЗЫКАЛЬНОЕ ЛОТО');
     const [footerText, setFooterText] = useState<string>('год был трындец, а ты молодец');
 
-    const [selectedSongs, setSelectedSongs] = useState<Song[]>([]);
+    const [selectedSongs, setSelectedSongs] = useState<Song[]>(() => {
+        try {
+            return JSON.parse(localStorage.getItem('creation_selectedSongs') || '[]');
+        } catch {
+            return [];
+        }
+    });
     const [isSelectModalOpen, setIsSelectModalOpen] = useState<boolean>(false);
+
+    // Save inputs to localStorage to preserve state on page reload
+    useEffect(() => {
+        if (isCreatingGame) {
+            localStorage.setItem('creation_gameName', gameName);
+            localStorage.setItem('creation_cardSize', cardSize.toString());
+            localStorage.setItem('creation_participantsCount', participantsCount.toString());
+            localStorage.setItem('creation_rules', rules.toString());
+            localStorage.setItem('creation_selectedSongs', JSON.stringify(selectedSongs));
+        }
+    }, [isCreatingGame, gameName, cardSize, participantsCount, rules, selectedSongs]);
 
     const [generatedCards, setGeneratedCards] = useState<CardDto[]>([]);
     const [currentCardIndex, setCurrentCardIndex] = useState<number>(0);
@@ -193,26 +219,6 @@ const Cabinet: React.FC = () => {
         setIsCreatingGame(mode === 'create');
     }, [searchParams]);
 
-    // Pre-fill selected songs when entering creation mode
-    useEffect(() => {
-        if (isCreatingGame && songs.length > 0 && selectedSongs.length === 0) {
-            const generatorSongsJson = localStorage.getItem('generatorSelectedSongIds');
-            if (generatorSongsJson) {
-                try {
-                    const selectedIds: string[] = JSON.parse(generatorSongsJson);
-                    const filtered = songs.filter(s => selectedIds.includes(s.id));
-                    if (filtered.length >= cardSize * cardSize) {
-                        setSelectedSongs(filtered);
-                        return;
-                    }
-                } catch (e) {
-                    console.error(e);
-                }
-            }
-            // Fallback: default to first 30 songs
-            setSelectedSongs(songs.slice(0, Math.max(30, cardSize * cardSize)));
-        }
-    }, [isCreatingGame, songs, cardSize]);
 
     // Automatically generate cards when inputs change
     useEffect(() => {
@@ -477,6 +483,7 @@ const Cabinet: React.FC = () => {
             });
 
             if (response.ok) {
+                clearCreationDraft();
                 const data = await response.json();
                 const gameId = data.id || data.Id;
                 navigate(`/presentation?sessionId=${gameId}`);
@@ -502,6 +509,7 @@ const Cabinet: React.FC = () => {
                     <div className="create-card-view">
                         <div className="cabinet-breadcrumbs">
                             <span className="breadcrumb-link" onClick={() => {
+                                clearCreationDraft();
                                 setIsCreatingGame(false);
                                 setSearchParams({});
                             }}>Личный кабинет</span>
@@ -567,76 +575,87 @@ const Cabinet: React.FC = () => {
                                         </div>
                                         <span className="rule-card-label">Диагональ</span>
                                     </div>
-
                                 </div>
                             </div>
 
-                            {/* Songs Selection Pool status */}
-                            {songs.length === 0 ? (
-                                <div className="songs-pool-status warning" style={{ backgroundColor: '#FEF3C7', border: '1px solid #F59E0B' }}>
-                                    <div className="status-icon">
-                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                            <circle cx="10" cy="10" r="9" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="2" />
-                                            <path d="M10 6v5M10 14h.01" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
-                                    </div>
-                                    <div className="status-text">
-                                        <strong>В вашей библиотеке пока нет песен</strong>
-                                        <span>Пожалуйста, добавьте песни в библиотеку, чтобы настроить игру</span>
-                                    </div>
-                                </div>
-                            ) : selectedSongs.length >= cardSize * cardSize + participantsCount ? (
-                                <div className="songs-pool-status success">
-                                    <div className="status-icon">
-                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                            <circle cx="10" cy="10" r="9" fill="#D1FAE5" stroke="#10B981" strokeWidth="2" />
-                                            <path d="M6 10l3 3 5-5" stroke="#10B981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
-                                    </div>
-                                    <div className="status-text">
-                                        <strong>Выбрано {selectedSongs.length} песен</strong>
-                                        <span>Достаточно для карточек и {participantsCount} участников (минимум {cardSize * cardSize + participantsCount})</span>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="songs-pool-status warning">
-                                    <div className="status-icon">
-                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                            <circle cx="10" cy="10" r="9" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="2" />
-                                            <path d="M10 6v5M10 14h.01" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
-                                    </div>
-                                    <div className="status-text">
-                                        <strong>Выбрано {selectedSongs.length} песен</strong>
-                                        <span>Нужно минимум {cardSize * cardSize + participantsCount} для {cardSize}x{cardSize} с {participantsCount} участниками.</span>
-                                    </div>
+                            {selectedSongs.length === 0 && (
+                                <div className="select-songs-btn-wrapper">
+                                    <button className="btn-select-songs-for-card" onClick={() => setIsSelectModalOpen(true)}>
+                                        <img src={SelectSongsForCardBtn} alt="Выбрать песни для карточки" />
+                                    </button>
                                 </div>
                             )}
 
-                            {/* Selected song list (matching mockup: 5 items + "Посмотреть все") */}
-                            <div className="selected-songs-pool">
-                                <div className="selected-songs-list">
-                                    {selectedSongs.slice(0, 5).map(song => (
-                                        <div className="song-thumbnail-card" key={song.id}>
-                                            <div className="song-thumb-icon">
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2E68F5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <path d="M9 18V5l12-2v13"></path>
-                                                    <circle cx="6" cy="18" r="3"></circle>
-                                                    <circle cx="18" cy="16" r="3"></circle>
+                            {/* Songs Selection Pool status */}
+                            {selectedSongs.length > 0 && (
+                                <>
+                                    {songs.length === 0 ? (
+                                        <div className="songs-pool-status warning" style={{ backgroundColor: '#FEF3C7', border: '1px solid #F59E0B' }}>
+                                            <div className="status-icon">
+                                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                                    <circle cx="10" cy="10" r="9" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="2" />
+                                                    <path d="M10 6v5M10 14h.01" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                                 </svg>
                                             </div>
-                                            <div className="song-thumb-info">
-                                                <div className="song-thumb-title" title={song.title}>{song.title}</div>
-                                                <div className="song-thumb-artist" title={song.artist}>{song.artist}</div>
+                                            <div className="status-text">
+                                                <strong>В вашей библиотеке пока нет песен</strong>
+                                                <span>Пожалуйста, добавьте песни в библиотеку, чтобы настроить игру</span>
                                             </div>
-                                            <button className="song-thumb-remove" onClick={() => handleRemoveSong(song.id)}>&times;</button>
                                         </div>
-                                    ))}
-                                    <button className="btn-view-all-songs" onClick={() => setIsSelectModalOpen(true)}>
-                                        Посмотреть все
-                                    </button>
-                                </div>
-                            </div>
+                                    ) : selectedSongs.length >= cardSize * cardSize + participantsCount ? (
+                                        <div className="songs-pool-status success">
+                                            <div className="status-icon">
+                                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                                    <circle cx="10" cy="10" r="9" fill="#D1FAE5" stroke="#10B981" strokeWidth="2" />
+                                                    <path d="M6 10l3 3 5-5" stroke="#10B981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                            </div>
+                                            <div className="status-text">
+                                                <strong>Выбрано {selectedSongs.length} песен</strong>
+                                                <span>Достаточно для карточек и {participantsCount} участников (минимум {cardSize * cardSize + participantsCount})</span>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="songs-pool-status warning">
+                                            <div className="status-icon">
+                                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                                    <circle cx="10" cy="10" r="9" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="2" />
+                                                    <path d="M10 6v5M10 14h.01" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                            </div>
+                                            <div className="status-text">
+                                                <strong>Выбрано {selectedSongs.length} песен</strong>
+                                                <span>Нужно минимум {cardSize * cardSize + participantsCount} для {cardSize}x{cardSize} с {participantsCount} участниками.</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Selected song list (matching mockup: 5 items + "Посмотреть все") */}
+                                    <div className="selected-songs-pool">
+                                        <div className="selected-songs-list">
+                                            {selectedSongs.slice(0, 5).map(song => (
+                                                <div className="song-thumbnail-card" key={song.id}>
+                                                    <div className="song-thumb-icon">
+                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2E68F5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M9 18V5l12-2v13"></path>
+                                                            <circle cx="6" cy="18" r="3"></circle>
+                                                            <circle cx="18" cy="16" r="3"></circle>
+                                                        </svg>
+                                                    </div>
+                                                    <div className="song-thumb-info">
+                                                        <div className="song-thumb-title" title={song.title}>{song.title}</div>
+                                                        <div className="song-thumb-artist" title={song.artist}>{song.artist}</div>
+                                                    </div>
+                                                    <button className="song-thumb-remove" onClick={() => handleRemoveSong(song.id)}>&times;</button>
+                                                </div>
+                                            ))}
+                                            <button className="btn-view-all-songs" onClick={() => setIsSelectModalOpen(true)}>
+                                                Посмотреть все
+                                            </button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
 
                         {/* Section 2: Генератор карточек */}
@@ -955,6 +974,12 @@ const Cabinet: React.FC = () => {
                                 <p className="cabinet-subtitle">Управляйте играми, карточками и музыкальной библиотекой</p>
                             </div>
                             <button className="create-game-btn" onClick={() => {
+                                clearCreationDraft();
+                                setGameName('Новый год');
+                                setCardSize(5);
+                                setParticipantsCount(2);
+                                setRules(0);
+                                setSelectedSongs([]);
                                 setIsCreatingGame(true);
                                 setSearchParams({ mode: 'create' });
                             }}>

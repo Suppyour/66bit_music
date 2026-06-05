@@ -83,6 +83,10 @@ const Gameplay: React.FC = () => {
     const [isEndGameConfirmOpen, setIsEndGameConfirmOpen] = useState(false);
     const [isPresenterActive, setIsPresenterActive] = useState(false);
     const [isBrowserFullscreen, setIsBrowserFullscreen] = useState(false);
+    const [isRandomizerMode, setIsRandomizerMode] = useState<boolean>(false);
+    const [isRolling, setIsRolling] = useState<boolean>(false);
+    const [rollingNumber, setRollingNumber] = useState<number | null>(null);
+    const [boardIndex, setBoardIndex] = useState<number>(0);
 
     const [playedSongs, setPlayedSongs] = useState<string[]>(() => {
         if (!sessionId) return [];
@@ -102,6 +106,53 @@ const Gameplay: React.FC = () => {
             localStorage.setItem(`loto_played_songs_${sessionId}`, JSON.stringify(playedSongs));
         }
     }, [playedSongs, sessionId]);
+
+    const handleRollRandomSong = () => {
+        const songSlides = slides.filter(s => {
+            const type = typeof s.type === 'number'
+                ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type]
+                : String(s.type);
+            return type === 'Song';
+        });
+
+        const unplayedSongSlides = songSlides.filter(s => !playedSongs.includes(s.id));
+
+        if (unplayedSongSlides.length === 0) {
+            alert('Все песни уже сыграны!');
+            return;
+        }
+
+        const randomIndex = Math.floor(Math.random() * unplayedSongSlides.length);
+        const chosenSlide = unplayedSongSlides[randomIndex];
+        const targetBoardIndex = songSlides.findIndex(s => s.id === chosenSlide.id) + 1;
+
+        setIsRolling(true);
+        setRollingNumber(null);
+        setBoardIndex(targetBoardIndex);
+
+        let iterations = 0;
+        const maxIterations = 20;
+        const intervalId = setInterval(() => {
+            const tempNum = Math.floor(Math.random() * songSlides.length) + 1;
+            setRollingNumber(tempNum);
+            iterations++;
+            if (iterations >= maxIterations) {
+                clearInterval(intervalId);
+                setRollingNumber(targetBoardIndex);
+                
+                setTimeout(() => {
+                    setIsRolling(false);
+                    setRollingNumber(null);
+                    
+                    const originalIndex = slides.findIndex(s => s.id === chosenSlide.id);
+                    if (!playedSongs.includes(chosenSlide.id)) {
+                        setPlayedSongs(prev => [...prev, chosenSlide.id]);
+                    }
+                    setActiveSlideIndex(originalIndex);
+                }, 1100);
+            }
+        }, 80);
+    };
 
     const handleSelectSongFromBoard = async (songSlide: Slide, slideIndex: number) => {
         setActiveSlideIndex(slideIndex);
@@ -621,6 +672,19 @@ const Gameplay: React.FC = () => {
         setActiveCheckingClaim(null);
     };
 
+    const parseMarkdownLine = (line: string) => {
+        let html = line;
+        html = html
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
+        html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        html = html.replace(/_(.*?)_/g, '<em>$1</em>');
+        return <span dangerouslySetInnerHTML={{ __html: html }} />;
+    };
+
     const getSlideTypeName = (type: string | number) => {
         const typeStr = typeof type === 'number'
             ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][type] || 'Title'
@@ -786,16 +850,80 @@ const Gameplay: React.FC = () => {
                                         <h2>ПРАВИЛА ИГРЫ</h2>
                                         <div className="rules-markdown-card">
                                             {activeSlide.content ? activeSlide.content.split('\n').map((line, lIdx) => (
-                                                <p key={lIdx}>{line}</p>
+                                                <p key={lIdx}>{parseMarkdownLine(line)}</p>
                                             )) : 'Ознакомьтесь с правилами игры на экране.'}
                                         </div>
                                     </div>
                                 )}
 
                                 {activeSlideTypeStr === 'GameBoard' && (
-                                    <div className="gameboard-container-custom">
-                                        <h2 className="gameboard-title-custom">Игровое поле</h2>
-                                        <div className="gameboard-grid-custom">
+                                    <div className="gameboard-container-custom" style={{ position: 'relative' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+                                            <h2 className="gameboard-title-custom" style={{ margin: 0 }}>Игровое поле</h2>
+                                            <div className="loto-mode-toggle" style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.1)', padding: '6px 14px', borderRadius: '20px' }}>
+                                                <span style={{ fontSize: '13px', fontWeight: 'bold', color: !isRandomizerMode ? '#FFF' : '#94A3B8' }}>Бочонки</span>
+                                                <div 
+                                                    className="toggle-switch" 
+                                                    onClick={() => setIsRandomizerMode(!isRandomizerMode)}
+                                                    style={{
+                                                        width: '44px',
+                                                        height: '24px',
+                                                        backgroundColor: isRandomizerMode ? '#10B981' : '#475569',
+                                                        borderRadius: '12px',
+                                                        position: 'relative',
+                                                        cursor: 'pointer',
+                                                        transition: 'background-color 0.2s'
+                                                    }}
+                                                >
+                                                    <div 
+                                                        style={{
+                                                            width: '18px',
+                                                            height: '18px',
+                                                            backgroundColor: '#FFF',
+                                                            borderRadius: '50%',
+                                                            position: 'absolute',
+                                                            top: '3px',
+                                                            left: isRandomizerMode ? '23px' : '3px',
+                                                            transition: 'left 0.2s'
+                                                        }}
+                                                    />
+                                                </div>
+                                                <span style={{ fontSize: '13px', fontWeight: 'bold', color: isRandomizerMode ? '#FFF' : '#94A3B8' }}>Рандомайзер</span>
+                                            </div>
+                                        </div>
+
+                                        {isRandomizerMode && (
+                                            <div className="randomizer-control-panel" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginBottom: '24px', width: '100%' }}>
+                                                <button
+                                                    type="button"
+                                                    className="btn-run-loto"
+                                                    onClick={handleRollRandomSong}
+                                                    disabled={isRolling || isLotoRunning}
+                                                    style={{
+                                                        background: '#10B981',
+                                                        color: '#FFF',
+                                                        padding: '14px 28px',
+                                                        fontSize: '16px',
+                                                        fontWeight: 'bold',
+                                                        borderRadius: '12px',
+                                                        border: 'none',
+                                                        cursor: 'pointer',
+                                                        boxShadow: '0 8px 16px rgba(16,185,129,0.3)',
+                                                        transition: 'all 0.2s',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '8px'
+                                                    }}
+                                                >
+                                                    {isRolling ? (
+                                                        <span className="spinner" style={{ borderTopColor: '#FFF' }}></span>
+                                                    ) : '🎲 Выбрать случайную песню'}
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        <div className="gameboard-grid-custom" style={{ pointerEvents: isRandomizerMode ? 'none' : 'auto', opacity: isRandomizerMode ? 0.7 : 1 }}>
                                             {slides.filter(s => {
                                                 const type = typeof s.type === 'number'
                                                     ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type]
@@ -831,6 +959,45 @@ const Gameplay: React.FC = () => {
                                                 );
                                             })}
                                         </div>
+
+                                        {/* Rolling Overlay */}
+                                        {(isRolling || rollingNumber !== null) && (
+                                            <div className="rolling-overlay" style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                right: 0,
+                                                bottom: 0,
+                                                background: 'rgba(15, 23, 42, 0.95)',
+                                                backdropFilter: 'blur(10px)',
+                                                zIndex: 200,
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                borderRadius: '24px'
+                                            }}>
+                                                <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '20px' }}>
+                                                    {isRolling && rollingNumber !== boardIndex ? 'Случайный выбор бочонка' : 'Результат розыгрыша'}
+                                                </span>
+                                                <div className="rolling-number-glow" style={{
+                                                    fontSize: '140px',
+                                                    fontWeight: '900',
+                                                    color: (isRolling && rollingNumber !== boardIndex) ? '#3B82F6' : '#10B981',
+                                                    textShadow: (isRolling && rollingNumber !== boardIndex) 
+                                                        ? '0 0 40px rgba(59,130,246,0.6)' 
+                                                        : '0 0 50px rgba(16,185,129,0.8)',
+                                                    transition: 'color 0.3s'
+                                                }}>
+                                                    {rollingNumber}
+                                                </div>
+                                                {rollingNumber === boardIndex && (
+                                                     <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#FFF', marginTop: '20px' }}>
+                                                         Переход к песне #{boardIndex}...
+                                                     </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
@@ -1182,14 +1349,14 @@ const Gameplay: React.FC = () => {
                                     <h1 className="presenter-heading">📜 ПРАВИЛА ИГРЫ</h1>
                                     <div className="presenter-rules-box">
                                         {activeSlide.content ? activeSlide.content.split('\n').map((line, lIdx) => (
-                                            <p key={lIdx}>{line}</p>
+                                            <p key={lIdx}>{parseMarkdownLine(line)}</p>
                                         )) : 'Ознакомьтесь с правилами игры на экране.'}
                                     </div>
                                 </div>
                             )}
 
                             {activeSlideTypeStr === 'GameBoard' && (
-                                <div className="presenter-slide-view gameboard-view-fullscreen" style={{ width: '100%', maxWidth: '900px' }}>
+                                <div className="presenter-slide-view gameboard-view-fullscreen" style={{ width: '100%', maxWidth: '900px', position: 'relative' }}>
                                     <h1 className="presenter-heading" style={{ marginBottom: '24px' }}>Игровое поле</h1>
                                     <div className="gameboard-grid-custom" style={{ width: '100%', gap: '20px' }}>
                                         {slides.filter(s => {
@@ -1228,6 +1395,45 @@ const Gameplay: React.FC = () => {
                                             );
                                         })}
                                     </div>
+
+                                    {/* Presenter Rolling Overlay */}
+                                    {(isRolling || rollingNumber !== null) && (
+                                        <div className="rolling-overlay" style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            right: 0,
+                                            bottom: 0,
+                                            background: 'rgba(15, 23, 42, 0.95)',
+                                            backdropFilter: 'blur(10px)',
+                                            zIndex: 200,
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            borderRadius: '24px'
+                                        }}>
+                                            <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '20px' }}>
+                                                {isRolling && rollingNumber !== boardIndex ? 'Случайный выбор бочонка' : 'Результат розыгрыша'}
+                                            </span>
+                                            <div className="rolling-number-glow" style={{
+                                                fontSize: '180px',
+                                                fontWeight: '900',
+                                                color: (isRolling && rollingNumber !== boardIndex) ? '#3B82F6' : '#10B981',
+                                                textShadow: (isRolling && rollingNumber !== boardIndex) 
+                                                    ? '0 0 50px rgba(59,130,246,0.6)' 
+                                                    : '0 0 60px rgba(16,185,129,0.8)',
+                                                transition: 'color 0.3s'
+                                            }}>
+                                                {rollingNumber}
+                                            </div>
+                                            {rollingNumber === boardIndex && (
+                                                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#FFF', marginTop: '20px' }}>
+                                                    Переход к песне #{boardIndex}...
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             )}
 

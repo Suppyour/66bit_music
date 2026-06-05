@@ -10,11 +10,16 @@ import arrowIcon from '../../assets/SongLibrary/Стрелка у админис
 import pencilIcon from '../../assets/Cabinet/Значок карандаша в кнопке изменить имя.svg';
 import logoutIcon from '../../assets/Cabinet/Иконка в Выход из системы.svg';
 
-const HeaderLibrary: React.FC = () => {
+interface HeaderLibraryProps {
+    simplified?: boolean;
+}
+
+const HeaderLibrary: React.FC<HeaderLibraryProps> = ({ simplified = false }) => {
     const [showDropdown, setShowDropdown] = useState(false);
     const [userName, setUserName] = useState('');
     const [surName, setSurName] = useState('');
     const [email, setEmail] = useState('');
+    const [displayName, setDisplayName] = useState('Администратор');
     const [isSaving, setIsSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState('');
@@ -22,25 +27,35 @@ const HeaderLibrary: React.FC = () => {
     const navigate = useNavigate();
     const { closePlayer } = useMusic();
 
+    const fetchProfile = async () => {
+        try {
+            const res = await apiFetch('/api/Users/profile');
+            if (res.ok) {
+                const data = await res.json();
+                setUserName(data.name || '');
+                setSurName(data.surName || '');
+                setEmail(data.email || '');
+                
+                if (data.name && data.name !== 'Игрок') {
+                    setDisplayName(data.name);
+                } else {
+                    setDisplayName('Администратор');
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching profile:', err);
+        }
+    };
+
+    useEffect(() => {
+        fetchProfile();
+    }, []);
+
     useEffect(() => {
         if (showDropdown) {
             setSaveStatus('idle');
             setErrorMessage('');
-            apiFetch('/api/Users/profile')
-                .then((res) => {
-                    if (res.ok) {
-                        return res.json();
-                    }
-                    throw new Error('Не удалось загрузить данные профиля.');
-                })
-                .then((data) => {
-                    setUserName(data.name || '');
-                    setSurName(data.surName || '');
-                    setEmail(data.email || '');
-                })
-                .catch((err) => {
-                    console.error('Error fetching profile:', err);
-                });
+            fetchProfile();
         }
     }, [showDropdown]);
 
@@ -54,8 +69,8 @@ const HeaderLibrary: React.FC = () => {
 
         const command = {
             name: userName.trim(),
-            surName,
-            email,
+            surName: surName.trim() || '-',
+            email: email.trim() || 'admin@66bit.ru',
             password: null
         };
 
@@ -70,6 +85,12 @@ const HeaderLibrary: React.FC = () => {
 
             if (response.ok) {
                 setSaveStatus('success');
+                const updatedName = userName.trim();
+                if (updatedName && updatedName !== 'Игрок') {
+                    setDisplayName(updatedName);
+                } else {
+                    setDisplayName('Администратор');
+                }
                 setTimeout(() => {
                     setSaveStatus('idle');
                 }, 2000);
@@ -97,68 +118,70 @@ const HeaderLibrary: React.FC = () => {
     return (
         <header className="header-library">
             <div className="container header-content">
-                <NavLink to="/" className="logo-section" style={{ textDecoration: 'none' }}>
+                <NavLink to="/" className="logo-section" style={{ textDecoration: 'none' }} onClick={handleLogout}>
                     <img src={logoIcon} alt="Logo" className="logo-icon" />
                     <span className="logo-text">66bit</span>
                 </NavLink>
 
-                <div className="user-profile-container">
-                    <div className="user-profile-trigger" onClick={() => setShowDropdown(!showDropdown)}>
-                        <img src={avatarIcon} alt="Profile" className="profile-avatar-img" />
-                        <span className="profile-role">Администратор</span>
-                        <img src={arrowIcon} alt="Chevron" className={`chevron-icon ${showDropdown ? 'open' : ''}`} />
-                    </div>
+                {!simplified && (
+                    <div className="user-profile-container">
+                        <div className="user-profile-trigger" onClick={() => setShowDropdown(!showDropdown)}>
+                            <img src={avatarIcon} alt="Profile" className="profile-avatar-img" />
+                            <span className="profile-role">{displayName}</span>
+                            <img src={arrowIcon} alt="Chevron" className={`chevron-icon ${showDropdown ? 'open' : ''}`} />
+                        </div>
 
-                    {showDropdown && (
-                        <>
-                            <div className="dropdown-overlay" onClick={() => setShowDropdown(false)} />
-                            <div className="profile-dropdown" onClick={(e) => e.stopPropagation()}>
-                                <div className="profile-dropdown-title">Профиль администратора</div>
-                                
-                                <form className="profile-dropdown-form" onSubmit={handleUpdateName}>
-                                    <label className="profile-input-label">Ввести имя</label>
-                                    <input
-                                        type="text"
-                                        className="profile-input"
-                                        value={userName}
-                                        onChange={(e) => setUserName(e.target.value)}
-                                        placeholder="Напр. Иван Иванов"
-                                        disabled={isSaving}
-                                        required
-                                    />
+                        {showDropdown && (
+                            <>
+                                <div className="dropdown-overlay" onClick={() => setShowDropdown(false)} />
+                                <div className="profile-dropdown" onClick={(e) => e.stopPropagation()}>
+                                    <div className="profile-dropdown-title">Профиль администратора</div>
                                     
-                                    <button 
-                                        type="submit" 
-                                        className={`profile-change-btn ${saveStatus === 'success' ? 'success' : ''}`}
-                                        disabled={isSaving || !userName.trim()}
-                                    >
-                                        {saveStatus === 'success' ? (
-                                            'Успешно!'
-                                        ) : isSaving ? (
-                                            'Сохранение...'
-                                        ) : (
-                                            <>
-                                                <img src={pencilIcon} alt="" className="pencil-icon" />
-                                                Изменить имя
-                                            </>
+                                    <form className="profile-dropdown-form" onSubmit={handleUpdateName}>
+                                        <label className="profile-input-label">Ввести имя</label>
+                                        <input
+                                            type="text"
+                                            className="profile-input"
+                                            value={userName}
+                                            onChange={(e) => setUserName(e.target.value)}
+                                            placeholder="Напр. Иван Иванов"
+                                            disabled={isSaving}
+                                            required
+                                        />
+                                        
+                                        <button 
+                                            type="submit" 
+                                            className={`profile-change-btn ${saveStatus === 'success' ? 'success' : ''}`}
+                                            disabled={isSaving || !userName.trim()}
+                                        >
+                                            {saveStatus === 'success' ? (
+                                                'Успешно!'
+                                            ) : isSaving ? (
+                                                'Сохранение...'
+                                            ) : (
+                                                <>
+                                                    <img src={pencilIcon} alt="" className="pencil-icon" />
+                                                    Изменить имя
+                                                </>
+                                            )}
+                                        </button>
+                                        
+                                        {saveStatus === 'error' && (
+                                            <div className="profile-error-msg">{errorMessage}</div>
                                         )}
-                                    </button>
+                                    </form>
                                     
-                                    {saveStatus === 'error' && (
-                                        <div className="profile-error-msg">{errorMessage}</div>
-                                    )}
-                                </form>
-                                
-                                <div className="profile-divider"></div>
-                                
-                                <button className="profile-logout-btn" onClick={handleLogout}>
-                                    <img src={logoutIcon} alt="" className="logout-icon" />
-                                    Выход из системы
-                                </button>
-                            </div>
-                        </>
-                    )}
-                </div>
+                                    <div className="profile-divider"></div>
+                                    
+                                    <button className="profile-logout-btn" onClick={handleLogout}>
+                                        <img src={logoutIcon} alt="" className="logout-icon" />
+                                        Выход из системы
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
             </div>
         </header>
     );

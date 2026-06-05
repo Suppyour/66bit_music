@@ -39,9 +39,14 @@ const EditSongModal: React.FC<EditSongModalProps> = ({ isOpen, onClose, onEdit, 
                     if (songData.backgroundImagePath) {
                         setCoverImagePreview(songData.backgroundImagePath);
                     }
+                    if (songData.audioPath) {
+                        const path = songData.audioPath;
+                        const filename = path.substring(path.lastIndexOf('/') + 1);
+                        setAudioFileName(filename);
+                    }
                 }
             } catch (error) {
-                console.error('Ошибка при загрузке обложки песни с сервера:', error);
+                console.error('Ошибка при загрузке деталей песни с сервера:', error);
             }
         };
 
@@ -101,6 +106,16 @@ const EditSongModal: React.FC<EditSongModalProps> = ({ isOpen, onClose, onEdit, 
         e.preventDefault();
         const form = e.currentTarget;
         const formData = new FormData(form);
+        
+        const audioFile = formData.get('AudioFile') as File | null;
+        if (!audioFile || audioFile.size === 0 || !audioFile.name) {
+            formData.delete('AudioFile');
+        }
+        
+        const backgroundImageFile = formData.get('BackgroundImageFile') as File | null;
+        if (!backgroundImageFile || backgroundImageFile.size === 0 || !backgroundImageFile.name) {
+            formData.delete('BackgroundImageFile');
+        }
         
         if (onEdit && initialData?.id) {
             onEdit(initialData.id, formData);

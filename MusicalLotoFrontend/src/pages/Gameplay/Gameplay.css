@@ -1557,3 +1557,14 @@ body.presenter-active {
 .gameplay-main-grid.preview-active {
     grid-template-columns: 250px 1fr !important;
 }
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
