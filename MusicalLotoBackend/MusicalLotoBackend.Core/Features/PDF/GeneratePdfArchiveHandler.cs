@@ -128,8 +128,10 @@ public class GeneratePdfArchiveHandler : IRequestHandler<GeneratePdfArchiveComma
     
     .print-card-container .card-header-left {
         position: absolute;
-        top: -9px;
+        top: 15px;
         left: 24px;
+        overflow: hidden;
+        vertical-align: -20px;
         background-color: #ffffff;
         padding: 0 8px;
         font-size: 10.5px;
@@ -143,7 +145,7 @@ public class GeneratePdfArchiveHandler : IRequestHandler<GeneratePdfArchiveComma
     
     .print-card-container .card-header-center {
         position: absolute;
-        top: -9px;
+        top: 15px;
         left: 50%;
         transform: translateX(-50%);
         background-color: #ffffff;
@@ -160,7 +162,7 @@ public class GeneratePdfArchiveHandler : IRequestHandler<GeneratePdfArchiveComma
     
     .print-card-container .card-footer-row {
         position: absolute;
-        bottom: -9px;
+        bottom: 6px;
         left: 50%;
         transform: translateX(-50%);
         background-color: #ffffff;
@@ -573,7 +575,7 @@ public class GeneratePdfArchiveHandler : IRequestHandler<GeneratePdfArchiveComma
                         <div class=""mini-grid-layout horizontal-rule"">
                             {cellsGrid}
                         </div>
-                        <span class=""mini-grid-label"">5 песен подряд в одном ряду</span>
+                        <span class=""mini-grid-label"">5 песен в одном ряду</span>
                     </div>");
                 }
 
@@ -591,7 +593,7 @@ public class GeneratePdfArchiveHandler : IRequestHandler<GeneratePdfArchiveComma
                         <div class=""mini-grid-layout vertical-rule"">
                             {cellsGrid}
                         </div>
-                        <span class=""mini-grid-label"">5 песен подряд в одной колонке</span>
+                        <span class=""mini-grid-label"">5 песен в одной колонке</span>
                     </div>");
                 }
 
@@ -684,7 +686,7 @@ public class GeneratePdfArchiveHandler : IRequestHandler<GeneratePdfArchiveComma
                     Format = PaperFormat.A4,
                     Landscape = true,
                     PrintBackground = true,
-                    Scale = 1.415m,
+                    Scale = 1.465m,
                     MarginOptions = new MarginOptions
                     {
                         Top = "0px",

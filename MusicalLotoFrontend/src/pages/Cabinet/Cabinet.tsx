@@ -866,7 +866,7 @@ const Cabinet: React.FC = () => {
                                                                         <div key={idx} className="mini-grid-cell" />
                                                                     ))}
                                                                 </div>
-                                                                <span className="mini-grid-label">5 песен подряд в одном ряду</span>
+                                                                <span className="mini-grid-label">5 песен в одном ряду</span>
                                                             </div>
                                                         ) : null}
 
@@ -881,7 +881,7 @@ const Cabinet: React.FC = () => {
                                                                         <div key={idx} className="mini-grid-cell" />
                                                                     ))}
                                                                 </div>
-                                                                <span className="mini-grid-label">5 песен подряд в одной колонке</span>
+                                                                <span className="mini-grid-label">5 песен в одной колонке</span>
                                                             </div>
                                                         ) : null}
 
