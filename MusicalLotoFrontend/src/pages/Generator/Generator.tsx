@@ -21,6 +21,17 @@ import { CSS } from '@dnd-kit/utilities';
 import HeaderLibrary from '../../components/HeaderLibrary/HeaderLibrary';
 import SelectSongsModal from '../../components/SelectSongsModal/SelectSongsModal';
 import type { Song } from '../../components/SelectSongsModal/SelectSongsModal';
+import { PrintCard } from '../../components/PrintCard/PrintCard';
+import { renderToStaticMarkup } from 'react-dom/server';
+import printCardStyles from '../../components/PrintCard/PrintCard.css?inline';
+
+const getBase64Image = async (file: File): Promise<string | null> => {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+    });
+};
 
 import InfinityIcon from '../../assets/Generator/Значек во все карточки уникальны.svg';
 import arrowIcon from '../../assets/Cabinet/Стрелка в Песен в библиотеке.svg';
@@ -203,16 +214,34 @@ const Generator: React.FC = () => {
         setIsDownloading(true);
 
         const formData = new FormData();
-        formData.append('cardsJson', JSON.stringify(generatedCards));
-        formData.append('songsJson', JSON.stringify(selectedSongs));
-        formData.append('companyName', companyName);
-        formData.append('editionName', editionName);
-        formData.append('titleText', titleText);
-        formData.append('footerText', footerText);
 
+        let bgBase64 = null;
         if (backgroundImageFile) {
-            formData.append('background', backgroundImageFile);
+            bgBase64 = await getBase64Image(backgroundImageFile);
         }
+
+        const htmlData = generatedCards.map((card, i) => {
+            const cardMarkup = renderToStaticMarkup(
+                <PrintCard
+                    card={card}
+                    cardSize={5}
+                    selectedSongs={selectedSongs}
+                    rules={0} // Generator doesn't have rules state
+                    accentColor="#B21016" // Generator default
+                    fontFamily="Inter"
+                    companyName={companyName}
+                    editionName={editionName}
+                    titleText={titleText}
+                    footerText={footerText}
+                    backgroundImage={bgBase64}
+                />
+            );
+            const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><style>${printCardStyles} body { margin: 0; padding: 0; overflow: hidden; } .print-card-container { margin: 0 !important; max-width: none !important; width: 793px !important; height: 560px !important; border-radius: 0 !important; box-shadow: none !important; }</style></head><body><div>${cardMarkup}</div></body></html>`;
+            return { html, cuteName: card.cuteName || String(i + 1) };
+        });
+
+        formData.append('htmlCards', JSON.stringify(htmlData));
+        formData.append('isSingle', 'false');
 
         try {
             const response = await apiFetch('/api/Pdf/generateArchive', {

@@ -21,6 +21,23 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import './Cabinet.css';
 import { apiFetch } from '../../utils/api';
+import { PrintCard } from '../../components/PrintCard/PrintCard';
+import { renderToStaticMarkup } from 'react-dom/server';
+import printCardStyles from '../../components/PrintCard/PrintCard.css?inline';
+
+const getBase64Image = async (url: string): Promise<string | null> => {
+    try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+        });
+    } catch {
+        return null;
+    }
+};
 
 import plusIcon from '../../assets/Cabinet/Плюсик из Создать игру.svg';
 import noteIcon from '../../assets/Cabinet/Нота в кабинет.svg';
@@ -336,25 +353,34 @@ const Cabinet: React.FC = () => {
         setIsDownloadingArchive(true);
 
         const formData = new FormData();
-        formData.append('cardsJson', JSON.stringify(generatedCards));
-        formData.append('songsJson', JSON.stringify(selectedSongs));
-        formData.append('companyName', companyName);
-        formData.append('editionName', editionName);
-        formData.append('titleText', titleText);
-        formData.append('footerText', footerText);
-        formData.append('fontFamily', fontFamily);
-        formData.append('accentColor', accentColor);
-        formData.append('rules', rules.toString());
-
+        
+        let bgBase64 = null;
         if (backgroundImage) {
-            try {
-                const res = await fetch(backgroundImage);
-                const blob = await res.blob();
-                formData.append('background', blob, 'background.png');
-            } catch (e) {
-                console.error("Failed to append background file:", e);
-            }
+            bgBase64 = await getBase64Image(backgroundImage);
         }
+
+        const htmlData = generatedCards.map((card, i) => {
+            const cardMarkup = renderToStaticMarkup(
+                <PrintCard
+                    card={card}
+                    cardSize={cardSize}
+                    selectedSongs={selectedSongs}
+                    rules={rules}
+                    accentColor={accentColor}
+                    fontFamily={fontFamily}
+                    companyName={companyName}
+                    editionName={editionName}
+                    titleText={titleText}
+                    footerText={footerText}
+                    backgroundImage={bgBase64}
+                />
+            );
+            const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><style>${printCardStyles} body { margin: 0; padding: 0; overflow: hidden; } .print-card-container { margin: 0 !important; max-width: none !important; width: 793px !important; height: 560px !important; border-radius: 0 !important; box-shadow: none !important; }</style></head><body><div>${cardMarkup}</div></body></html>`;
+            return { html, cuteName: card.cuteName || String(i + 1) };
+        });
+
+        formData.append('htmlCards', JSON.stringify(htmlData));
+        formData.append('isSingle', 'false');
 
         try {
             const response = await apiFetch('/api/Pdf/generateArchive', {
@@ -390,25 +416,34 @@ const Cabinet: React.FC = () => {
         setIsDownloadingSingle(true);
 
         const formData = new FormData();
-        formData.append('cardsJson', JSON.stringify([currentCard]));
-        formData.append('songsJson', JSON.stringify(selectedSongs));
-        formData.append('companyName', companyName);
-        formData.append('editionName', editionName);
-        formData.append('titleText', titleText);
-        formData.append('footerText', footerText);
-        formData.append('fontFamily', fontFamily);
-        formData.append('accentColor', accentColor);
-        formData.append('rules', rules.toString());
 
+        let bgBase64 = null;
         if (backgroundImage) {
-            try {
-                const res = await fetch(backgroundImage);
-                const blob = await res.blob();
-                formData.append('background', blob, 'background.png');
-            } catch (e) {
-                console.error("Failed to append background file:", e);
-            }
+            bgBase64 = await getBase64Image(backgroundImage);
         }
+
+        const cardMarkup = renderToStaticMarkup(
+            <PrintCard
+                card={currentCard}
+                cardSize={cardSize}
+                selectedSongs={selectedSongs}
+                rules={rules}
+                accentColor={accentColor}
+                fontFamily={fontFamily}
+                companyName={companyName}
+                editionName={editionName}
+                titleText={titleText}
+                footerText={footerText}
+                backgroundImage={bgBase64}
+            />
+        );
+
+        const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"/><style>${printCardStyles} body { margin: 0; padding: 0; overflow: hidden; } .print-card-container { margin: 0 !important; max-width: none !important; width: 793px !important; height: 560px !important; border-radius: 0 !important; box-shadow: none !important; }</style></head><body><div>${cardMarkup}</div></body></html>`;
+
+        const htmlData = [{ html: fullHtml, cuteName: currentCard.cuteName || String(currentCardIndex + 1) }];
+
+        formData.append('htmlCards', JSON.stringify(htmlData));
+        formData.append('isSingle', 'true');
 
         try {
             const response = await apiFetch('/api/Pdf/generateSingle', {
@@ -781,147 +816,53 @@ const Cabinet: React.FC = () => {
                                     </div>
 
                                     {currentCard ? (
-                                        <div
-                                            className="print-card-container"
-                                            style={{
-                                                '--accent-color': accentColor,
-                                                fontFamily: fontFamily === 'Playfair Display' ? "'Playfair Display', serif" : fontFamily === 'Montserrat' ? "'Montserrat', sans-serif" : "'Inter', sans-serif"
-                                            } as React.CSSProperties}
-                                        >
-                                            <div className="inner-border-box">
-                                                <div className="card-left-panel">
-                                                    <div className="card-header-left">
-                                                        <strong>{companyName}</strong>
-                                                    </div>
-                                                    <div className="card-header-center">
-                                                        <span>{editionName}</span>
-                                                    </div>
-
-                                                    <div className="title-row">
-                                                        <span className="title-line"></span>
-                                                        <h2 className="card-title-text" style={{ fontFamily: fontFamily === 'Playfair Display' ? "'Playfair Display', serif" : undefined }}>
-                                                            {titleText}
-                                                        </h2>
-                                                        <span className="title-line"></span>
-                                                    </div>
-
-                                                    {currentCard?.cuteName && (
-                                                        <div className="card-subtitle-code" style={{ color: accentColor }}>
-                                                            Код билета: {currentCard.cuteName}
-                                                        </div>
-                                                    )}
-
-                                                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                                                        <SortableContext
-                                                            items={currentCard.cells.map(c => `${c.row}-${c.column}`)}
-                                                            strategy={rectSortingStrategy}
-                                                        >
-                                                            <div
-                                                                className="bingo-card"
-                                                                style={{
-                                                                    gridTemplateColumns: `repeat(${cardSize}, 1fr)`,
-                                                                    backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
-                                                                    backgroundSize: backgroundImage ? 'cover' : undefined,
-                                                                    backgroundPosition: backgroundImage ? 'center' : undefined,
-                                                                    backgroundColor: backgroundImage ? 'transparent' : undefined,
-                                                                }}
-                                                            >
-                                                                {currentCard.cells.map(cell => {
-                                                                    const song = selectedSongs.find(s => s.id === cell.songId);
-                                                                    const isCenter = cell.row === 2 && cell.column === 2;
-                                                                    return (
-                                                                        <SortableCell
-                                                                            key={`${cell.row}-${cell.column}`}
-                                                                            cell={cell}
-                                                                            song={song}
-                                                                            isCenter={isCenter}
-                                                                            accentColor={accentColor}
-                                                                        />
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        </SortableContext>
-                                                    </DndContext>
-
-                                                    <div className="card-footer-row">
-                                                        <span>{footerText}</span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="card-right-panel">
-                                                    <div className="scissors-label">
-                                                        <span className="scissors-icon">✂</span> — твоя уникальная песня
-                                                    </div>
-                                                    <div className="rules-panel-title">Победные комбинации</div>
-
-                                                    <div className="mini-grids-container">
-                                                        {/* Horizontal rule (1) */}
-                                                        {(rules & 1) ? (
-                                                            <div className="mini-grid-wrapper">
-                                                                <div
-                                                                    className="mini-grid-layout horizontal-rule"
-                                                                    style={{ '--accent-color-rule': accentColor } as React.CSSProperties}
-                                                                >
-                                                                    {Array.from({ length: 25 }).map((_, idx) => (
-                                                                        <div key={idx} className="mini-grid-cell" />
-                                                                    ))}
-                                                                </div>
-                                                                <span className="mini-grid-label">5 песен в одном ряду</span>
-                                                            </div>
-                                                        ) : null}
-
-                                                        {/* Vertical rule (2) */}
-                                                        {(rules & 2) ? (
-                                                            <div className="mini-grid-wrapper">
-                                                                <div
-                                                                    className="mini-grid-layout vertical-rule"
-                                                                    style={{ '--accent-color-rule': accentColor } as React.CSSProperties}
-                                                                >
-                                                                    {Array.from({ length: 25 }).map((_, idx) => (
-                                                                        <div key={idx} className="mini-grid-cell" />
-                                                                    ))}
-                                                                </div>
-                                                                <span className="mini-grid-label">5 песен в одной колонке</span>
-                                                            </div>
-                                                        ) : null}
-
-                                                        {/* Diagonal rule (8) */}
-                                                        {(rules & 8) ? (
-                                                            <div className="mini-grid-wrapper">
-                                                                <div
-                                                                    className="mini-grid-layout diagonal-rule"
-                                                                    style={{ '--accent-color-rule': accentColor } as React.CSSProperties}
-                                                                >
-                                                                    {Array.from({ length: 25 }).map((_, idx) => {
-                                                                        const row = Math.floor(idx / 5);
-                                                                        const col = idx % 5;
-                                                                        const isAccent = row === col || row + col === 4;
-                                                                        return (
-                                                                            <div
-                                                                                key={idx}
-                                                                                className={isAccent ? "mini-grid-cell active-cross" : "mini-grid-cell"}
-                                                                                style={isAccent ? { borderColor: accentColor, color: accentColor } : {}}
-                                                                            >
-                                                                                {isAccent ? "✕" : ""}
-                                                                            </div>
-                                                                        );
-                                                                    })}
-                                                                </div>
-                                                                <span className="mini-grid-label">5 песен подряд по диагонали</span>
-                                                            </div>
-                                                        ) : null}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <PrintCard
+                                            card={currentCard}
+                                            cardSize={cardSize}
+                                            selectedSongs={selectedSongs}
+                                            rules={rules}
+                                            accentColor={accentColor}
+                                            fontFamily={fontFamily}
+                                            companyName={companyName}
+                                            editionName={editionName}
+                                            titleText={titleText}
+                                            footerText={footerText}
+                                            backgroundImage={backgroundImage}
+                                            renderGridWrapper={(grid) => (
+                                                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                                                    <SortableContext items={currentCard.cells.map(c => `${c.row}-${c.column}`)} strategy={rectSortingStrategy}>
+                                                        {grid}
+                                                    </SortableContext>
+                                                </DndContext>
+                                            )}
+                                            renderCell={(cell) => {
+                                                const song = selectedSongs.find(s => s.id === cell.songId);
+                                                const centerIndex = Math.floor(cardSize / 2);
+                                                const isCenter = cardSize % 2 !== 0 && cell.row === centerIndex && cell.column === centerIndex;
+                                                return (
+                                                    <SortableCell
+                                                        key={`${cell.row}-${cell.column}`}
+                                                        cell={cell}
+                                                        song={song}
+                                                        isCenter={isCenter}
+                                                        accentColor={accentColor}
+                                                    />
+                                                );
+                                            }}
+                                        />
                                     ) : (
-                                        <div className="bingo-card empty-card" style={{ gridTemplateColumns: `repeat(${cardSize}, 1fr)`, opacity: 0.5 }}>
-                                            {Array.from({ length: cardSize * cardSize }).map((_, i) => (
-                                                <div key={i} className="bingo-cell empty-cell">
-                                                    <div className="cell-icon">...</div>
-                                                </div>
-                                            ))}
-                                        </div>
+                                        <PrintCard
+                                            card={null}
+                                            cardSize={cardSize}
+                                            selectedSongs={[]}
+                                            rules={0}
+                                            accentColor={accentColor}
+                                            fontFamily={fontFamily}
+                                            companyName={companyName}
+                                            editionName={editionName}
+                                            titleText={titleText}
+                                            footerText={footerText}
+                                        />
                                     )}
 
                                     <div className="drag-hint">Перетаскивайте ячейки для изменения порядка внутри карточки</div>
