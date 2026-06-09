@@ -578,7 +578,7 @@ const Gameplay: React.FC = () => {
     };
 
     const checkWinStatus = (card: SimulatedCard, playedIds: string[]) => {
-        const size = 5;
+        const size = Math.max(...card.cells.map(c => Math.max(c.row, c.col))) + 1;
         const grid: boolean[][] = Array(size).fill(null).map(() => Array(size).fill(false));
 
         card.cells.forEach(cell => {
@@ -1093,27 +1093,9 @@ const Gameplay: React.FC = () => {
                                 </button>
                             ) : (
                                 <>
-                                    <button
-                                        type="button"
-                                        className="btn-nav-step"
-                                        onClick={handlePrevSlide}
-                                        disabled={activeSlideIndex === 0}
-                                    >
-                                        ◀ НАЗАД
-                                    </button>
-
                                     <span className="step-info-counter">
                                         Шаг {activeSlideIndex + 1} / {slides.length}
                                     </span>
-
-                                    <button
-                                        type="button"
-                                        className="btn-nav-step"
-                                        onClick={handleNextSlide}
-                                        disabled={activeSlideIndex === slides.length - 1}
-                                    >
-                                        СЛЕДУЮЩИЙ СЛАЙД ▶
-                                    </button>
                                 </>
                             )}
                         </div>
@@ -1224,114 +1206,59 @@ const Gameplay: React.FC = () => {
                 )}
             </main>
 
-            {activeCheckingClaim && activeCheckingClaim.card && (
-                <div className="verification-modal-overlay" onClick={() => setActiveCheckingClaim(null)}>
-                    <div className="verification-modal-card" onClick={e => e.stopPropagation()}>
-                        <button
-                            onClick={() => setActiveCheckingClaim(null)}
-                            style={{
-                                position: 'absolute',
-                                top: '16px',
-                                right: '16px',
-                                background: 'none',
-                                border: 'none',
-                                color: '#94A3B8',
-                                fontSize: '24px',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            &times;
-                        </button>
-                        <div className="verification-modal-header">
-                            <h3 className="verification-modal-title">Проверка билета</h3>
-                            <p className="verification-modal-subtitle">Игрок: {activeCheckingClaim.name} | ID: {activeCheckingClaim.card.id}</p>
-                        </div>
 
-                        {/* 5x5 card representation */}
-                        <div className="verification-card-grid">
-                            {activeCheckingClaim.card.cells.map((cell, idx) => {
-                                const playedSongIds = slides
-                                    .slice(0, activeSlideIndex + 1)
-                                    .filter(s => {
-                                        const t = typeof s.type === 'number' ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type] : String(s.type);
-                                        return t === 'Song';
-                                    })
-                                    .map(s => s.songId || s.id);
-                                const isPlayed = playedSongIds.includes(cell.songId);
-                                return (
-                                    <div
-                                        key={idx}
-                                        className={`verification-cell ${isPlayed ? 'played' : ''}`}
-                                    >
-                                        <div style={{ fontWeight: 'bold', fontSize: '10px', marginBottom: '2px' }}>
-                                            {cell.row + 1}-{cell.col + 1}
-                                        </div>
-                                        <div style={{ lineHeight: '1.2' }}>{cell.title}</div>
-                                        <div style={{ fontSize: '9px', opacity: 0.7, marginTop: '2px' }}>{cell.artist}</div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        {/* Verification details */}
-                        <div className="verification-status-panel">
-                            <div className="verification-status-title">Результат анализа комбинаций:</div>
-                            {(() => {
-                                const playedSongIds = slides
-                                    .slice(0, activeSlideIndex + 1)
-                                    .filter(s => {
-                                        const t = typeof s.type === 'number' ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type] : String(s.type);
-                                        return t === 'Song';
-                                    })
-                                    .map(s => s.songId || s.id);
-                                const winningLines = checkWinStatus(activeCheckingClaim.card!, playedSongIds);
-                                if (winningLines.length > 0) {
-                                    return (
-                                        <div className="verification-status-result">
-                                            🎉 Бинго! Найдены выигрышные линии:
-                                            <ul style={{ margin: '8px 0 0 16px', padding: 0 }}>
-                                                {winningLines.map((line, lIdx) => (
-                                                    <li key={lIdx}>{line}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    );
-                                } else {
-                                    return (
-                                        <div className="verification-status-result invalid">
-                                            ❌ Совпадений недостаточно для выигрышной комбинации.
-                                        </div>
-                                    );
-                                }
-                            })()}
-                        </div>
-
-                        <div className="verification-modal-footer">
-                            <button
-                                className="btn-verification-reject"
-                                onClick={() => handleRejectBingo(activeCheckingClaim.id)}
-                            >
-                                Отклонить
-                            </button>
-                            <button
-                                className="btn-verification-confirm"
-                                onClick={() => handleConfirmBingo(activeCheckingClaim.id)}
-                            >
-                                Подтвердить победу
-                            </button>
-                            <button
-                                className="btn-verification-close"
-                                onClick={() => setActiveCheckingClaim(null)}
-                            >
-                                Закрыть
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {isPresenterActive && (
                 <div className="presenter-mode-overlay">
+                    {/* Floating Claims Panel in Presentation Mode */}
+                    {claims.length > 0 && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '24px',
+                            right: '24px',
+                            background: 'rgba(15, 23, 42, 0.85)',
+                            backdropFilter: 'blur(12px)',
+                            border: '1px solid #334155',
+                            borderRadius: '16px',
+                            padding: '16px',
+                            width: '280px',
+                            maxHeight: '80vh',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '12px',
+                            zIndex: 100
+                        }}>
+                            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#FFF' }}>
+                                Заявки на Бинго ({claims.filter(c => c.status === 'Pending').length})
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>
+                                {claims.map(claim => (
+                                    <div
+                                        key={claim.id}
+                                        onClick={() => setActiveCheckingClaim(claim)}
+                                        style={{
+                                            background: claim.status === 'Confirmed' ? 'rgba(16, 185, 129, 0.2)' : claim.status === 'Rejected' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(59, 130, 246, 0.2)',
+                                            padding: '12px',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            border: `1px solid ${claim.status === 'Confirmed' ? '#10B981' : claim.status === 'Rejected' ? '#EF4444' : '#3B82F6'}`
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#FFF', fontSize: '13px', marginBottom: '4px' }}>
+                                            <strong>#{claim.id}</strong>
+                                            <span>{claim.name}</span>
+                                        </div>
+                                        <div style={{ fontSize: '11px', color: '#E2E8F0' }}>
+                                            {claim.status === 'Pending' && 'Ожидает проверки'}
+                                            {claim.status === 'Confirmed' && 'Бинго подтверждено!'}
+                                            {claim.status === 'Rejected' && 'Отклонено'}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="presenter-slide-viewport" style={activeBackgroundStyle}>
                         {activeSlide.backgroundImageUrl && <div className="slide-image-overlay"></div>}
 
@@ -1357,8 +1284,35 @@ const Gameplay: React.FC = () => {
 
                             {activeSlideTypeStr === 'GameBoard' && (
                                 <div className="presenter-slide-view gameboard-view-fullscreen" style={{ width: '100%', maxWidth: '900px', position: 'relative' }}>
-                                    <h1 className="presenter-heading" style={{ marginBottom: '24px' }}>Игровое поле</h1>
-                                    <div className="gameboard-grid-custom" style={{ width: '100%', gap: '20px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '24px' }}>
+                                        <h1 className="presenter-heading" style={{ margin: 0 }}>Игровое поле</h1>
+                                        <button
+                                            type="button"
+                                            className="btn-run-loto"
+                                            onClick={handleRollRandomSong}
+                                            disabled={isRolling || isLotoRunning}
+                                            style={{
+                                                background: '#10B981',
+                                                color: '#FFF',
+                                                padding: '12px 24px',
+                                                fontSize: '16px',
+                                                fontWeight: 'bold',
+                                                borderRadius: '12px',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                boxShadow: '0 8px 16px rgba(16,185,129,0.3)',
+                                                transition: 'all 0.2s',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '8px'
+                                            }}
+                                        >
+                                            {isRolling ? (
+                                                <span className="spinner" style={{ borderTopColor: '#FFF' }}></span>
+                                            ) : 'Случайная песня'}
+                                        </button>
+                                    </div>
+                                    <div className="gameboard-grid-custom" style={{ width: '100%', gap: '20px', pointerEvents: isRolling ? 'none' : 'auto' }}>
                                         {slides.filter(s => {
                                             const type = typeof s.type === 'number'
                                                 ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type]
@@ -1505,10 +1459,25 @@ const Gameplay: React.FC = () => {
                         </div>
 
                         <div className="presenter-toolbar">
-                            <div className="presenter-toolbar-section left">
+                            <div className="presenter-toolbar-section left" style={{ display: 'flex', alignItems: 'center' }}>
                                 <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#94A3B8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '160px' }}>
-                                    🎵 {gameName}
+                                    {gameName}
                                 </span>
+                                <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="ID билета"
+                                        value={manualCardQuery}
+                                        onChange={(e) => setManualCardQuery(e.target.value)}
+                                        style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #334155', background: '#1E293B', color: '#F8FAFC', fontSize: '12px', width: '90px', outline: 'none' }}
+                                    />
+                                    <button
+                                        className="btn-toolbar-action fullscreen"
+                                        style={{ padding: '0px 16px', width: 'auto' }}
+                                    >
+                                        Проверить
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="presenter-toolbar-section center">
@@ -1538,11 +1507,21 @@ const Gameplay: React.FC = () => {
                             <div className="presenter-toolbar-section right">
                                 <button
                                     type="button"
+                                    className="btn-toolbar-action"
+                                    onClick={handleEndGame}
+                                    title="Завершить игру"
+                                    style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#FCA5A5', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '0 16px', marginRight: '8px' }}
+                                >
+                                    Финал
+                                </button>
+                                <button
+                                    type="button"
                                     className="btn-toolbar-action fullscreen"
                                     onClick={toggleFullscreen}
                                     title="Полноэкранный режим браузера"
+                                    style={{ padding: '0 16px', width: 'auto' }}
                                 >
-                                    {isBrowserFullscreen ? '🗗' : '🗖'}
+                                    {isBrowserFullscreen ? 'Свернуть' : 'Развернуть'}
                                 </button>
                                 <button
                                     type="button"
@@ -1550,9 +1529,107 @@ const Gameplay: React.FC = () => {
                                     onClick={togglePresenterMode}
                                     title="Выйти из презентации"
                                 >
-                                    ❌ Выйти
+                                    Выйти
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {activeCheckingClaim && activeCheckingClaim.card && (
+                <div className="verification-modal-overlay" onClick={() => setActiveCheckingClaim(null)}>
+                    <div className="verification-modal-card" onClick={e => e.stopPropagation()}>
+                        <button
+                            onClick={() => setActiveCheckingClaim(null)}
+                            style={{
+                                position: 'absolute',
+                                top: '16px',
+                                right: '16px',
+                                background: 'none',
+                                border: 'none',
+                                color: '#94A3B8',
+                                fontSize: '24px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            &times;
+                        </button>
+                        <div className="verification-modal-header">
+                            <h3 className="verification-modal-title">Проверка билета</h3>
+                            <p className="verification-modal-subtitle">Игрок: {activeCheckingClaim.name} | ID: {activeCheckingClaim.card.id}</p>
+                        </div>
+
+                        {/* 5x5 card representation */}
+                        <div className="verification-card-grid">
+                            {activeCheckingClaim.card.cells.map((cell, idx) => {
+                                const playedSongIds = slides
+                                    .filter(s => playedSongs.includes(s.id))
+                                    .map(s => s.songId || s.id);
+                                const isPlayed = playedSongIds.includes(cell.songId);
+                                return (
+                                    <div
+                                        key={idx}
+                                        className={`verification-cell ${isPlayed ? 'played' : ''}`}
+                                    >
+                                        <div style={{ fontWeight: 'bold', fontSize: '10px', marginBottom: '2px' }}>
+                                            {cell.row + 1}-{cell.col + 1}
+                                        </div>
+                                        <div style={{ lineHeight: '1.2' }}>{cell.title}</div>
+                                        <div style={{ fontSize: '9px', opacity: 0.7, marginTop: '2px' }}>{cell.artist}</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Verification details */}
+                        <div className="verification-status-panel">
+                            <div className="verification-status-title">Результат анализа комбинаций:</div>
+                            {(() => {
+                                const playedSongIds = slides
+                                    .filter(s => playedSongs.includes(s.id))
+                                    .map(s => s.songId || s.id);
+                                const winningLines = checkWinStatus(activeCheckingClaim.card!, playedSongIds);
+                                if (winningLines.length > 0) {
+                                    return (
+                                        <div className="verification-status-result">
+                                            Бинго! Найдены выигрышные линии:
+                                            <ul style={{ margin: '8px 0 0 16px', padding: 0 }}>
+                                                {winningLines.map((line, lIdx) => (
+                                                    <li key={lIdx}>{line}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    );
+                                } else {
+                                    return (
+                                        <div className="verification-status-result invalid">
+                                            Совпадений недостаточно для выигрышной комбинации.
+                                        </div>
+                                    );
+                                }
+                            })()}
+                        </div>
+
+                        <div className="verification-modal-footer">
+                            <button
+                                className="btn-verification-reject"
+                                onClick={() => handleRejectBingo(activeCheckingClaim.id)}
+                            >
+                                Отклонить
+                            </button>
+                            <button
+                                className="btn-verification-confirm"
+                                onClick={() => handleConfirmBingo(activeCheckingClaim.id)}
+                            >
+                                Подтвердить победу
+                            </button>
+                            <button
+                                className="btn-verification-close"
+                                onClick={() => setActiveCheckingClaim(null)}
+                            >
+                                Закрыть
+                            </button>
                         </div>
                     </div>
                 </div>

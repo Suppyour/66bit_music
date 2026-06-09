@@ -35,7 +35,7 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "MusicalLoto API", Version = "v1" });
     
-    // Настройка для передачи токена
+    // печать токенов
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme. Enter token below.",
@@ -99,7 +99,6 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     dbContext.Database.Migrate();
     
-    // Seed default admin
     if (!dbContext.Users.Any())
     {
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();

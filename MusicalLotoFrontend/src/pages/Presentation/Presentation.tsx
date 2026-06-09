@@ -119,16 +119,14 @@ const SortableSlideItem: React.FC<SortableSlideItemProps> = ({ slide, index, onE
                 </svg>
             </button>
 
-            {!slide.isRequired && slideTypeStr !== 'Song' && (
-                <button type="button" className="btn-delete-slide" onClick={() => onDelete(slide.id)} title="Удалить слайд">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        <line x1="10" y1="11" x2="10" y2="17"></line>
-                        <line x1="14" y1="11" x2="14" y2="17"></line>
-                    </svg>
-                </button>
-            )}
+            <button type="button" className="btn-delete-slide" onClick={() => onDelete(slide.id)} title="Удалить слайд">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+            </button>
         </div>
     );
 };
@@ -259,8 +257,8 @@ const Presentation: React.FC = () => {
     const handleAddSlideClick = async () => {
         const newSlide: Slide = {
             id: generateUUID(),
-            type: 'GameBoard',
-            title: 'Новый слайд игрового поля',
+            type: 'Title',
+            title: 'Новый слайд',
             content: 'Введите текст на слайде...',
             backgroundColor: '#1E293B',
             order: slides.length + 1,

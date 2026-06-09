@@ -185,7 +185,6 @@
 
 /* Слайд-превью бокс */
 .slide-preview-box {
-    height: 700px;
     border-radius: 18px;
     display: flex;
     align-items: center;
@@ -663,7 +662,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 6000;
 }
 
 .verification-modal-card {
@@ -1192,8 +1191,8 @@ body.presenter-active {
     bottom: 30px;
     left: 50%;
     transform: translateX(-50%) translateY(10px);
-    width: 90%;
-    max-width: 780px;
+    width: 100%;
+    max-width: 1280px;
     height: 72px;
     background: rgba(15, 23, 42, 0.7);
     backdrop-filter: blur(24px);
