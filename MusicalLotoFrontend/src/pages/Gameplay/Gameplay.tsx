@@ -372,117 +372,8 @@ const Gameplay: React.FC = () => {
 
     const activeSlide = slides[activeSlideIndex];
 
-    const playNextSongApi = async () => {
-        if (!sessionId) return;
-        setIsLotoRunning(true);
-        try {
-            const response = await apiFetch('/api/Gameplay/next-song', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sessionId })
-            });
 
-            if (response.ok) {
-                const songData = await response.json();
-                if (songData && songData.audioPath) {
-                    const songDetails: MusicSong = {
-                        id: songData.id,
-                        title: songData.title,
-                        artist: songData.artist,
-                        audioPath: songData.audioPath,
-                    };
-                    setCurrentLotoSong(songDetails);
-                    if (currentSong?.id === songDetails.id) {
-                        if (!isPlaying) {
-                            togglePlay();
-                        }
-                    } else {
-                        playSong(songDetails);
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('Ошибка автоматического переключения на следующую песню:', error);
-        } finally {
-            setIsLotoRunning(false);
-        }
-    };
 
-    const playPrevSongApi = async () => {
-        if (!sessionId) return;
-        setIsLotoRunning(true);
-        try {
-            const response = await apiFetch('/api/Gameplay/previous-song', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sessionId })
-            });
-
-            if (response.ok) {
-                const songData = await response.json();
-                if (songData && songData.audioPath) {
-                    const songDetails: MusicSong = {
-                        id: songData.id,
-                        title: songData.title,
-                        artist: songData.artist,
-                        audioPath: songData.audioPath,
-                    };
-                    setCurrentLotoSong(songDetails);
-                    if (currentSong?.id === songDetails.id) {
-                        if (!isPlaying) {
-                            togglePlay();
-                        }
-                    } else {
-                        playSong(songDetails);
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('Ошибка автоматического переключения на предыдущую песню:', error);
-        } finally {
-            setIsLotoRunning(false);
-        }
-    };
-
-    const handleNextSlide = async () => {
-        if (activeSlideIndex < slides.length - 1) {
-            const nextIdx = activeSlideIndex + 1;
-            const targetSlide = slides[nextIdx];
-            const typeStr = typeof targetSlide.type === 'number'
-                ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][targetSlide.type] || 'Title'
-                : String(targetSlide.type);
-
-            setActiveSlideIndex(nextIdx);
-
-            if (typeStr === 'Song') {
-                if (!isPreview) {
-                    await playNextSongApi();
-                }
-            } else if (isPlaying) {
-                togglePlay();
-            }
-        }
-    };
-
-    const handlePrevSlide = async () => {
-        if (activeSlideIndex > 0) {
-            const prevIdx = activeSlideIndex - 1;
-            const targetSlide = slides[prevIdx];
-            const typeStr = typeof targetSlide.type === 'number'
-                ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][targetSlide.type] || 'Title'
-                : String(targetSlide.type);
-
-            setActiveSlideIndex(prevIdx);
-
-            if (typeStr === 'Song') {
-                if (!isPreview) {
-                    await playPrevSongApi();
-                }
-            } else if (isPlaying) {
-                togglePlay();
-            }
-        }
-    };
 
     const handleSelectSlide = (idx: number) => {
         setActiveSlideIndex(idx);
@@ -1474,6 +1365,7 @@ const Gameplay: React.FC = () => {
                                     <button
                                         className="btn-toolbar-action fullscreen"
                                         style={{ padding: '0px 16px', width: 'auto' }}
+                                        onClick={handleManualCardCheck}
                                     >
                                         Проверить
                                     </button>
@@ -1481,27 +1373,9 @@ const Gameplay: React.FC = () => {
                             </div>
 
                             <div className="presenter-toolbar-section center">
-                                <button
-                                    type="button"
-                                    className="btn-toolbar-nav"
-                                    onClick={handlePrevSlide}
-                                    disabled={activeSlideIndex === 0}
-                                    title="Предыдущий слайд"
-                                >
-                                    ◀
-                                </button>
                                 <span className="presenter-toolbar-counter">
                                     Слайд {activeSlideIndex + 1} из {slides.length}
                                 </span>
-                                <button
-                                    type="button"
-                                    className="btn-toolbar-nav"
-                                    onClick={handleNextSlide}
-                                    disabled={activeSlideIndex === slides.length - 1}
-                                    title="Следующий слайд"
-                                >
-                                    ▶
-                                </button>
                             </div>
 
                             <div className="presenter-toolbar-section right">

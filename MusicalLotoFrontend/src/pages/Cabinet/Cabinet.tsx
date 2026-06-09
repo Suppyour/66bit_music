@@ -718,13 +718,50 @@ const Cabinet: React.FC = () => {
                                             <option value="Playfair Display">Serif (Playfair Display)</option>
                                             <option value="Montserrat">Sans-Serif (Montserrat)</option>
                                             <option value="Inter">Classic (Inter)</option>
+                                            <option value="Roboto">Modern (Roboto)</option>
+                                            <option value="Oswald">Bold (Oswald)</option>
+                                            <option value="Caveat">Handwriting (Caveat)</option>
+                                            <option value="Pacifico">Cursive (Pacifico)</option>
+                                            <option value="Comfortaa">Rounded (Comfortaa)</option>
+                                            <option value="Courier New">Monospace (Courier)</option>
+                                            <option value="Georgia">Elegant (Georgia)</option>
                                         </select>
                                     </div>
                                     <div className="customizer-field" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                         <label style={{ fontSize: '13px', fontWeight: '600', color: '#475569' }}>Акцентный цвет</label>
-                                        <div className="color-picker-container" style={{ display: 'flex', alignItems: 'center', gap: '12px', height: '40px' }}>
-                                            <input type="color" value={accentColor} onChange={e => setAccentColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer', padding: 0, background: 'transparent' }} />
-                                            <span className="color-hex-label" style={{ fontSize: '14px', fontWeight: '600', color: '#1E293B', fontFamily: 'monospace' }}>{accentColor}</span>
+                                        <div className="color-picker-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', height: '40px', border: '1px solid #CBD5E1', borderRadius: '8px', background: '#FFFFFF', padding: '0 8px', cursor: 'text' }} onClick={() => document.getElementById('hex-color-input')?.focus()}>
+                                            <input 
+                                                type="color" 
+                                                value={accentColor.startsWith('#') && (accentColor.length === 7 || accentColor.length === 4) ? accentColor : '#000000'} 
+                                                onChange={e => setAccentColor(e.target.value)} 
+                                                list="presetColors"
+                                                style={{ width: '24px', height: '24px', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: 0, backgroundColor: 'transparent' }} 
+                                            />
+                                            <datalist id="presetColors">
+                                                <option value="#B21016" />
+                                                <option value="#2563EB" />
+                                                <option value="#10B981" />
+                                                <option value="#F59E0B" />
+                                                <option value="#8B5CF6" />
+                                                <option value="#EC4899" />
+                                                <option value="#0F172A" />
+                                                <option value="#14B8A6" />
+                                                <option value="#EAB308" />
+                                                <option value="#F43F5E" />
+                                            </datalist>
+                                            <input 
+                                                id="hex-color-input"
+                                                type="text" 
+                                                value={accentColor} 
+                                                onChange={e => {
+                                                    let val = e.target.value;
+                                                    if (!val.startsWith('#') && val.length > 0) val = '#' + val;
+                                                    setAccentColor(val);
+                                                }} 
+                                                placeholder="#HEX"
+                                                maxLength={7}
+                                                style={{ border: 'none', outline: 'none', fontSize: '14px', fontFamily: 'monospace', fontWeight: '600', color: '#1E293B', width: '100%', background: 'transparent' }}
+                                            />
                                         </div>
                                     </div>
                                     <div className="customizer-field" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
