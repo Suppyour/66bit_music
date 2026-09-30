@@ -17,6 +17,7 @@ interface MusicContextType {
     volume: number;
     currentTime: number;
     duration: number;
+    primeAudio: (song: MusicSong) => void;
     playSong: (song: MusicSong) => void;
     togglePlay: () => void;
     handleNext: () => void;
@@ -96,22 +97,41 @@ export const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         };
     }, [songs]); // Re-bind handleNext if songs change
 
+    const primeAudio = (song: MusicSong) => {
+        setCurrentSong(song);
+        if (song.audioPath) {
+            audioRef.current.src = song.audioPath;
+            audioRef.current.load();
+        }
+    };
+
     const playSong = (song: MusicSong) => {
-        if (currentSong?.id === song.id) {
+        if (currentSong?.id === song.id && isPlaying) {
             togglePlay();
         } else {
             setCurrentSong(song);
-            audioRef.current.src = song.audioPath;
-            audioRef.current.play();
-            setIsPlaying(true);
+            if (!audioRef.current.src.endsWith(song.audioPath)) {
+                audioRef.current.src = song.audioPath;
+            }
+            audioRef.current.play().then(() => {
+                setIsPlaying(true);
+            }).catch(err => {
+                console.warn('Playback blocked or failed:', err);
+                setIsPlaying(false);
+            });
         }
     };
 
     const togglePlay = () => {
         if (isPlaying) {
             audioRef.current.pause();
+            setIsPlaying(false);
         } else if (currentSong) {
-            audioRef.current.play();
+            audioRef.current.play().then(() => {
+                setIsPlaying(true);
+            }).catch(err => {
+                console.warn('Playback blocked or failed:', err);
+            });
         }
     };
 
@@ -154,6 +174,7 @@ export const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             volume,
             currentTime,
             duration,
+            primeAudio,
             playSong,
             togglePlay,
             handleNext,

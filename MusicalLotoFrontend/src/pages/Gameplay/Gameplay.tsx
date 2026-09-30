@@ -45,7 +45,7 @@ interface Claim {
 const Gameplay: React.FC = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const { playSong, isPlaying, togglePlay, currentSong, closePlayer } = useMusic();
+    const { primeAudio, playSong, isPlaying, togglePlay, currentSong, closePlayer } = useMusic();
 
     const sessionId = searchParams.get('sessionId');
     const isPreview = searchParams.get('preview') === 'true';
@@ -126,12 +126,23 @@ const Gameplay: React.FC = () => {
         const chosenSlide = unplayedSongSlides[randomIndex];
         const targetBoardIndex = songSlides.findIndex(s => s.id === chosenSlide.id) + 1;
 
+        // Предварительный поиск и прайминг аудио прямо в обработчике клика пользователя
+        let targetSong: MusicSong | undefined = undefined;
+        if (chosenSlide.songId) {
+            targetSong = allLibrarySongs.find(
+                s => s.id?.toLowerCase() === chosenSlide.songId?.toLowerCase()
+            );
+            if (targetSong) {
+                primeAudio(targetSong);
+            }
+        }
+
         setIsRolling(true);
         setRollingNumber(null);
         setBoardIndex(targetBoardIndex);
 
         let iterations = 0;
-        const maxIterations = 20;
+        const maxIterations = 14;
         const intervalId = setInterval(() => {
             const tempNum = Math.floor(Math.random() * songSlides.length) + 1;
             setRollingNumber(tempNum);
@@ -140,7 +151,7 @@ const Gameplay: React.FC = () => {
                 clearInterval(intervalId);
                 setRollingNumber(targetBoardIndex);
                 
-                setTimeout(() => {
+                setTimeout(async () => {
                     setIsRolling(false);
                     setRollingNumber(null);
                     
@@ -149,9 +160,31 @@ const Gameplay: React.FC = () => {
                         setPlayedSongs(prev => [...prev, chosenSlide.id]);
                     }
                     setActiveSlideIndex(originalIndex);
-                }, 1100);
+
+                    // Воспроизведение трека
+                    if (targetSong) {
+                        playSong(targetSong);
+                    } else if (chosenSlide.songId) {
+                        try {
+                            const response = await apiFetch(`/api/Songs/${chosenSlide.songId}`);
+                            if (response.ok) {
+                                const songData = await response.json();
+                                if (songData && songData.audioPath) {
+                                    playSong({
+                                        id: songData.id,
+                                        title: songData.title,
+                                        artist: songData.artist,
+                                        audioPath: songData.audioPath
+                                    });
+                                }
+                            }
+                        } catch (err) {
+                            console.error("Ошибка загрузки песни после рандомайзера:", err);
+                        }
+                    }
+                }, 400);
             }
-        }, 80);
+        }, 65);
     };
 
     const handleSelectSongFromBoard = async (songSlide: Slide, slideIndex: number) => {
@@ -160,9 +193,11 @@ const Gameplay: React.FC = () => {
             setPlayedSongs(prev => [...prev, songSlide.id]);
         }
 
-        // Play the music using the global music context
+        // Воспроизведение выбранной вручную песни
         if (songSlide.songId) {
-            const librarySong = allLibrarySongs.find(s => s.id === songSlide.songId);
+            const librarySong = allLibrarySongs.find(
+                s => s.id?.toLowerCase() === songSlide.songId?.toLowerCase()
+            );
             if (librarySong) {
                 playSong(librarySong);
             } else {
@@ -185,17 +220,6 @@ const Gameplay: React.FC = () => {
             }
         }
     };
-
-    // Block global keyboard slide transitions using arrows
-    useEffect(() => {
-        const handleGlobalKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-                e.preventDefault();
-            }
-        };
-        window.addEventListener('keydown', handleGlobalKeyDown);
-        return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-    }, []);
 
     useEffect(() => {
         if (!sessionId) {
@@ -282,21 +306,24 @@ const Gameplay: React.FC = () => {
         };
     }, []);
 
-    // Keyboard shortcuts for presenter mode
+    // Keyboard shortcuts for gameplay and presenter mode
     useEffect(() => {
-        if (!isPresenterActive) return;
-
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'ArrowRight') {
+            const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+            if (activeTag === 'input' || activeTag === 'textarea') return;
+
+            if (e.key === 'ArrowRight' || e.key === 'PageDown') {
                 e.preventDefault();
-                // Blocked
-            } else if (e.key === 'ArrowLeft') {
+                setActiveSlideIndex(prev => Math.min(prev + 1, slides.length - 1));
+            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
                 e.preventDefault();
-                // Blocked
+                setActiveSlideIndex(prev => Math.max(prev - 1, 0));
             } else if (e.key === 'Escape') {
-                e.preventDefault();
-                setIsPresenterActive(false);
-                document.body.classList.remove('presenter-active');
+                if (isPresenterActive) {
+                    e.preventDefault();
+                    setIsPresenterActive(false);
+                    document.body.classList.remove('presenter-active');
+                }
             } else if (e.key === ' ') {
                 const targetSlide = slides[activeSlideIndex];
                 if (targetSlide) {
@@ -315,7 +342,7 @@ const Gameplay: React.FC = () => {
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, [isPresenterActive, activeSlideIndex, slides, isPlaying, currentSong, isLotoRunning]);
+    }, [isPresenterActive, isBrowserFullscreen, activeSlideIndex, slides, isPlaying, currentSong, isLotoRunning]);
     const handleManualCardCheck = () => {
         if (!manualCardQuery.trim()) return;
         if (cards.length === 0) {
@@ -1153,7 +1180,35 @@ const Gameplay: React.FC = () => {
                     <div className="presenter-slide-viewport" style={activeBackgroundStyle}>
                         {activeSlide.backgroundImageUrl && <div className="slide-image-overlay"></div>}
 
-                        <div className="presenter-slide-content">
+                        {/* Floating Side Navigation Arrows for Screen / Presenter */}
+                        {activeSlideIndex > 0 && (
+                            <button
+                                type="button"
+                                className="presenter-nav-arrow left"
+                                onClick={() => setActiveSlideIndex(prev => Math.max(prev - 1, 0))}
+                                title="Предыдущий слайд (Стрелка влево / PageUp)"
+                                aria-label="Предыдущий слайд"
+                            >
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="15 18 9 12 15 6" />
+                                </svg>
+                            </button>
+                        )}
+                        {activeSlideIndex < slides.length - 1 && (
+                            <button
+                                type="button"
+                                className="presenter-nav-arrow right"
+                                onClick={() => setActiveSlideIndex(prev => Math.min(prev + 1, slides.length - 1))}
+                                title="Следующий слайд (Стрелка вправо / Пробел / PageDown)"
+                                aria-label="Следующий слайд"
+                            >
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="9 18 15 12 9 6" />
+                                </svg>
+                            </button>
+                        )}
+
+                        <div className={`presenter-slide-content ${activeSlideTypeStr === 'GameBoard' ? 'fullscreen-board-mode' : ''}`}>
                             {activeSlideTypeStr === 'Title' && (
                                 <div className="presenter-slide-view title-view">
                                     <div className="presenter-logo">🎵</div>
@@ -1174,36 +1229,35 @@ const Gameplay: React.FC = () => {
                             )}
 
                             {activeSlideTypeStr === 'GameBoard' && (
-                                <div className="presenter-slide-view gameboard-view-fullscreen" style={{ width: '100%', maxWidth: '900px', position: 'relative' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '24px' }}>
-                                        <h1 className="presenter-heading" style={{ margin: 0 }}>Игровое поле</h1>
-                                        <button
-                                            type="button"
-                                            className="btn-run-loto"
-                                            onClick={handleRollRandomSong}
-                                            disabled={isRolling || isLotoRunning}
-                                            style={{
-                                                background: '#10B981',
-                                                color: '#FFF',
-                                                padding: '12px 24px',
-                                                fontSize: '16px',
-                                                fontWeight: 'bold',
-                                                borderRadius: '12px',
-                                                border: 'none',
-                                                cursor: 'pointer',
-                                                boxShadow: '0 8px 16px rgba(16,185,129,0.3)',
-                                                transition: 'all 0.2s',
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                gap: '8px'
-                                            }}
-                                        >
-                                            {isRolling ? (
-                                                <span className="spinner" style={{ borderTopColor: '#FFF' }}></span>
-                                            ) : 'Случайная песня'}
-                                        </button>
+                                <div className="presenter-slide-view gameboard-view-fullscreen">
+                                    <div className="presenter-gameboard-header">
+                                        <div className="gameboard-header-left">
+                                            <h1 className="presenter-heading gameboard-heading">Игровое поле</h1>
+                                            <span className="gameboard-songs-counter">
+                                                Сыграно: {playedSongs.length} / {slides.filter(s => {
+                                                    const type = typeof s.type === 'number'
+                                                        ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type]
+                                                        : String(s.type);
+                                                    return type === 'Song';
+                                                }).length}
+                                            </span>
+                                        </div>
+                                        <div className="gameboard-header-right">
+                                            <button
+                                                type="button"
+                                                className="btn-run-loto presenter-randomizer-btn"
+                                                onClick={handleRollRandomSong}
+                                                disabled={isRolling || isLotoRunning}
+                                            >
+                                                {isRolling ? (
+                                                    <span className="spinner" style={{ borderTopColor: '#FFF' }}></span>
+                                                ) : (
+                                                    <>🎲 Случайная песня</>
+                                                )}
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className="gameboard-grid-custom" style={{ width: '100%', gap: '20px', pointerEvents: isRolling ? 'none' : 'auto' }}>
+                                    <div className="gameboard-grid-custom" style={{ pointerEvents: isRolling ? 'none' : 'auto' }}>
                                         {slides.filter(s => {
                                             const type = typeof s.type === 'number'
                                                 ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type]
@@ -1223,19 +1277,19 @@ const Gameplay: React.FC = () => {
                                                             handleSelectSongFromBoard(songSlide, originalIndex);
                                                         }
                                                     }}
-                                                    style={{ height: '100px', cursor: isPlayed ? 'default' : 'pointer' }}
+                                                    style={{ cursor: isPlayed ? 'default' : 'pointer' }}
                                                 >
                                                     <div className="gameboard-cell-dots">
                                                         <svg width="8" height="12" viewBox="0 0 8 12" fill="none">
-                                                            <circle cx="2" cy="2" r="1.2" fill="#D1D5DB" />
-                                                            <circle cx="2" cy="6" r="1.2" fill="#D1D5DB" />
-                                                            <circle cx="2" cy="10" r="1.2" fill="#D1D5DB" />
-                                                            <circle cx="6" cy="2" r="1.2" fill="#D1D5DB" />
-                                                            <circle cx="6" cy="6" r="1.2" fill="#D1D5DB" />
-                                                            <circle cx="6" cy="10" r="1.2" fill="#D1D5DB" />
+                                                            <circle cx="2" cy="2" r="1.2" fill="#94A3B8" />
+                                                            <circle cx="2" cy="6" r="1.2" fill="#94A3B8" />
+                                                            <circle cx="2" cy="10" r="1.2" fill="#94A3B8" />
+                                                            <circle cx="6" cy="2" r="1.2" fill="#94A3B8" />
+                                                            <circle cx="6" cy="6" r="1.2" fill="#94A3B8" />
+                                                            <circle cx="6" cy="10" r="1.2" fill="#94A3B8" />
                                                         </svg>
                                                     </div>
-                                                    <span className="gameboard-cell-number" style={{ fontSize: '28px' }}>{index + 1}</span>
+                                                    <span className="gameboard-cell-number">{index + 1}</span>
                                                 </div>
                                             );
                                         })}
@@ -1350,21 +1404,24 @@ const Gameplay: React.FC = () => {
                         </div>
 
                         <div className="presenter-toolbar">
-                            <div className="presenter-toolbar-section left" style={{ display: 'flex', alignItems: 'center' }}>
-                                <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#94A3B8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '160px' }}>
+                            <div className="presenter-toolbar-section left">
+                                <span className="presenter-game-name" title={gameName}>
                                     {gameName}
                                 </span>
-                                <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>
+                                <div className="presenter-manual-check">
                                     <input
                                         type="text"
-                                        placeholder="ID билета"
+                                        placeholder="ID / № билета"
                                         value={manualCardQuery}
                                         onChange={(e) => setManualCardQuery(e.target.value)}
-                                        style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #334155', background: '#1E293B', color: '#F8FAFC', fontSize: '12px', width: '90px', outline: 'none' }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleManualCardCheck();
+                                        }}
+                                        className="presenter-ticket-input"
                                     />
                                     <button
-                                        className="btn-toolbar-action fullscreen"
-                                        style={{ padding: '0px 16px', width: 'auto' }}
+                                        type="button"
+                                        className="btn-toolbar-action check-ticket"
                                         onClick={handleManualCardCheck}
                                     >
                                         Проверить
@@ -1373,18 +1430,58 @@ const Gameplay: React.FC = () => {
                             </div>
 
                             <div className="presenter-toolbar-section center">
+                                <button
+                                    type="button"
+                                    className="btn-toolbar-nav"
+                                    onClick={() => setActiveSlideIndex(prev => Math.max(prev - 1, 0))}
+                                    disabled={activeSlideIndex === 0}
+                                    title="Предыдущий слайд (←)"
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="15 18 9 12 15 6" />
+                                    </svg>
+                                </button>
                                 <span className="presenter-toolbar-counter">
-                                    Слайд {activeSlideIndex + 1} из {slides.length}
+                                    Слайд {activeSlideIndex + 1} / {slides.length}
                                 </span>
+                                <button
+                                    type="button"
+                                    className="btn-toolbar-nav"
+                                    onClick={() => setActiveSlideIndex(prev => Math.min(prev + 1, slides.length - 1))}
+                                    disabled={activeSlideIndex === slides.length - 1}
+                                    title="Следующий слайд (→)"
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="9 18 15 12 9 6" />
+                                    </svg>
+                                </button>
+                                {activeSlideTypeStr !== 'GameBoard' && (
+                                    <button
+                                        type="button"
+                                        className="btn-toolbar-action to-board"
+                                        onClick={() => {
+                                            closePlayer();
+                                            const idx = slides.findIndex(s => {
+                                                const type = typeof s.type === 'number'
+                                                    ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type]
+                                                    : String(s.type);
+                                                return type === 'GameBoard';
+                                            });
+                                            if (idx !== -1) setActiveSlideIndex(idx);
+                                        }}
+                                        title="Вернуться к игровому полю"
+                                    >
+                                        🎲 Игровое поле
+                                    </button>
+                                )}
                             </div>
 
                             <div className="presenter-toolbar-section right">
                                 <button
                                     type="button"
-                                    className="btn-toolbar-action"
+                                    className="btn-toolbar-action finish"
                                     onClick={handleEndGame}
                                     title="Завершить игру"
-                                    style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#FCA5A5', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '0 16px', marginRight: '8px' }}
                                 >
                                     Финал
                                 </button>
@@ -1393,15 +1490,14 @@ const Gameplay: React.FC = () => {
                                     className="btn-toolbar-action fullscreen"
                                     onClick={toggleFullscreen}
                                     title="Полноэкранный режим браузера"
-                                    style={{ padding: '0 16px', width: 'auto' }}
                                 >
-                                    {isBrowserFullscreen ? 'Свернуть' : 'Развернуть'}
+                                    {isBrowserFullscreen ? '🗗 Свернуть' : '⛶ Во весь экран'}
                                 </button>
                                 <button
                                     type="button"
                                     className="btn-toolbar-action close"
                                     onClick={togglePresenterMode}
-                                    title="Выйти из презентации"
+                                    title="Выйти из презентации (Esc)"
                                 >
                                     Выйти
                                 </button>

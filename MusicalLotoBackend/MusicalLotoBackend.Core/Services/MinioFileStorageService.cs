@@ -44,8 +44,7 @@ public class MinioFileStorageService : IFileStorageService
 
             await _minioClient.PutObjectAsync(putObjectArgs, cancellationToken);
 
-            var schema = _publicEndpoint.Contains("localhost") ? "http" : "https";
-            return $"{schema}://{_publicEndpoint}/{_bucketName}/{objectName}";
+            return $"/minio/{_bucketName}/{objectName}";
         }
         catch (MinioException e)
         {

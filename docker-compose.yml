@@ -27,6 +27,8 @@ services:
       - ASPNETCORE_HTTP_PORTS=8080
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}
       - Minio__Endpoint=minio:9000
+      - Minio__AccessKey=${MINIO_ROOT_USER}
+      - Minio__SecretKey=${MINIO_ROOT_PASSWORD}
       - Minio__PublicEndpoint=${MINIO_PUBLIC_ENDPOINT}
     volumes:
       - app_wwwroot:/app/wwwroot
@@ -45,7 +47,7 @@ services:
     restart: unless-stopped
 
   minio:
-    image: minio/minio:latest
+    image: elestio/minio:latest
     container_name: music_loto_minio
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
@@ -59,18 +61,12 @@ services:
     restart: unless-stopped
 
   minio-setup:
-    image: minio/mc:latest
+    image: carlosedp/minio-mc:latest
     container_name: music_loto_minio_setup
     depends_on:
       - minio
     entrypoint: >
-      /bin/sh -c "
-      sleep 5;
-      /usr/bin/mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
-      /usr/bin/mc mb myminio/music-loto --ignore-existing;
-      /usr/bin/mc anonymous set download myminio/music-loto;
-      exit 0;
-      "
+      /bin/sh -c " sleep 5; /usr/bin/mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}; /usr/bin/mc mb myminio/music-loto --ignore-existing; (/usr/bin/mc anonymous set download myminio/music-loto 2>/dev/null || /usr/bin/mc policy set download myminio/music-loto); exit 0; "
 
 volumes:
   postgres_data:

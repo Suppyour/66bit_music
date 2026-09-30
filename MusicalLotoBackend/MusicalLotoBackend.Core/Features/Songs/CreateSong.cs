@@ -32,50 +32,15 @@ public class CreateSongHandler : IRequestHandler<CreateSongCommand, Guid>
 
     public async Task<Guid> Handle(CreateSongCommand request, CancellationToken cancellationToken)
     {
-        IFormFile fileToUpload = request.AudioFile;
-        MemoryStream? trimmedStream = null;
-        try
-        {
-            using (var originalStream = request.AudioFile.OpenReadStream())
-            {
-                trimmedStream = AudioTrimmer.TryTrimMp3(originalStream, 30);
-            }
-
-            if (trimmedStream != null)
-            {
-                fileToUpload = new StreamFormFile(
-                    trimmedStream,
-                    request.AudioFile.Name,
-                    request.AudioFile.FileName,
-                    request.AudioFile.ContentType
-                );
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[CreateSong] Ошибка при автоматической нарезке: {ex.Message}");
-        }
-
-        var audioPath = await _fileStorageService.UploadFileAsync(fileToUpload, "audio", cancellationToken);
-        
-        string? imagePath = null;
-        if (request.BackgroundImageFile != null)
-        {
-            imagePath = await _fileStorageService.UploadFileAsync(request.BackgroundImageFile, "images", cancellationToken);
-        }
-        
+        // Читаем длительность исходного аудиофайла
         int durationSeconds = 0;
-        
-        var extension = Path.GetExtension(fileToUpload.FileName);
+        var extension = Path.GetExtension(request.AudioFile.FileName);
         var tempFilePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}{extension}");
         try
         {
             using (var stream = new FileStream(tempFilePath, FileMode.Create))
             {
-                using (var uploadStream = fileToUpload.OpenReadStream())
-                {
-                    await uploadStream.CopyToAsync(stream, cancellationToken);
-                }
+                await request.AudioFile.CopyToAsync(stream, cancellationToken);
             }
             using var tfile = TagLib.File.Create(tempFilePath);
             durationSeconds = (int)tfile.Properties.Duration.TotalSeconds;
@@ -90,7 +55,15 @@ public class CreateSongHandler : IRequestHandler<CreateSongCommand, Guid>
             {
                 File.Delete(tempFilePath);
             }
-            trimmedStream?.Dispose();
+        }
+
+        // Загрузка аудио в Minio
+        var audioPath = await _fileStorageService.UploadFileAsync(request.AudioFile, "audio", cancellationToken);
+        
+        string? imagePath = null;
+        if (request.BackgroundImageFile != null)
+        {
+            imagePath = await _fileStorageService.UploadFileAsync(request.BackgroundImageFile, "images", cancellationToken);
         }
 
         // здесь готовые уже данные

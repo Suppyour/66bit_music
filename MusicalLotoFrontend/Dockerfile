@@ -41,6 +41,11 @@ RUN echo "server { \
         proxy_set_header Host \$host; \
         proxy_set_header X-Real-IP \$remote_addr; \
     } \
+    location /minio/ { \
+        proxy_pass http://minio:9000/; \
+        proxy_set_header Host minio:9000; \
+        proxy_set_header X-Real-IP \$remote_addr; \
+    } \
     location /gameHub/ { \
         proxy_pass http://api:8080/gameHub/; \
         proxy_set_header Host \$host; \

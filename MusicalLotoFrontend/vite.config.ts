@@ -18,6 +18,11 @@ export default defineConfig({
       '/images': {
         target: 'http://localhost:30480',
         changeOrigin: true,
+      },
+      '/minio': {
+        target: 'http://localhost:9000',
+        changeOrigin: true,
+        rewrite: (path: string) => path.replace(/^\/minio/, ''),
       }
     }
   }
