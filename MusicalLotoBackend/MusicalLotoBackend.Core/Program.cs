@@ -52,9 +52,17 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
 
+var minioEndpoint = builder.Configuration["Minio:Endpoint"] ?? "localhost:9000";
+var minioAccessKey = string.IsNullOrWhiteSpace(builder.Configuration["Minio:AccessKey"])
+    ? "admin"
+    : builder.Configuration["Minio:AccessKey"]!;
+var minioSecretKey = string.IsNullOrWhiteSpace(builder.Configuration["Minio:SecretKey"])
+    ? "password"
+    : builder.Configuration["Minio:SecretKey"]!;
+
 builder.Services.AddMinio(configureClient => configureClient
-    .WithEndpoint(builder.Configuration["Minio:Endpoint"])
-    .WithCredentials(builder.Configuration["Minio:AccessKey"], builder.Configuration["Minio:SecretKey"])
+    .WithEndpoint(minioEndpoint)
+    .WithCredentials(minioAccessKey, minioSecretKey)
     .WithSSL(builder.Configuration.GetValue<bool>("Minio:UseSSL"))
 );  
 builder.Services.AddScoped<IFileStorageService, MinioFileStorageService>();
@@ -115,11 +123,8 @@ using (var scope = app.Services.CreateScope())
 
 
 app.UseStaticFiles();
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseAuthentication();
 app.UseAuthorization();
