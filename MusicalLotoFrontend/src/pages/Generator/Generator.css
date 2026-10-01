@@ -223,11 +223,8 @@
 }
 
 .preview-container {
-    background-image: url('../../assets/Generator/Фон предварительного просмотра.svg');
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: center;
-    border: none;
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
     border-radius: 22px;
     display: flex;
     flex-direction: column;
@@ -236,6 +233,8 @@
     position: relative;
     width: 100%;
     min-height: 845px;
+    padding: 32px 24px 80px 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
 }
 
 .pagination {
@@ -275,6 +274,72 @@
     color: #374151;
 }
 
+.pagination-card-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.page-number {
+    font-weight: 500;
+    color: #374151;
+    font-size: 14px;
+}
+
+.card-name-editor {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.card-name-separator {
+    color: #94A3B8;
+    font-weight: 500;
+}
+
+.card-name-input {
+    border: 1px solid #CBD5E1;
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1E293B;
+    background-color: #FFFFFF;
+    outline: none;
+    width: 150px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.card-name-input:focus {
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.btn-random-name {
+    background: #F8FAFC;
+    border: 1px solid #CBD5E1;
+    border-radius: 8px;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.btn-random-name:hover {
+    background: #E2E8F0;
+    transform: scale(1.08);
+}
+
+.btn-random-name:active {
+    transform: scale(0.95);
+}
+
 .bingo-card {
     border: 2px solid #E5E7EB;
     border-radius: 16px;
@@ -285,6 +350,7 @@
     width: 100%;
     max-width: 600px;
     margin-bottom: 16px;
+    background: #FFFFFF;
 }
 
 .bingo-cell {
@@ -354,6 +420,20 @@
     position: absolute;
     bottom: 32px;
     right: 32px;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-download-pdf:hover:not(:disabled) {
+    background: #2563EB;
+}
+
+.btn-download-pdf:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.btn-download-pdf:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .generator-stats {

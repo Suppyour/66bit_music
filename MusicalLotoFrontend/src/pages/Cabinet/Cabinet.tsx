@@ -24,6 +24,7 @@ import { apiFetch } from '../../utils/api';
 import { PrintCard } from '../../components/PrintCard/PrintCard';
 import { renderToStaticMarkup } from 'react-dom/server';
 import printCardStyles from '../../components/PrintCard/PrintCard.css?inline';
+import { getRandomCuteName } from '../../utils/cuteNames';
 
 const getBase64Image = async (url: string): Promise<string | null> => {
     try {
@@ -54,6 +55,7 @@ import deleteBtn from '../../assets/SongLibrary/Кнопка удалить.svg'
 import horizontalIcon from '../../assets/Cabinet/Горизонталь.svg';
 import verticalIcon from '../../assets/Cabinet/Вертикаль.svg';
 import diagonalIcon from '../../assets/Cabinet/Диагональ.svg';
+import fullFieldIcon from '../../assets/Cabinet/Полное поле.svg';
 
 import LoadBgIcon from '../../assets/Generator/Иконка в кнопке Загрузить фон.svg';
 import InfinityIcon from '../../assets/Generator/Значек во все карточки уникальны.svg';
@@ -103,13 +105,13 @@ const SortableCell = ({ cell, song, isCenter, accentColor }: { cell: CardCellDat
             className={`bingo-cell ${isDragging ? 'bingo-cell-dragging' : ''}`}
         >
             {isCenter && (
-                <>
-                    {/* SVG Bows for the center gift cell */}
-                    <svg className="corner-bow top-left" viewBox="0 0 100 100" style={{ stroke: accentColor }}><path d="M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90" fill="none" strokeWidth="8" strokeLinecap="round" /></svg>
-                    <svg className="corner-bow top-right" viewBox="0 0 100 100" style={{ stroke: accentColor }}><path d="M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90" fill="none" strokeWidth="8" strokeLinecap="round" /></svg>
-                    <svg className="corner-bow bottom-left" viewBox="0 0 100 100" style={{ stroke: accentColor }}><path d="M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90" fill="none" strokeWidth="8" strokeLinecap="round" /></svg>
-                    <svg className="corner-bow bottom-right" viewBox="0 0 100 100" style={{ stroke: accentColor }}><path d="M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90" fill="none" strokeWidth="8" strokeLinecap="round" /></svg>
-                </>
+                <div className="center-cell-bow" style={{ position: 'absolute', top: '-7px', right: '-7px', zIndex: 15, pointerEvents: 'none' }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={accentColor || '#B21016'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 11.2c-1.8-2.2-4.5-2.2-4.5 0s2.7 2.2 4.5 0zm0 0c1.8-2.2 4.5-2.2 4.5 0s-2.7 2.2-4.5 0z" />
+                        <circle cx="12" cy="11.2" r="1.8" fill={accentColor || '#B21016'} />
+                        <path d="M11 13l-3 6m5-6l3 6" />
+                    </svg>
+                </div>
             )}
             <div className="cell-title" title={song ? `${song.artist} – ${song.title}` : 'Пустая ячейка'}>
                 {song ? `${song.artist} – ${song.title}` : '...'}
@@ -610,6 +612,12 @@ const Cabinet: React.FC = () => {
                                         </div>
                                         <span className="rule-card-label">Диагональ</span>
                                     </div>
+                                    <div className={`rule-card ${(rules & 4) ? 'active' : ''}`} onClick={() => toggleRule(4)}>
+                                        <div className="rule-blueprint">
+                                            <img src={fullFieldIcon} alt="Вся карточка" />
+                                        </div>
+                                        <span className="rule-card-label">Вся карточка</span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -811,12 +819,13 @@ const Cabinet: React.FC = () => {
                                         <span className="page-info" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                                             {generatedCards.length > 0 ? `${currentCardIndex + 1} / ${generatedCards.length}` : '0 / 0'}
                                             {currentCard && (
-                                                <>
+                                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                                                     <span> — </span>
                                                     <input
                                                         type="text"
                                                         value={currentCard.cuteName || ''}
                                                         placeholder="Назовите карточку..."
+                                                        title="Нажмите, чтобы переименовать карточку"
                                                         onChange={(e) => {
                                                             const newName = e.target.value;
                                                             setGeneratedCards(prev => {
@@ -836,11 +845,41 @@ const Cabinet: React.FC = () => {
                                                             color: '#1E293B',
                                                             backgroundColor: '#FFFFFF',
                                                             outline: 'none',
-                                                            width: '180px',
+                                                            width: '160px',
                                                             fontWeight: '600'
                                                         }}
                                                     />
-                                                </>
+                                                    <button
+                                                        type="button"
+                                                        title="Сгенерировать случайное название"
+                                                        onClick={() => {
+                                                            const randomName = getRandomCuteName();
+                                                            setGeneratedCards(prev => {
+                                                                const copy = [...prev];
+                                                                copy[currentCardIndex] = {
+                                                                    ...copy[currentCardIndex],
+                                                                    cuteName: randomName
+                                                                };
+                                                                return copy;
+                                                            });
+                                                        }}
+                                                        style={{
+                                                            background: '#F8FAFC',
+                                                            border: '1px solid #CBD5E1',
+                                                            borderRadius: '8px',
+                                                            width: '28px',
+                                                            height: '28px',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            cursor: 'pointer',
+                                                            fontSize: '13px',
+                                                            lineHeight: 1
+                                                        }}
+                                                    >
+                                                        🎲
+                                                    </button>
+                                                </div>
                                             )}
                                         </span>
                                         <button
@@ -1047,6 +1086,12 @@ const Cabinet: React.FC = () => {
                                                         <img src={playBtn} alt="Просмотр" />
                                                     </button>
                                                 )}
+                                                <button className="edit-game-btn" onClick={() => navigate(`/generator?sessionId=${game.id}`)} title="Карточки лото и печать">
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                                        <path d="M3 9h18M9 21V9"/>
+                                                    </svg>
+                                                </button>
                                                 <button className="edit-game-btn" onClick={() => navigate(`/presentation?sessionId=${game.id}`)} title="Редактировать презентацию">
                                                     <img src={editBtn} alt="Редактировать" />
                                                 </button>

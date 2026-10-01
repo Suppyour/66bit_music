@@ -26,5 +26,6 @@ public enum WinningRules
     None = 0,
     Horizontal = 1,
     Vertical = 2,
-    FullCard = 4
+    FullCard = 4,
+    Diagonal = 8
 }

@@ -295,12 +295,17 @@
 }
 
 .slide-song-view .slide-song-badge {
-    background: rgba(255, 255, 255, 0.18);
-    padding: 4px 12px;
+    background: rgba(15, 23, 42, 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: #FFFFFF;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 6px 14px;
     border-radius: 20px;
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 700;
     letter-spacing: 0.08em;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .slide-song-title {
@@ -1127,16 +1132,22 @@ body.presenter-active {
 
 /* Song Slide View */
 .presenter-song-badge {
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 6px 20px;
+    background: rgba(15, 23, 42, 0.78);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
+    padding: 8px 24px;
     border-radius: 30px;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 800;
     letter-spacing: 0.15em;
-    color: #93C5FD;
+    color: #FFFFFF;
     text-transform: uppercase;
     margin-bottom: 24px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .presenter-song-title {
@@ -1581,9 +1592,8 @@ body.presenter-active {
 
 .gameboard-grid-custom {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    /* 6x6 grid for 36 songs like screenshot */
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+    gap: 12px;
     width: 100%;
     padding: 16px;
     box-sizing: border-box;
@@ -1591,7 +1601,7 @@ body.presenter-active {
 
 @media (max-width: 768px) {
     .gameboard-grid-custom {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
     }
 }
 
@@ -1634,17 +1644,34 @@ body.presenter-active {
 }
 
 .gameboard-cell-custom.played {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(241, 245, 249, 0.92) !important;
+    border-color: #CBD5E1 !important;
     cursor: default;
-    opacity: 0.5;
+    opacity: 0.8 !important;
     box-shadow: none;
     transform: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.gameboard-cell-custom.played::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -10%;
+    width: 120%;
+    height: 3px;
+    background: #EF4444;
+    transform: translateY(-50%) rotate(-25deg);
+    pointer-events: none;
+    border-radius: 2px;
 }
 
 .gameboard-cell-custom.played .gameboard-cell-number {
-    color: rgba(255, 255, 255, 0.5);
+    color: #64748B !important;
     text-decoration: line-through;
+    text-decoration-color: #EF4444;
+    text-decoration-thickness: 2px;
 }
 
 .gameboard-cell-dots {
@@ -1727,9 +1754,9 @@ body.presenter-active {
 .gameboard-view-fullscreen .gameboard-grid-custom {
     flex: 1;
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(clamp(85px, 8vw, 130px), 1fr));
     grid-auto-rows: 1fr;
-    gap: clamp(10px, 1.2vw, 16px);
+    gap: clamp(10px, 1.2vw, 18px);
     padding: 6px 0 12px 0;
     width: 100%;
     height: 100%;
@@ -1765,17 +1792,19 @@ body.presenter-active {
 }
 
 .gameboard-view-fullscreen .gameboard-cell-custom.played {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(241, 245, 249, 0.92) !important;
+    border-color: #CBD5E1 !important;
     cursor: default;
-    opacity: 0.45;
+    opacity: 0.82 !important;
     box-shadow: none;
     transform: none;
 }
 
 .gameboard-view-fullscreen .gameboard-cell-custom.played .gameboard-cell-number {
-    color: rgba(255, 255, 255, 0.4);
+    color: #64748B !important;
     text-decoration: line-through;
+    text-decoration-color: #EF4444;
+    text-decoration-thickness: 3px;
 }
 
 /* Custom banner styles for preview mode */

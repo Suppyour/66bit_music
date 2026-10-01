@@ -210,4 +210,31 @@ public class GamesController : ControllerBase
         await _dbContext.SaveChangesAsync();
         return Ok(new { Message = "Игра завершена" });
     }
+
+    [HttpPatch("{sessionId}/cards/{cardId}/name")]
+    public async Task<IActionResult> UpdateCardName(Guid sessionId, Guid cardId, [FromBody] UpdateCardNameRequest request)
+    {
+        Guid userId;
+        try
+        {
+            userId = GetUserId();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+
+        var session = await _dbContext.Sessions.FindAsync(sessionId);
+        if (session == null) return NotFound(new { Message = "Сессия не найдена" });
+        if (session.UserId != userId) return Forbid();
+
+        var card = await _dbContext.GameCards.FindAsync(cardId);
+        if (card == null || card.GameSessionId != sessionId) return NotFound(new { Message = "Карточка не найдена" });
+
+        card.CuteName = request.CuteName?.Trim();
+        await _dbContext.SaveChangesAsync();
+        return Ok(new { Message = "Название карточки успешно обновлено", CuteName = card.CuteName });
+    }
 }
+
+public record UpdateCardNameRequest(string? CuteName);

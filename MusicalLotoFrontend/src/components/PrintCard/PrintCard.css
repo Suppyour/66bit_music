@@ -40,10 +40,10 @@
 .print-card-container .card-left-panel {
     flex: 3.1;
     background-color: rgba(255, 255, 255, 0.95);
-    padding: 24px 28px;
+    padding: 18px 24px 28px 24px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
     height: 100%;
     position: relative;
 }
@@ -52,7 +52,7 @@
 .print-card-container .card-right-panel {
     flex: 1;
     background-color: rgba(255, 255, 255, 0.95);
-    padding: 70px 14px 20px 14px;
+    padding: 16px 12px 14px 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -60,6 +60,7 @@
     border-left: 1.5px dashed var(--accent-color, #B21016);
     height: 100%;
     position: relative;
+    overflow: hidden;
     transition: border-color 0.3s ease;
 }
 
@@ -90,26 +91,24 @@
     transition: background-color 0.3s ease;
 }
 
-/* Scissors label on the perforated edge top border */
-.print-card-container .scissors-label {
-    position: absolute;
-    top: 40px;
-    right: 20px;
+/* Unique song label above the rules section */
+.print-card-container .scissors-label,
+.print-card-container .unique-song-label {
+    position: relative;
+    top: auto;
+    right: auto;
+    margin-bottom: 6px;
     background-color: #ffffff;
-    padding: 0 8px;
-    font-size: 10.5px;
-    font-weight: 500;
+    padding: 2px 6px;
+    font-size: 9.5px;
+    font-weight: 600;
     color: #475569;
     display: flex;
     align-items: center;
-    gap: 4px;
+    justify-content: center;
+    gap: 6px;
     z-index: 10;
-}
-
-/* Ножницы в правом верхнем углу рамки */
-.print-card-container .scissors-label .scissors-icon {
-    font-size: 13px;
-    color: var(--accent-color, #B21016);
+    white-space: nowrap;
 }
 
 /* Название компании в левом верхнем углу рамки */
@@ -149,12 +148,12 @@
 /* Текст в подвале (центрирован по горизонтали на нижней границе) */
 .print-card-container .card-footer-row {
     position: absolute;
-    bottom: 6px;
+    bottom: 8px;
     left: 50%;
     transform: translateX(-50%);
     background-color: #ffffff;
-    padding: 0 8px;
-    font-size: 10.5px;
+    padding: 0 10px;
+    font-size: 10px;
     color: #475569;
     font-weight: 500;
     z-index: 10;
@@ -162,11 +161,11 @@
 }
 
 .print-card-container .rules-panel-title {
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 700;
     text-align: center;
     color: #1E293B;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -177,7 +176,7 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    margin: 12px 0 6px 0;
+    margin: 6px 0 4px 0;
 }
 
 .print-card-container .title-line {
@@ -207,15 +206,15 @@
     letter-spacing: 0.5px;
     color: var(--accent-color, #B21016);
     text-align: center;
-    margin-top: -4px;
-    margin-bottom: 10px;
+    margin-top: -2px;
+    margin-bottom: 8px;
     transition: color 0.3s ease;
 }
 
 /* The actual Bingo board grid */
 .print-card-container .bingo-card {
     display: grid;
-    gap: 8px !important;
+    gap: 6px !important;
     background-color: transparent !important;
     border: none !important;
     border-radius: 0 !important;
@@ -230,9 +229,9 @@
 .print-card-container .bingo-cell {
     border: 1.5px solid var(--accent-color, #B21016) !important;
     background-color: #ffffff !important;
-    border-radius: 14px !important;
-    padding: 6px !important;
-    height: 80px !important;
+    border-radius: 12px !important;
+    padding: 4px 6px !important;
+    height: 68px !important;
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
@@ -275,49 +274,30 @@
     text-align: center !important;
 }
 
-/* Corner Gift Bows for the center cell */
-.print-card-container .corner-bow {
+/* Festive bow for the unique center cell */
+.print-card-container .center-cell-bow {
     position: absolute;
-    width: 16px;
-    height: 16px;
+    top: -7px;
+    right: -7px;
     z-index: 15;
     pointer-events: none;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
 }
 
-.print-card-container .corner-bow.top-left {
-    top: -8px;
-    left: -8px;
-    transform: rotate(45deg);
-}
-
-.print-card-container .corner-bow.top-right {
-    top: -8px;
-    right: -8px;
-    transform: rotate(-45deg);
-}
-
-.print-card-container .corner-bow.bottom-left {
-    bottom: -8px;
-    left: -8px;
-    transform: rotate(135deg);
-}
-
-.print-card-container .corner-bow.bottom-right {
-    bottom: -8px;
-    right: -8px;
-    transform: rotate(-135deg);
+.print-card-container .center-unique-cell {
+    border-color: var(--accent-color, #B21016) !important;
+    background-color: rgba(254, 242, 242, 0.4) !important;
 }
 
 /* Rules list mini blueprints */
 .print-card-container .mini-grids-container {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 8px;
     width: 100%;
+    flex: 1;
     align-items: center;
-    justify-content: center;
-    transform: scale(1.6);
-    transform-origin: center top;
+    justify-content: space-evenly;
 }
 
 .print-card-container .mini-grid-wrapper {
@@ -330,9 +310,9 @@
 .print-card-container .mini-grid-layout {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 2px;
-    width: 58px;
-    height: 58px;
+    gap: 1.5px;
+    width: 50px;
+    height: 50px;
     background: transparent;
     padding: 0;
     box-sizing: border-box;
@@ -372,12 +352,12 @@
     border: 1px solid #cbd5e1;
     box-sizing: border-box;
     border-radius: 50%;
-    width: 10px;
-    height: 10px;
+    width: 8.8px;
+    height: 8.8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 7px;
+    font-size: 6px;
     line-height: 1;
 }
 
@@ -391,8 +371,10 @@
     font-size: 7.5px;
     color: #475569;
     text-align: center;
-    margin-top: 4px;
+    margin-top: 3px;
     font-weight: 500;
+    line-height: 1.15;
+    max-width: 120px;
 }
 
 .print-card-container.empty-card-container .empty-card {

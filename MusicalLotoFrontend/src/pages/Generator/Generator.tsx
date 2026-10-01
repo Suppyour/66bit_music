@@ -24,6 +24,7 @@ import type { Song } from '../../components/SelectSongsModal/SelectSongsModal';
 import { PrintCard } from '../../components/PrintCard/PrintCard';
 import { renderToStaticMarkup } from 'react-dom/server';
 import printCardStyles from '../../components/PrintCard/PrintCard.css?inline';
+import { getRandomCuteName } from '../../utils/cuteNames';
 
 const getBase64Image = async (file: File): Promise<string | null> => {
     return new Promise((resolve) => {
@@ -41,7 +42,6 @@ import LoadBgBtn from '../../assets/Generator/Кнопка Загрузить ф
 import PresentationBtn from '../../assets/Generator/Кнопка Перейти к презентации.svg';
 import GenerateBtn from '../../assets/Generator/Кнопка Сгенерировать.svg';
 import SelectedSongsBg from '../../assets/Generator/Фон для песен выбрано.svg';
-import PreviewCellsBg from '../../assets/Generator/Фон ячеек под карточкой предварительного просмотра.svg';
 
 import './Generator.css';
 import { apiFetch } from '../../utils/api';
@@ -100,6 +100,8 @@ const Generator: React.FC = () => {
 
     const [cardCount, setCardCount] = useState<number>(20);
     const [selectedSongs, setSelectedSongs] = useState<Song[]>([]);
+    const [sessionRules, setSessionRules] = useState<number>(0);
+    const [sessionCardSize, setSessionCardSize] = useState<number>(5);
     const [isSelectModalOpen, setIsSelectModalOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isAlertOpen, setIsAlertOpen] = useState(false);
@@ -116,6 +118,8 @@ const Generator: React.FC = () => {
                         const currentSession = sessions.find((s: any) => s.id === sessionId);
                         if (currentSession) {
                             setCardCount(currentSession.participantCount || 20);
+                            if (currentSession.rules !== undefined) setSessionRules(currentSession.rules);
+                            if (currentSession.cardSize) setSessionCardSize(currentSession.cardSize);
                         }
                     }
 
@@ -139,9 +143,19 @@ const Generator: React.FC = () => {
 
                         if (songsFromSlides.length > 0) {
                             setSelectedSongs(songsFromSlides);
-                            return; // skip loading from localStorage
                         }
                     }
+
+                    // Fetch existing game cards
+                    const cardsResponse = await apiFetch(`/api/Games/${sessionId}/cards`);
+                    if (cardsResponse.ok) {
+                        const cardsData = await cardsResponse.json();
+                        if (Array.isArray(cardsData) && cardsData.length > 0) {
+                            setGeneratedCards(cardsData);
+                            setCardCount(cardsData.length);
+                        }
+                    }
+                    return; // Loaded existing session successfully
                 } catch (error) {
                     console.error("Ошибка при инициализации генератора по sessionId:", error);
                 }
@@ -224,10 +238,10 @@ const Generator: React.FC = () => {
             const cardMarkup = renderToStaticMarkup(
                 <PrintCard
                     card={card}
-                    cardSize={5}
+                    cardSize={sessionCardSize}
                     selectedSongs={selectedSongs}
-                    rules={0} // Generator doesn't have rules state
-                    accentColor="#B21016" // Generator default
+                    rules={sessionRules}
+                    accentColor="#B21016"
                     fontFamily="Inter"
                     companyName={companyName}
                     editionName={editionName}
@@ -334,6 +348,35 @@ const Generator: React.FC = () => {
             newCards[currentCardIndex] = currentCard;
             return newCards;
         });
+    };
+
+    const handleRenameCard = async (index: number, newName: string) => {
+        setGeneratedCards(prev => {
+            const copy = [...prev];
+            copy[index] = {
+                ...copy[index],
+                cuteName: newName
+            };
+            return copy;
+        });
+
+        const targetCard = generatedCards[index];
+        if (sessionId && targetCard && targetCard.id) {
+            try {
+                await apiFetch(`/api/Games/${sessionId}/cards/${targetCard.id}/name`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cuteName: newName })
+                });
+            } catch (err) {
+                console.error("Failed to update card name on server:", err);
+            }
+        }
+    };
+
+    const handleRandomizeCardName = (index: number) => {
+        const randomName = getRandomCuteName();
+        handleRenameCard(index, randomName);
     };
 
     const currentCard = generatedCards[currentCardIndex];
@@ -444,18 +487,40 @@ const Generator: React.FC = () => {
                         <div className="pagination">
                             <button
                                 className="btn-page"
-                                disabled={currentCardIndex === 0}
+                                disabled={currentCardIndex === 0 || generatedCards.length === 0}
                                 onClick={() => setCurrentCardIndex(prev => prev - 1)}
                             >
                                 &lt;
                             </button>
-                            <span className="page-info">
-                                {generatedCards.length > 0 ? currentCardIndex + 1 : 0} / {generatedCards.length}
-                                {currentCard?.cuteName && ` — ${currentCard.cuteName}`}
-                            </span>
+                            <div className="pagination-card-info">
+                                <span className="page-number">
+                                    {generatedCards.length > 0 ? `${currentCardIndex + 1} / ${generatedCards.length}` : '0 / 0'}
+                                </span>
+                                {currentCard && (
+                                    <div className="card-name-editor">
+                                        <span className="card-name-separator">—</span>
+                                        <input
+                                            type="text"
+                                            className="card-name-input"
+                                            value={currentCard.cuteName || ''}
+                                            placeholder="Назовите карточку..."
+                                            title="Нажмите, чтобы переименовать карточку"
+                                            onChange={(e) => handleRenameCard(currentCardIndex, e.target.value)}
+                                        />
+                                        <button
+                                            type="button"
+                                            className="btn-random-name"
+                                            title="Сгенерировать случайное название"
+                                            onClick={() => handleRandomizeCardName(currentCardIndex)}
+                                        >
+                                            🎲
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                             <button
                                 className="btn-page"
-                                disabled={currentCardIndex >= generatedCards.length - 1}
+                                disabled={currentCardIndex >= generatedCards.length - 1 || generatedCards.length === 0}
                                 onClick={() => setCurrentCardIndex(prev => prev + 1)}
                             >
                                 &gt;
@@ -507,7 +572,7 @@ const Generator: React.FC = () => {
                         <div className="stat-box-label">Всего карточек</div>
                     </div>
                     <div className="stat-box">
-                        <div className="stat-box-val">25</div>
+                        <div className="stat-box-val">{sessionCardSize ? sessionCardSize * sessionCardSize : 25}</div>
                         <div className="stat-box-label">Ячеек на карточке</div>
                     </div>
                     <div className="stat-box">
@@ -516,8 +581,9 @@ const Generator: React.FC = () => {
                         </div>
                         <div className="stat-box-label">Все карточки уникальны</div>
                     </div>
-                    <div className="stat-box stat-box-svg">
-                        <img src={PreviewCellsBg} alt="Размер сетки 5x5" />
+                    <div className="stat-box">
+                        <div className="stat-box-val">{sessionCardSize ? `${sessionCardSize}×${sessionCardSize}` : '5×5'}</div>
+                        <div className="stat-box-label">Размер сетки</div>
                     </div>
                 </div>
             </main>

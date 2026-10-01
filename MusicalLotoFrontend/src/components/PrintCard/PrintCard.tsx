@@ -37,14 +37,15 @@ export interface PrintCardProps {
 
 export const StaticCell = ({ song, isCenter, accentColor }: { song?: Song; isCenter?: boolean; accentColor?: string }) => {
     return (
-        <div className="bingo-cell">
+        <div className={`bingo-cell ${isCenter ? 'center-unique-cell' : ''}`}>
             {isCenter && (
-                <>
-                    <svg className="corner-bow top-left" viewBox="0 0 100 100" style={{ stroke: accentColor }}><path d="M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90" fill="none" strokeWidth="8" strokeLinecap="round" /></svg>
-                    <svg className="corner-bow top-right" viewBox="0 0 100 100" style={{ stroke: accentColor }}><path d="M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90" fill="none" strokeWidth="8" strokeLinecap="round" /></svg>
-                    <svg className="corner-bow bottom-left" viewBox="0 0 100 100" style={{ stroke: accentColor }}><path d="M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90" fill="none" strokeWidth="8" strokeLinecap="round" /></svg>
-                    <svg className="corner-bow bottom-right" viewBox="0 0 100 100" style={{ stroke: accentColor }}><path d="M 50 50 C 20 20, 20 80, 50 50 C 80 20, 80 80, 50 50 M 50 50 L 30 90 M 50 50 L 70 90" fill="none" strokeWidth="8" strokeLinecap="round" /></svg>
-                </>
+                <div className="center-cell-bow" style={{ position: 'absolute', top: '-7px', right: '-7px', zIndex: 15, pointerEvents: 'none' }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={accentColor || '#B21016'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 11.2c-1.8-2.2-4.5-2.2-4.5 0s2.7 2.2 4.5 0zm0 0c1.8-2.2 4.5-2.2 4.5 0s-2.7 2.2-4.5 0z" />
+                        <circle cx="12" cy="11.2" r="1.8" fill={accentColor || '#B21016'} />
+                        <path d="M11 13l-3 6m5-6l3 6" />
+                    </svg>
+                </div>
             )}
             <div className="cell-title" title={song ? `${song.artist} – ${song.title}` : 'Пустая ячейка'}>
                 {song ? `${song.artist} – ${song.title}` : '...'}
@@ -150,14 +151,21 @@ export const PrintCard: React.FC<PrintCardProps> = ({
 
                     {renderGridWrapper ? renderGridWrapper(gridElement) : gridElement}
 
-                    <div className="card-footer-row">
-                        <span>{footerText}</span>
-                    </div>
+                    {footerText && footerText.trim() !== '' && (
+                        <div className="card-footer-row">
+                            <span>{footerText}</span>
+                        </div>
+                    )}
                 </div>
 
                 <div className="card-right-panel">
-                    <div className="scissors-label">
-                        <span className="scissors-icon">✂</span> — твоя уникальная песня
+                    <div className="scissors-label unique-song-label">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={accentColor || '#B21016'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                            <path d="M12 11.2c-1.8-2.2-4.5-2.2-4.5 0s2.7 2.2 4.5 0zm0 0c1.8-2.2 4.5-2.2 4.5 0s-2.7 2.2-4.5 0z" />
+                            <circle cx="12" cy="11.2" r="1.8" fill={accentColor || '#B21016'} />
+                            <path d="M11 13l-3 6m5-6l3 6" />
+                        </svg>
+                        <span>— твоя уникальная песня</span>
                     </div>
                     <div className="rules-panel-title">Победные комбинации</div>
 
@@ -215,6 +223,27 @@ export const PrintCard: React.FC<PrintCardProps> = ({
                                     })}
                                 </div>
                                 <span className="mini-grid-label">5 песен подряд по диагонали</span>
+                            </div>
+                        )}
+
+                        {/* Full card rule (4) */}
+                        {(rules & 4) !== 0 && (
+                            <div className="mini-grid-wrapper">
+                                <div
+                                    className="mini-grid-layout full-card-rule"
+                                    style={{ '--accent-color-rule': accentColor } as React.CSSProperties}
+                                >
+                                    {Array.from({ length: 25 }).map((_, idx) => (
+                                        <div
+                                            key={idx}
+                                            className="mini-grid-cell active-cross"
+                                            style={{ borderColor: accentColor, color: accentColor }}
+                                        >
+                                            ✕
+                                        </div>
+                                    ))}
+                                </div>
+                                <span className="mini-grid-label">Вся карточка</span>
                             </div>
                         )}
                     </div>

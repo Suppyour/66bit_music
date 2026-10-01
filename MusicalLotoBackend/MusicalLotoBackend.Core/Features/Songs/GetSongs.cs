@@ -33,6 +33,7 @@ public class GetSongsHandler : IRequestHandler<GetSongsQuery, List<SongDto>>
         var songs = await _dbContext.Songs
             .AsNoTracking()
             .Where(s => s.UserId == request.UserId)
+            .OrderByDescending(s => s.CreatedAt)
             .Select(s => new SongDto
             {
                 Id = s.Id,

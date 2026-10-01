@@ -93,6 +93,41 @@ const AddSongModal: React.FC<AddSongModalProps> = ({ isOpen, onClose, onUpload, 
                 <form className="add-song-form" onSubmit={handleSubmit}>
                     <div className="form-group">
                         <label className="form-label">
+                            Аудиофайл песни <span className="required">*</span>
+                        </label>
+                        <div className="drag-drop-zone">
+                            {audioFileName ? (
+                                <div className="file-success-preview">
+                                    <svg width="40" height="48" viewBox="0 0 40 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="file-icon-svg">
+                                        <path d="M4 4C4 1.79086 5.79086 0 8 0H24L40 16V44C40 46.2091 38.2091 48 36 48H8C5.79086 48 4 46.2091 4 44V4Z" fill="#F3F4F6" stroke="#D1D5DB" strokeWidth="2" />
+                                        <path d="M24 0V12C24 14.2091 25.7909 16 28 16H40" fill="#E5E7EB" />
+                                        <path d="M23.5 21V33" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        <path d="M27.5 25L23.5 26.5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        <circle cx="21" cy="33" r="2.5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                    <p className="file-success-name">{audioFileName}</p>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="file-success-check">
+                                        <circle cx="12" cy="12" r="12" fill="#22C55E" />
+                                        <path d="M7 12.5L10.5 16L17.5 9" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                </div>
+                            ) : (
+                                <>
+                                    <span className="drag-drop-icon">🎵</span>
+                                    <p className="drag-drop-text">
+                                        Перетащите аудио сюда или нажмите для выбора
+                                    </p>
+                                    <p className="drag-drop-subtext">
+                                        MP3, WAV, OGG, M4A, MP4 (полная версия трека, без обрезки)
+                                    </p>
+                                </>
+                            )}
+                            <input type="file" name="AudioFile" className="file-input" accept="audio/*,video/mp4" required onChange={handleAudioChange} />
+                        </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label">
                             Название песни <span className="required">*</span>
                         </label>
                         <input
@@ -119,41 +154,6 @@ const AddSongModal: React.FC<AddSongModalProps> = ({ isOpen, onClose, onUpload, 
                             onChange={(e) => setArtist(e.target.value)}
                             required
                         />
-                    </div>
-
-                    <div className="form-group">
-                        <label className="form-label">
-                            Аудио или видео файл <span className="required">*</span>
-                        </label>
-                        <div className="drag-drop-zone">
-                            {audioFileName ? (
-                                <div className="file-success-preview">
-                                    <svg width="40" height="48" viewBox="0 0 40 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="file-icon-svg">
-                                        <path d="M4 4C4 1.79086 5.79086 0 8 0H24L40 16V44C40 46.2091 38.2091 48 36 48H8C5.79086 48 4 46.2091 4 44V4Z" fill="#F3F4F6" stroke="#D1D5DB" strokeWidth="2" />
-                                        <path d="M24 0V12C24 14.2091 25.7909 16 28 16H40" fill="#E5E7EB" />
-                                        <path d="M23.5 21V33" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M27.5 25L23.5 26.5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <circle cx="21" cy="33" r="2.5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    <p className="file-success-name">{audioFileName}</p>
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="file-success-check">
-                                        <circle cx="12" cy="12" r="12" fill="#22C55E" />
-                                        <path d="M7 12.5L10.5 16L17.5 9" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </div>
-                            ) : (
-                                <>
-                                    <span className="drag-drop-icon">🎵</span>
-                                    <p className="drag-drop-text">
-                                        Перетащите аудио/видео сюда или нажмите для выбора
-                                    </p>
-                                    <p className="drag-drop-subtext">
-                                        Поддерживаемые форматы: MP3, WAV, MP4
-                                    </p>
-                                </>
-                            )}
-                            <input type="file" name="AudioFile" className="file-input" accept="audio/*,video/mp4" required onChange={handleAudioChange} />
-                        </div>
                     </div>
 
                     <div className="form-group">

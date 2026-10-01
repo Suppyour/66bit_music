@@ -42,6 +42,13 @@ interface Claim {
     card?: SimulatedCard;
 }
 
+const getSlideTypeStr = (slide?: Slide): string => {
+    if (!slide) return '';
+    return typeof slide.type === 'number'
+        ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][slide.type] || 'Title'
+        : String(slide.type);
+};
+
 const Gameplay: React.FC = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
@@ -88,6 +95,16 @@ const Gameplay: React.FC = () => {
     const [rollingNumber, setRollingNumber] = useState<number | null>(null);
     const [boardIndex, setBoardIndex] = useState<number>(0);
 
+    const currentSlide = slides[activeSlideIndex] as Slide | undefined;
+    const activeSlideTypeStr = getSlideTypeStr(currentSlide);
+
+    const isCurrentSong = activeSlideTypeStr === 'Song';
+    const isPrevSong = activeSlideIndex > 0 ? getSlideTypeStr(slides[activeSlideIndex - 1]) === 'Song' : false;
+    const isNextSong = activeSlideIndex < slides.length - 1 ? getSlideTypeStr(slides[activeSlideIndex + 1]) === 'Song' : false;
+
+    const canGoPrev = activeSlideIndex > 0 && !isCurrentSong && !isPrevSong;
+    const canGoNext = activeSlideIndex < slides.length - 1 && !isCurrentSong && !isNextSong;
+
     const [playedSongs, setPlayedSongs] = useState<string[]>(() => {
         if (!sessionId) return [];
         try {
@@ -98,6 +115,47 @@ const Gameplay: React.FC = () => {
             return [];
         }
     });
+
+    const isSongPlayed = (slide?: Slide) => {
+        if (!slide) return false;
+        return (
+            playedSongs.includes(slide.id) ||
+            Boolean(slide.songId && playedSongs.includes(slide.songId))
+        );
+    };
+
+    const markSongAsPlayed = (slide?: Slide) => {
+        if (!slide) return;
+        setPlayedSongs(prev => {
+            const next = [...prev];
+            let changed = false;
+            if (slide.id && !next.includes(slide.id)) {
+                next.push(slide.id);
+                changed = true;
+            }
+            if (slide.songId && !next.includes(slide.songId)) {
+                next.push(slide.songId);
+                changed = true;
+            }
+            return changed ? next : prev;
+        });
+    };
+
+    const handleReturnToGameBoard = () => {
+        if (currentSlide && getSlideTypeStr(currentSlide) === 'Song') {
+            markSongAsPlayed(currentSlide);
+        }
+        closePlayer();
+        const idx = slides.findIndex(s => getSlideTypeStr(s) === 'GameBoard');
+        if (idx !== -1) setActiveSlideIndex(idx);
+    };
+
+    // Auto-mark active song slide as played
+    useEffect(() => {
+        if (currentSlide && getSlideTypeStr(currentSlide) === 'Song') {
+            markSongAsPlayed(currentSlide);
+        }
+    }, [activeSlideIndex, currentSlide]);
 
     const { songs: allLibrarySongs } = useMusic();
 
@@ -115,7 +173,7 @@ const Gameplay: React.FC = () => {
             return type === 'Song';
         });
 
-        const unplayedSongSlides = songSlides.filter(s => !playedSongs.includes(s.id));
+        const unplayedSongSlides = songSlides.filter(s => !isSongPlayed(s));
 
         if (unplayedSongSlides.length === 0) {
             alert('Все песни уже сыграны!');
@@ -156,9 +214,7 @@ const Gameplay: React.FC = () => {
                     setRollingNumber(null);
                     
                     const originalIndex = slides.findIndex(s => s.id === chosenSlide.id);
-                    if (!playedSongs.includes(chosenSlide.id)) {
-                        setPlayedSongs(prev => [...prev, chosenSlide.id]);
-                    }
+                    markSongAsPlayed(chosenSlide);
                     setActiveSlideIndex(originalIndex);
 
                     // Воспроизведение трека
@@ -188,10 +244,8 @@ const Gameplay: React.FC = () => {
     };
 
     const handleSelectSongFromBoard = async (songSlide: Slide, slideIndex: number) => {
+        markSongAsPlayed(songSlide);
         setActiveSlideIndex(slideIndex);
-        if (!playedSongs.includes(songSlide.id)) {
-            setPlayedSongs(prev => [...prev, songSlide.id]);
-        }
 
         // Воспроизведение выбранной вручную песни
         if (songSlide.songId) {
@@ -313,11 +367,15 @@ const Gameplay: React.FC = () => {
             if (activeTag === 'input' || activeTag === 'textarea') return;
 
             if (e.key === 'ArrowRight' || e.key === 'PageDown') {
-                e.preventDefault();
-                setActiveSlideIndex(prev => Math.min(prev + 1, slides.length - 1));
+                if (canGoNext) {
+                    e.preventDefault();
+                    setActiveSlideIndex(prev => Math.min(prev + 1, slides.length - 1));
+                }
             } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
-                e.preventDefault();
-                setActiveSlideIndex(prev => Math.max(prev - 1, 0));
+                if (canGoPrev) {
+                    e.preventDefault();
+                    setActiveSlideIndex(prev => Math.max(prev - 1, 0));
+                }
             } else if (e.key === 'Escape') {
                 if (isPresenterActive) {
                     e.preventDefault();
@@ -327,9 +385,7 @@ const Gameplay: React.FC = () => {
             } else if (e.key === ' ') {
                 const targetSlide = slides[activeSlideIndex];
                 if (targetSlide) {
-                    const typeStr = typeof targetSlide.type === 'number'
-                        ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][targetSlide.type] || 'Title'
-                        : String(targetSlide.type);
+                    const typeStr = getSlideTypeStr(targetSlide);
                     if (typeStr === 'Song') {
                         e.preventDefault();
                         handleLotoButtonClick();
@@ -342,7 +398,7 @@ const Gameplay: React.FC = () => {
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, [isPresenterActive, isBrowserFullscreen, activeSlideIndex, slides, isPlaying, currentSong, isLotoRunning]);
+    }, [isPresenterActive, isBrowserFullscreen, activeSlideIndex, slides, isPlaying, currentSong, isLotoRunning, canGoNext, canGoPrev]);
     const handleManualCardCheck = () => {
         if (!manualCardQuery.trim()) return;
         if (cards.length === 0) {
@@ -397,11 +453,6 @@ const Gameplay: React.FC = () => {
     };
 
 
-    const activeSlide = slides[activeSlideIndex];
-
-
-
-
     const handleSelectSlide = (idx: number) => {
         setActiveSlideIndex(idx);
     };
@@ -449,6 +500,14 @@ const Gameplay: React.FC = () => {
 
                     // Trigger global playback
                     playSong(songDetails);
+
+                    // Also mark the matching slide as played
+                    const matchingSlide = slides.find(s => s.songId === songData.id || s.id === songData.id);
+                    if (matchingSlide) {
+                        markSongAsPlayed(matchingSlide);
+                    } else if (songData.id) {
+                        setPlayedSongs(prev => prev.includes(songData.id) ? prev : [...prev, songData.id]);
+                    }
                 } else {
                     alert('Все песни в плейлисте уже были воспроизведены!');
                 }
@@ -467,7 +526,7 @@ const Gameplay: React.FC = () => {
         if (isPlaying) {
             togglePlay();
         } else {
-            if (currentSong && currentSong.id === activeSlide.songId) {
+            if (currentSong && currentSlide?.songId && currentSong.id === currentSlide.songId) {
                 togglePlay();
             } else {
                 handleRunLoto();
@@ -662,9 +721,7 @@ const Gameplay: React.FC = () => {
         );
     }
 
-    const activeSlideTypeStr = typeof activeSlide.type === 'number'
-        ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][activeSlide.type] || 'Title'
-        : String(activeSlide.type);
+    const activeSlide = (slides[activeSlideIndex] || slides[0]) as Slide;
 
     const activeBackgroundStyle = activeSlide.backgroundImageUrl
         ? { backgroundImage: `url(${activeSlide.backgroundImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: 'transparent' }
@@ -759,7 +816,9 @@ const Gameplay: React.FC = () => {
                                     <div className="slide-title-view">
                                         <div className="slide-view-logo">🎵</div>
                                         <h2 className="title-view-heading">{activeSlide.title || gameName}</h2>
-                                        <p className="title-view-desc">МУЗЫКАЛЬНОЕ ЛОТО</p>
+                                        <p className="title-view-desc">
+                                            {activeSlide.content && activeSlide.content.trim() ? activeSlide.content : 'МУЗЫКАЛЬНОЕ ЛОТО'}
+                                        </p>
                                     </div>
                                 )}
 
@@ -848,13 +907,14 @@ const Gameplay: React.FC = () => {
                                                     : String(s.type);
                                                 return type === 'Song';
                                             }).map((songSlide, index) => {
-                                                const isPlayed = playedSongs.includes(songSlide.id);
+                                                const isPlayed = isSongPlayed(songSlide);
                                                 const originalIndex = slides.findIndex(s => s.id === songSlide.id);
                                                 return (
                                                     <div
                                                         key={songSlide.id}
                                                         className={`gameboard-cell-custom ${isPlayed ? 'played' : ''}`}
                                                         onClick={() => {
+                                                            markSongAsPlayed(songSlide);
                                                             if (isPreview) {
                                                                 setActiveSlideIndex(originalIndex);
                                                             } else {
@@ -937,7 +997,7 @@ const Gameplay: React.FC = () => {
 
                                 {activeSlideTypeStr === 'Song' && (
                                     <div className="slide-song-view">
-                                        <span className="slide-song-badge">АКТИВНАЯ ПЕСНЯ</span>
+                                        <span className="slide-song-badge">🎵 СЕЙЧАС ИГРАЕТ</span>
                                         <h2 className="slide-song-title">{activeSlide.title}</h2>
                                         <p className="slide-song-artist">{activeSlide.content || 'Исполнитель'}</p>
 
@@ -981,41 +1041,52 @@ const Gameplay: React.FC = () => {
 
                         {/* Панель управления и шагов */}
                         <div className="slide-navigation-controls">
-                            {activeSlideTypeStr === 'Song' ? (
-                                <button
-                                    type="button"
-                                    className="btn-return-gameboard"
-                                    onClick={() => {
-                                        closePlayer();
-                                        const idx = slides.findIndex(s => {
-                                            const type = typeof s.type === 'number'
-                                                ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type]
-                                                : String(s.type);
-                                            return type === 'GameBoard';
-                                        });
-                                        if (idx !== -1) setActiveSlideIndex(idx);
-                                    }}
-                                    style={{
-                                        background: '#2168F5',
-                                        color: '#FFFFFF',
-                                        border: 'none',
-                                        padding: '12px 24px',
-                                        borderRadius: '8px',
-                                        fontWeight: 'bold',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        boxShadow: '0 4px 12px rgba(33, 104, 245, 0.2)'
-                                    }}
-                                >
-                                    Вернуться в игровое поле
-                                </button>
-                            ) : (
-                                <>
-                                    <span className="step-info-counter">
-                                        Шаг {activeSlideIndex + 1} / {slides.length}
-                                    </span>
-                                </>
-                            )}
+                            <button
+                                type="button"
+                                className="btn-nav-step"
+                                onClick={() => canGoPrev && setActiveSlideIndex(prev => Math.max(prev - 1, 0))}
+                                disabled={!canGoPrev}
+                                title={!canGoPrev ? (isCurrentSong ? 'Стрелки заблокированы во время песни' : 'Переход недоступен') : 'Предыдущий слайд'}
+                            >
+                                ← Назад
+                            </button>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                                <span className="step-info-counter">
+                                    Шаг {activeSlideIndex + 1} / {slides.length}
+                                </span>
+                                {activeSlideTypeStr === 'Song' && (
+                                    <button
+                                        type="button"
+                                        className="btn-return-gameboard"
+                                        onClick={handleReturnToGameBoard}
+                                        style={{
+                                            background: '#2168F5',
+                                            color: '#FFFFFF',
+                                            border: 'none',
+                                            padding: '10px 24px',
+                                            borderRadius: '8px',
+                                            fontWeight: 'bold',
+                                            fontSize: '14px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            boxShadow: '0 4px 12px rgba(33, 104, 245, 0.2)'
+                                        }}
+                                    >
+                                        Вернуться в игровое поле
+                                    </button>
+                                )}
+                            </div>
+
+                            <button
+                                type="button"
+                                className="btn-nav-step"
+                                onClick={() => canGoNext && setActiveSlideIndex(prev => Math.min(prev + 1, slides.length - 1))}
+                                disabled={!canGoNext}
+                                title={!canGoNext ? (isCurrentSong ? 'Стрелки заблокированы во время песни' : 'Переход недоступен') : 'Следующий слайд'}
+                            >
+                                Вперед →
+                            </button>
                         </div>
 
                         {!isPreview && (
@@ -1178,42 +1249,16 @@ const Gameplay: React.FC = () => {
                     )}
 
                     <div className="presenter-slide-viewport" style={activeBackgroundStyle}>
-                        {activeSlide.backgroundImageUrl && <div className="slide-image-overlay"></div>}
-
-                        {/* Floating Side Navigation Arrows for Screen / Presenter */}
-                        {activeSlideIndex > 0 && (
-                            <button
-                                type="button"
-                                className="presenter-nav-arrow left"
-                                onClick={() => setActiveSlideIndex(prev => Math.max(prev - 1, 0))}
-                                title="Предыдущий слайд (Стрелка влево / PageUp)"
-                                aria-label="Предыдущий слайд"
-                            >
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <polyline points="15 18 9 12 15 6" />
-                                </svg>
-                            </button>
-                        )}
-                        {activeSlideIndex < slides.length - 1 && (
-                            <button
-                                type="button"
-                                className="presenter-nav-arrow right"
-                                onClick={() => setActiveSlideIndex(prev => Math.min(prev + 1, slides.length - 1))}
-                                title="Следующий слайд (Стрелка вправо / Пробел / PageDown)"
-                                aria-label="Следующий слайд"
-                            >
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <polyline points="9 18 15 12 9 6" />
-                                </svg>
-                            </button>
-                        )}
+                        {activeSlide?.backgroundImageUrl && <div className="slide-image-overlay"></div>}
 
                         <div className={`presenter-slide-content ${activeSlideTypeStr === 'GameBoard' ? 'fullscreen-board-mode' : ''}`}>
                             {activeSlideTypeStr === 'Title' && (
                                 <div className="presenter-slide-view title-view">
                                     <div className="presenter-logo">🎵</div>
                                     <h1 className="presenter-heading">{activeSlide.title || gameName}</h1>
-                                    <p className="presenter-subheading">МУЗЫКАЛЬНОЕ ЛОТО</p>
+                                    <p className="presenter-subheading">
+                                        {activeSlide.content && activeSlide.content.trim() ? activeSlide.content : 'МУЗЫКАЛЬНОЕ ЛОТО'}
+                                    </p>
                                 </div>
                             )}
 
@@ -1234,12 +1279,7 @@ const Gameplay: React.FC = () => {
                                         <div className="gameboard-header-left">
                                             <h1 className="presenter-heading gameboard-heading">Игровое поле</h1>
                                             <span className="gameboard-songs-counter">
-                                                Сыграно: {playedSongs.length} / {slides.filter(s => {
-                                                    const type = typeof s.type === 'number'
-                                                        ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type]
-                                                        : String(s.type);
-                                                    return type === 'Song';
-                                                }).length}
+                                                Сыграно: {slides.filter(s => getSlideTypeStr(s) === 'Song' && isSongPlayed(s)).length} / {slides.filter(s => getSlideTypeStr(s) === 'Song').length}
                                             </span>
                                         </div>
                                         <div className="gameboard-header-right">
@@ -1264,13 +1304,14 @@ const Gameplay: React.FC = () => {
                                                 : String(s.type);
                                             return type === 'Song';
                                         }).map((songSlide, index) => {
-                                            const isPlayed = playedSongs.includes(songSlide.id);
+                                            const isPlayed = isSongPlayed(songSlide);
                                             const originalIndex = slides.findIndex(s => s.id === songSlide.id);
                                             return (
                                                 <div
                                                     key={songSlide.id}
                                                     className={`gameboard-cell-custom ${isPlayed ? 'played' : ''}`}
                                                     onClick={() => {
+                                                        markSongAsPlayed(songSlide);
                                                         if (isPreview) {
                                                             setActiveSlideIndex(originalIndex);
                                                         } else {
@@ -1353,44 +1394,13 @@ const Gameplay: React.FC = () => {
 
                             {activeSlideTypeStr === 'Song' && (
                                 <div className="presenter-slide-view song-view">
-                                    <span className="presenter-song-badge">🎵 АКТИВНАЯ ПЕСНЯ</span>
+                                    <span className="presenter-song-badge">🎵 СЕЙЧАС ИГРАЕТ</span>
                                     <h1 className="presenter-song-title">
                                         {activeSlide.title}
                                     </h1>
                                     <p className="presenter-song-artist">
-                                        {activeSlide.content || 'Исполнитель'}
+                                        {activeSlide?.content || 'Исполнитель'}
                                     </p>
-
-                                    <div className="presenter-song-controls" style={{ marginTop: '30px' }}>
-                                        <button
-                                            type="button"
-                                            className="btn-presenter-action return-gameboard-presenter"
-                                            onClick={() => {
-                                                closePlayer();
-                                                const idx = slides.findIndex(s => {
-                                                    const type = typeof s.type === 'number'
-                                                        ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type]
-                                                        : String(s.type);
-                                                    return type === 'GameBoard';
-                                                });
-                                                if (idx !== -1) setActiveSlideIndex(idx);
-                                            }}
-                                            style={{
-                                                background: '#2168F5',
-                                                color: '#FFFFFF',
-                                                border: 'none',
-                                                padding: '16px 36px',
-                                                borderRadius: '12px',
-                                                fontSize: '18px',
-                                                fontWeight: 'bold',
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s',
-                                                boxShadow: '0 4px 15px rgba(33, 104, 245, 0.3)'
-                                            }}
-                                        >
-                                            Вернуться в игровое поле
-                                        </button>
-                                    </div>
                                 </div>
                             )}
 
@@ -1433,9 +1443,9 @@ const Gameplay: React.FC = () => {
                                 <button
                                     type="button"
                                     className="btn-toolbar-nav"
-                                    onClick={() => setActiveSlideIndex(prev => Math.max(prev - 1, 0))}
-                                    disabled={activeSlideIndex === 0}
-                                    title="Предыдущий слайд (←)"
+                                    onClick={() => canGoPrev && setActiveSlideIndex(prev => Math.max(prev - 1, 0))}
+                                    disabled={!canGoPrev}
+                                    title={!canGoPrev ? (isCurrentSong ? 'Стрелки заблокированы во время песни' : 'Переход недоступен') : 'Предыдущий слайд (←)'}
                                 >
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                         <polyline points="15 18 9 12 15 6" />
@@ -1447,9 +1457,9 @@ const Gameplay: React.FC = () => {
                                 <button
                                     type="button"
                                     className="btn-toolbar-nav"
-                                    onClick={() => setActiveSlideIndex(prev => Math.min(prev + 1, slides.length - 1))}
-                                    disabled={activeSlideIndex === slides.length - 1}
-                                    title="Следующий слайд (→)"
+                                    onClick={() => canGoNext && setActiveSlideIndex(prev => Math.min(prev + 1, slides.length - 1))}
+                                    disabled={!canGoNext}
+                                    title={!canGoNext ? (isCurrentSong ? 'Стрелки заблокированы во время песни' : 'Переход недоступен') : 'Следующий слайд (→)'}
                                 >
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                         <polyline points="9 18 15 12 9 6" />
@@ -1459,19 +1469,10 @@ const Gameplay: React.FC = () => {
                                     <button
                                         type="button"
                                         className="btn-toolbar-action to-board"
-                                        onClick={() => {
-                                            closePlayer();
-                                            const idx = slides.findIndex(s => {
-                                                const type = typeof s.type === 'number'
-                                                    ? ['Title', 'Rules', 'GameBoard', 'QrCode', 'Song', 'Winner'][s.type]
-                                                    : String(s.type);
-                                                return type === 'GameBoard';
-                                            });
-                                            if (idx !== -1) setActiveSlideIndex(idx);
-                                        }}
+                                        onClick={handleReturnToGameBoard}
                                         title="Вернуться к игровому полю"
                                     >
-                                        🎲 Игровое поле
+                                        🎲 Вернуться в игровое поле
                                     </button>
                                 )}
                             </div>
@@ -1534,7 +1535,7 @@ const Gameplay: React.FC = () => {
                         <div className="verification-card-grid">
                             {activeCheckingClaim.card.cells.map((cell, idx) => {
                                 const playedSongIds = slides
-                                    .filter(s => playedSongs.includes(s.id))
+                                    .filter(s => isSongPlayed(s))
                                     .map(s => s.songId || s.id);
                                 const isPlayed = playedSongIds.includes(cell.songId);
                                 return (
@@ -1557,7 +1558,7 @@ const Gameplay: React.FC = () => {
                             <div className="verification-status-title">Результат анализа комбинаций:</div>
                             {(() => {
                                 const playedSongIds = slides
-                                    .filter(s => playedSongs.includes(s.id))
+                                    .filter(s => isSongPlayed(s))
                                     .map(s => s.songId || s.id);
                                 const winningLines = checkWinStatus(activeCheckingClaim.card!, playedSongIds);
                                 if (winningLines.length > 0) {
